@@ -1,0 +1,235 @@
+import React, { useState, useRef } from 'react';
+import {
+  ScrollView,
+  Text,
+  View,
+  Pressable,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useColors } from '@/hooks/use-colors';
+import { useAuth } from '@/hooks/use-auth';
+import { useAICoach } from '@/hooks/use-ai-coach';
+
+interface Message {
+  id: string;
+  text: string;
+  sender: 'user' | 'ai';
+  timestamp: Date;
+}
+
+export default function AICoachScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const { processMessage, loading: isTyping } = useAICoach();
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      text: `¡Hola ${user?.name || 'reina'}! 👸 Soy tu LifeOS Coach. Cuéntame sobre tus finanzas, salud o progreso mental. Guardaré todo lo importante por ti.`,
+      sender: 'ai',
+      timestamp: new Date(),
+    },
+  ]);
+  const [inputText, setInputText] = useState('');
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  const clearChat = () => {
+    setMessages([{
+      id: Date.now().toString(),
+      text: `Nueva sesión iniciada. ¿En qué te enfocas hoy, ${user?.name || 'reina'}?`,
+      sender: 'ai',
+      timestamp: new Date(),
+    }]);
+  };
+
+  const sendMessage = async () => {
+    if (!inputText.trim() || isTyping) return;
+
+    const userText = inputText;
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      text: userText,
+      sender: 'user',
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInputText('');
+
+    const result = await processMessage(userText);
+
+    if (result && result.success) {
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        text: result.actionSummary
+          ? `${result.actionSummary}\n\n${result.aiResponse ?? ''}`
+          : (result.aiResponse ?? ''),
+        sender: 'ai',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, aiResponse]);
+    } else {
+      const errorResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        text: 'Lo siento, tuve un problema procesando eso. Inténtalo de nuevo, ¡tú puedes! 💪',
+        sender: 'ai',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorResponse]);
+    }
+  };
+
+  return (
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#09090B' }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.bottom + 49 : 0}
+      >
+        {/* Header */}
+        <View style={{
+          paddingHorizontal: 24,
+          paddingTop: 16,
+          paddingBottom: 16,
+          borderBottomWidth: 1,
+          borderBottomColor: '#27272A',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
+          <View>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: '#FAFAFA' }}>AI Coach</Text>
+            <Text style={{ fontSize: 10, color: '#71717A', marginTop: 2, letterSpacing: 3, fontWeight: '700', textTransform: 'uppercase' }}>
+              Mentalidad de Reina 👸
+            </Text>
+          </View>
+          <Pressable
+            onPress={clearChat}
+            style={{
+              backgroundColor: 'rgba(113,113,122,0.15)',
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderRadius: 99,
+              borderWidth: 1,
+              borderColor: '#27272A',
+            }}
+          >
+            <Text style={{ fontSize: 10, fontWeight: '700', color: '#71717A', textTransform: 'uppercase' }}>
+              Limpiar
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* Chat Area */}
+        <ScrollView
+          ref={scrollViewRef}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 8 }}
+          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+          showsVerticalScrollIndicator={false}
+        >
+          {messages.map((msg) => (
+            <View
+              key={msg.id}
+              style={{
+                maxWidth: '85%',
+                marginBottom: 12,
+                padding: 14,
+                borderRadius: 18,
+                alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+                backgroundColor: msg.sender === 'user' ? colors.primary : '#27272A',
+                borderTopRightRadius: msg.sender === 'user' ? 4 : 18,
+                borderTopLeftRadius: msg.sender === 'user' ? 18 : 4,
+              }}
+            >
+              <Text style={{
+                fontSize: 14,
+                color: '#FAFAFA',
+                lineHeight: 20,
+              }}>
+                {msg.text}
+              </Text>
+              <Text style={{
+                fontSize: 9,
+                marginTop: 6,
+                opacity: 0.5,
+                color: '#A1A1AA',
+                textAlign: 'right',
+              }}>
+                {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Text>
+            </View>
+          ))}
+          {isTyping && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 8, marginBottom: 12 }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary, opacity: 1 }} />
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary, opacity: 0.6 }} />
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary, opacity: 0.3 }} />
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Input Area */}
+        <View style={{
+          padding: 12,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom + 60 : Platform.OS === 'web' ? 90 : 12,
+          backgroundColor: '#18181B',
+          borderTopWidth: 1,
+          borderTopColor: '#27272A',
+        }}>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            backgroundColor: '#27272A',
+            borderWidth: 1,
+            borderColor: '#3F3F46',
+            borderRadius: 28,
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+          }}>
+            <TextInput
+              style={{
+                flex: 1,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
+                color: '#FAFAFA',
+                fontSize: 14,
+                maxHeight: 120,
+              }}
+              placeholder={`Háblame, ${user?.name || 'reina'}...`}
+              placeholderTextColor="#52525B"
+              value={inputText}
+              onChangeText={setInputText}
+              multiline
+              onSubmitEditing={sendMessage}
+            />
+            <Pressable
+              onPress={sendMessage}
+              disabled={!inputText.trim() || isTyping}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 16,
+                backgroundColor: !inputText.trim() || isTyping ? '#3F3F46' : colors.primary,
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: !inputText.trim() || isTyping ? 0.6 : 1,
+              }}
+            >
+              <IconSymbol
+                name="paperplane.fill"
+                size={18}
+                color={!inputText.trim() || isTyping ? '#71717A' : colors.background}
+              />
+            </Pressable>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
