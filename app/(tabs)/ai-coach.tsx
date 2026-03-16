@@ -26,10 +26,12 @@ export default function AICoachScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { processMessage, loading: isTyping } = useAICoach();
+  const genderEmoji = (user as any)?.gender === 'masculino' ? '👑' : (user as any)?.gender === 'otro' ? '✨' : '👸';
+  const genderTitle = (user as any)?.gender === 'masculino' ? 'rey' : (user as any)?.gender === 'otro' ? '' : 'reina';
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: `¡Hola ${user?.name || 'reina'}! 👸 Soy tu LifeOS Coach. Cuéntame sobre tus finanzas, salud o progreso mental. Guardaré todo lo importante por ti.`,
+      text: `¡Hola ${user?.name || genderTitle || 'tú'}! ${genderEmoji} Soy tu LifeOS Coach. Cuéntame sobre tus finanzas, salud o progreso mental. Guardaré todo lo importante por ti.`,
       sender: 'ai',
       timestamp: new Date(),
     },
@@ -40,7 +42,7 @@ export default function AICoachScreen() {
   const clearChat = () => {
     setMessages([{
       id: Date.now().toString(),
-      text: `Nueva sesión iniciada. ¿En qué te enfocas hoy, ${user?.name || 'reina'}?`,
+      text: `Nueva sesión iniciada. ¿En qué te enfocas hoy, ${user?.name || genderTitle || 'tú'}? ${genderEmoji}`,
       sender: 'ai',
       timestamp: new Date(),
     }]);
@@ -205,7 +207,7 @@ export default function AICoachScreen() {
                 fontSize: 14,
                 maxHeight: 100,
               }}
-              placeholder={`Háblame, ${user?.name || 'reina'}...`}
+              placeholder={`Háblame, ${user?.name || genderTitle || 'tú'}...`}
               placeholderTextColor="#52525B"
               value={inputText}
               onChangeText={setInputText}

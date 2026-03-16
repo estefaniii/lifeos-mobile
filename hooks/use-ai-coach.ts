@@ -31,10 +31,27 @@ REGLAS:
 
 // ─── OpenAI direct call ──────────────────────────────────────────────────────
 
+// ─── Offline fallback responses ─────────────────────────────────────────────
+
+function getOfflineResponse(message: string, userName: string | null): { intent: 'none'; data: {}; ai_response: string } {
+  const name = userName || 'reina';
+  const lower = message.toLowerCase();
+
+  // Simple keyword matching for offline mode
+  if (lower.includes('hola') || lower.includes('hey') || lower.includes('buenos') || lower.includes('buenas')) {
+    return { intent: 'none', data: {}, ai_response: `¡Hola ${name}! 💫 Estoy en modo offline ahora, pero recuerda: todo lo que deseas ya es tuyo. ¿Necesitas registrar algo? Puedes usar los botones del Home mientras tanto.` };
+  }
+  if (lower.includes('gracias') || lower.includes('thanks')) {
+    return { intent: 'none', data: {}, ai_response: `¡De nada, ${name}! 🌟 Sigue brillando. El universo conspira a tu favor.` };
+  }
+  return { intent: 'none', data: {}, ai_response: `${name}, estoy en modo offline porque la API de IA no está disponible. 🔌\n\nPuedes:\n• Registrar gastos/ingresos desde el Home\n• Agregar agua, gym, yoga desde Registros Rápidos\n• Revisar tu progreso en cada módulo\n\n💡 Para activar el coach IA, verifica tu API key de OpenAI en las variables de entorno de Vercel.` };
+}
+
 async function callOpenAI(message: string, userName: string | null, gender: string | null) {
   const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error('EXPO_PUBLIC_OPENAI_API_KEY no configurada');
+    // No API key — use offline mode
+    return getOfflineResponse(message, userName);
   }
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -56,8 +73,15 @@ async function callOpenAI(message: string, userName: string | null, gender: stri
   });
 
   if (!response.ok) {
+    const status = response.status;
+    if (status === 429) {
+      return { intent: 'none' as const, data: {}, ai_response: `${userName || 'Reina'}, la API de OpenAI se quedó sin créditos. 💳\n\nPara solucionarlo:\n1. Ve a platform.openai.com/billing\n2. Agrega créditos a tu cuenta\n3. O cambia la API key en Vercel\n\nMientras tanto, puedes usar todos los módulos de LifeOS normalmente.` };
+    }
+    if (status === 401) {
+      return { intent: 'none' as const, data: {}, ai_response: `La API key de OpenAI no es válida. 🔑 Verifica la variable EXPO_PUBLIC_OPENAI_API_KEY en Vercel.` };
+    }
     const errText = await response.text();
-    throw new Error(`OpenAI ${response.status}: ${errText.substring(0, 200)}`);
+    throw new Error(`OpenAI ${status}: ${errText.substring(0, 150)}`);
   }
 
   const result = await response.json();

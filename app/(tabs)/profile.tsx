@@ -187,7 +187,7 @@ export default function ProfileScreen() {
         <View className="mx-6 mb-8 bg-surface border border-border rounded-[32px] p-8 shadow-sm">
           <View className="flex-row items-center mb-6">
             <View className="w-20 h-20 rounded-full bg-primary/10 items-center justify-center border-4 border-primary/20">
-              <Text className="text-4xl">👸</Text>
+              <Text className="text-4xl">{gender === 'masculino' ? '👑' : gender === 'otro' ? '✨' : '👸'}</Text>
             </View>
             <View className="flex-1 ml-6">
               <Text className="text-xl font-bold text-foreground" style={{ color: '#FAFAFA' }}>{user?.name || user?.email?.split('@')[0] || 'Usuario'}</Text>
