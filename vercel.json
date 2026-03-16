@@ -1,5 +1,5 @@
 {
-  "installCommand": "pnpm install --no-frozen-lockfile",
+  "installCommand": "npm install --legacy-peer-deps",
   "buildCommand": "npx expo export --platform web",
   "outputDirectory": "dist",
   "framework": null,
