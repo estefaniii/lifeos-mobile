@@ -63,20 +63,20 @@ export function ProgressRing({
           strokeLinecap="round" rotation={-90} origin={`${center}, ${center}`}
         />
       </Svg>
-      <View className="items-center gap-1">
-        <Text className="text-sm font-semibold text-foreground">{label}</Text>
-        {value && <Text className="text-xs text-muted">{value}</Text>}
+      <View style={{ alignItems: 'center', gap: 2 }}>
+        <Text style={{ fontSize: 12, fontWeight: '600', color: '#FAFAFA' }}>{label}</Text>
+        {value && <Text style={{ fontSize: 11, color: '#A1A1AA' }}>{value}</Text>}
       </View>
     </>
   );
 
   if (onPress) {
     return (
-      <Pressable className="items-center gap-2 active:opacity-70" onPress={onPress}>
+      <Pressable style={{ alignItems: 'center', gap: 4 }} onPress={onPress}>
         {content}
       </Pressable>
     );
   }
 
-  return <View className="items-center gap-2">{content}</View>;
+  return <View style={{ alignItems: 'center', gap: 4 }}>{content}</View>;
 }

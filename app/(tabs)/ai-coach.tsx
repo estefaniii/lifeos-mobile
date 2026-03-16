@@ -92,9 +92,9 @@ export default function AICoachScreen() {
       >
         {/* Header */}
         <View style={{
-          paddingHorizontal: 24,
-          paddingTop: 16,
-          paddingBottom: 16,
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          paddingBottom: 12,
           borderBottomWidth: 1,
           borderBottomColor: '#27272A',
           flexDirection: 'row',
@@ -102,17 +102,17 @@ export default function AICoachScreen() {
           alignItems: 'center',
         }}>
           <View>
-            <Text style={{ fontSize: 22, fontWeight: '800', color: '#FAFAFA' }}>AI Coach</Text>
-            <Text style={{ fontSize: 10, color: '#71717A', marginTop: 2, letterSpacing: 3, fontWeight: '700', textTransform: 'uppercase' }}>
-              Mentalidad de Reina 👸
+            <Text style={{ fontSize: 20, fontWeight: '800', color: '#FAFAFA' }}>AI Coach</Text>
+            <Text style={{ fontSize: 9, color: '#71717A', marginTop: 2, letterSpacing: 2, fontWeight: '700', textTransform: 'uppercase' }}>
+              Tu asistente personal
             </Text>
           </View>
           <Pressable
             onPress={clearChat}
             style={{
               backgroundColor: 'rgba(113,113,122,0.15)',
-              paddingHorizontal: 16,
-              paddingVertical: 8,
+              paddingHorizontal: 14,
+              paddingVertical: 7,
               borderRadius: 99,
               borderWidth: 1,
               borderColor: '#27272A',
@@ -128,7 +128,7 @@ export default function AICoachScreen() {
         <ScrollView
           ref={scrollViewRef}
           style={{ flex: 1 }}
-          contentContainerStyle={{ padding: 16, paddingBottom: 8 }}
+          contentContainerStyle={{ padding: 12, paddingBottom: 8, maxWidth: 600, alignSelf: 'center', width: '100%' }}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
           showsVerticalScrollIndicator={false}
         >
@@ -136,14 +136,14 @@ export default function AICoachScreen() {
             <View
               key={msg.id}
               style={{
-                maxWidth: '85%',
-                marginBottom: 12,
-                padding: 14,
-                borderRadius: 18,
+                maxWidth: '82%',
+                marginBottom: 10,
+                padding: 12,
+                borderRadius: 16,
                 alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
                 backgroundColor: msg.sender === 'user' ? colors.primary : '#27272A',
-                borderTopRightRadius: msg.sender === 'user' ? 4 : 18,
-                borderTopLeftRadius: msg.sender === 'user' ? 18 : 4,
+                borderTopRightRadius: msg.sender === 'user' ? 4 : 16,
+                borderTopLeftRadius: msg.sender === 'user' ? 16 : 4,
               }}
             >
               <Text style={{
@@ -155,7 +155,7 @@ export default function AICoachScreen() {
               </Text>
               <Text style={{
                 fontSize: 9,
-                marginTop: 6,
+                marginTop: 4,
                 opacity: 0.5,
                 color: '#A1A1AA',
                 textAlign: 'right',
@@ -175,31 +175,35 @@ export default function AICoachScreen() {
 
         {/* Input Area */}
         <View style={{
-          padding: 12,
-          paddingBottom: Platform.OS === 'ios' ? insets.bottom + 60 : Platform.OS === 'web' ? 90 : 12,
+          paddingHorizontal: 12,
+          paddingTop: 10,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom + 60 : Platform.OS === 'web' ? 80 : 12,
           backgroundColor: '#18181B',
           borderTopWidth: 1,
           borderTopColor: '#27272A',
         }}>
           <View style={{
             flexDirection: 'row',
-            alignItems: 'center',
+            alignItems: 'flex-end',
             gap: 8,
             backgroundColor: '#27272A',
             borderWidth: 1,
             borderColor: '#3F3F46',
-            borderRadius: 28,
-            paddingHorizontal: 8,
+            borderRadius: 24,
+            paddingHorizontal: 6,
             paddingVertical: 4,
+            maxWidth: 600,
+            alignSelf: 'center',
+            width: '100%',
           }}>
             <TextInput
               style={{
                 flex: 1,
-                paddingHorizontal: 14,
-                paddingVertical: 12,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
                 color: '#FAFAFA',
                 fontSize: 14,
-                maxHeight: 120,
+                maxHeight: 100,
               }}
               placeholder={`Háblame, ${user?.name || 'reina'}...`}
               placeholderTextColor="#52525B"
@@ -212,9 +216,10 @@ export default function AICoachScreen() {
               onPress={sendMessage}
               disabled={!inputText.trim() || isTyping}
               style={{
-                width: 44,
-                height: 44,
-                borderRadius: 16,
+                width: 40,
+                height: 40,
+                borderRadius: 14,
+                marginBottom: 2,
                 backgroundColor: !inputText.trim() || isTyping ? '#3F3F46' : colors.primary,
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -223,7 +228,7 @@ export default function AICoachScreen() {
             >
               <IconSymbol
                 name="paperplane.fill"
-                size={18}
+                size={16}
                 color={!inputText.trim() || isTyping ? '#71717A' : colors.background}
               />
             </Pressable>

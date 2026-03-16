@@ -28,7 +28,17 @@ export default function ProfileScreen() {
   // Re-sync local state when user data updates (e.g. after refresh)
   useEffect(() => {
     if (user?.name) setName(user.name);
-    if ((user as any)?.gender) setGender((user as any).gender);
+    if ((user as any)?.gender) {
+      setGender((user as any).gender);
+    } else if (Platform.OS === 'web') {
+      // Fallback: load from localStorage
+      try {
+        const stored = localStorage.getItem('lifeos_gender');
+        if (stored === 'femenino' || stored === 'masculino' || stored === 'otro') {
+          setGender(stored);
+        }
+      } catch {}
+    }
   }, [user?.name, (user as any)?.gender]);
 
   const hasTelegram = user?.telegram_id != null;
@@ -205,7 +215,7 @@ export default function ProfileScreen() {
                 <Text className="text-background font-bold text-xs uppercase">{isUpdating ? '...' : 'Guardar'}</Text>
               </Pressable>
             </View>
-            <Text className="text-sm font-bold text-foreground mb-3" style={{ color: '#FAFAFA' }}>Género (para el AI Coach)</Text>
+            <Text style={{ color: '#FAFAFA', fontSize: 14, fontWeight: '700', marginBottom: 10 }}>Género (para el AI Coach)</Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               {(['femenino', 'masculino', 'otro'] as const).map((g) => {
                 const selected = gender === g;
@@ -216,12 +226,27 @@ export default function ProfileScreen() {
                       setGender(g);
                       if (!user?.id) return;
                       try {
-                        await supabase.from('users').upsert({
-                          id: String(user.id),
-                          gender: g,
-                          last_active: new Date().toISOString(),
-                        }, { onConflict: 'id' });
+                        // Use update instead of upsert to avoid overwriting other fields
+                        const { error } = await supabase
+                          .from('users')
+                          .update({ gender: g, last_active: new Date().toISOString() })
+                          .eq('id', String(user.id));
+
+                        if (error) {
+                          // If row doesn't exist yet, insert it
+                          await supabase.from('users').upsert({
+                            id: String(user.id),
+                            name: user.name || '',
+                            email: user.email || '',
+                            gender: g,
+                            last_active: new Date().toISOString(),
+                          }, { onConflict: 'id' });
+                        }
                         await refresh();
+                        if (Platform.OS === 'web') {
+                          // Save to localStorage as backup
+                          try { localStorage.setItem('lifeos_gender', g); } catch {}
+                        }
                       } catch (err) {
                         console.error('[Profile] Gender save error:', err);
                       }

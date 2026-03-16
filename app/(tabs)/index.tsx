@@ -330,132 +330,141 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
         className="pb-32"
       >
-        <View className="flex-1 px-4 sm:px-6 md:px-8 lg:px-12 py-8 max-w-7xl mx-auto w-full">
+        <View style={{ flex: 1, paddingHorizontal: 16, paddingVertical: 24, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
 
           {/* Header */}
-          <View className="mb-10 flex-row justify-between items-end">
-            <View>
-              <Text className="text-sm font-black text-primary uppercase tracking-[4px] mb-1">LIFEOS ELITE</Text>
-              <Text className="text-4xl font-bold text-foreground" style={{ color: '#FAFAFA' }}>
+          <View style={{ marginBottom: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: '#14B8A6', fontSize: 11, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 3, marginBottom: 4 }}>LIFEOS ELITE</Text>
+              <Text style={{ color: '#FAFAFA', fontSize: 26, fontWeight: '700' }}>
                 Hola, {user?.name || user?.email?.split('@')[0] || 'Tú'} 👋
               </Text>
             </View>
             <Pressable
               onPress={() => router.push('/profile')}
-              className="w-12 h-12 rounded-full bg-surface border border-border items-center justify-center"
+              style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', alignItems: 'center', justifyContent: 'center' }}
             >
-              <Text className="text-xl">{(user as any)?.gender === 'masculino' ? '👑' : '👸'}</Text>
+              <Text style={{ fontSize: 20 }}>{(user as any)?.gender === 'masculino' ? '👑' : (user as any)?.gender === 'otro' ? '✨' : '👸'}</Text>
             </Pressable>
           </View>
 
           {/* Grid Principal */}
-          <View className="flex-row flex-wrap -mx-3">
+          <View style={{ flexDirection: 'column', gap: 16 }}>
 
             {/* Afirmación */}
-            <View className="w-full lg:w-2/5 px-3 mb-6">
-              <View className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[40px] p-10 shadow-2xl shadow-black/40 relative overflow-hidden h-full justify-center border border-slate-700/50">
-                <View className="absolute -top-10 -right-10 w-40 h-40 bg-accent/20 rounded-full blur-3xl opacity-60" />
-                <Text className="text-[10px] font-black text-white/40 uppercase tracking-[5px] mb-6">AFIRMACIÓN MAESTRA</Text>
-                <Text className="text-3xl font-bold text-white leading-[1.2] mb-8">
-                  "{affirmation?.text || 'Asume el sentimiento del deseo cumplido.'}"
-                </Text>
-                <View className="flex-row items-center gap-3">
-                  <View className="h-[1px] flex-1 bg-white/20" />
-                  <Text className="text-[10px] text-white/50 font-bold uppercase tracking-widest">Neville Goddard</Text>
-                </View>
+            <View style={{
+              backgroundColor: '#18181B',
+              borderRadius: 28,
+              padding: 24,
+              borderWidth: 1,
+              borderColor: 'rgba(63,63,70,0.5)',
+              position: 'relative',
+              overflow: 'hidden',
+            }}>
+              <Text style={{ fontSize: 9, fontWeight: '900', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 4, marginBottom: 12 }}>AFIRMACIÓN MAESTRA</Text>
+              <Text style={{ fontSize: 20, fontWeight: '700', color: '#FAFAFA', lineHeight: 28, marginBottom: 16 }}>
+                "{affirmation?.text || 'Asume el sentimiento del deseo cumplido.'}"
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View style={{ height: 1, flex: 1, backgroundColor: 'rgba(255,255,255,0.15)' }} />
+                <Text style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 2 }}>Neville Goddard</Text>
               </View>
             </View>
 
             {/* Métricas */}
-            <View className="w-full lg:w-3/5 px-3 mb-6">
-              <View className="glass-card rounded-[40px] p-8 h-full">
-                <View className="flex-row justify-between items-center mb-8">
-                  <Text className="text-xl font-bold text-foreground" style={{ color: '#FAFAFA' }}>Métricas Vitales</Text>
-                  <View className="bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                    <Text className="text-[10px] font-black text-emerald-500 tracking-tighter">EN VIVO</Text>
-                  </View>
+            <View style={{
+              backgroundColor: '#18181B',
+              borderRadius: 28,
+              padding: 20,
+              borderWidth: 1,
+              borderColor: '#27272A',
+            }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '700' }}>Métricas Vitales</Text>
+                <View style={{ backgroundColor: 'rgba(16,185,129,0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, borderWidth: 1, borderColor: 'rgba(16,185,129,0.2)' }}>
+                  <Text style={{ fontSize: 9, fontWeight: '900', color: '#10B981', letterSpacing: 1 }}>EN VIVO</Text>
                 </View>
-                <View className="flex-row justify-around items-center">
-                  <ProgressRing
-                    progress={financesProgress}
-                    label="Finanzas"
-                    value={`$${financialSummary?.income || 0}`}
-                    color={colors.success}
-                    size={Platform.OS === 'web' ? 130 : 90}
-                    onPress={() => router.push('/finances')}
-                  />
-                  <ProgressRing
-                    progress={healthProgress}
-                    label="Pasos"
-                    value={`${healthSummary?.steps || 0}`}
-                    color={colors.primary}
-                    size={Platform.OS === 'web' ? 130 : 90}
-                    onPress={() => router.push('/health')}
-                  />
-                  <ProgressRing
-                    progress={productivityProgress}
-                    label="Ejercicio"
-                    value={`${healthSummary?.exerciseMinutes || 0}m`}
-                    color={colors.warning}
-                    size={Platform.OS === 'web' ? 130 : 90}
-                    onPress={() => router.push('/health')}
-                  />
-                </View>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }}>
+                <ProgressRing
+                  progress={financesProgress}
+                  label="Finanzas"
+                  value={`$${financialSummary?.income || 0}`}
+                  color={colors.success}
+                  size={85}
+                  onPress={() => router.push('/finances')}
+                />
+                <ProgressRing
+                  progress={healthProgress}
+                  label="Pasos"
+                  value={`${healthSummary?.steps || 0}`}
+                  color={colors.primary}
+                  size={85}
+                  onPress={() => router.push('/health')}
+                />
+                <ProgressRing
+                  progress={productivityProgress}
+                  label="Ejercicio"
+                  value={`${healthSummary?.exerciseMinutes || 0}m`}
+                  color={colors.warning}
+                  size={85}
+                  onPress={() => router.push('/health')}
+                />
               </View>
             </View>
 
             {/* Registros Rápidos */}
-            <View className="w-full px-3 mb-8">
-              <Text className="text-sm font-black text-muted uppercase tracking-[3px] mb-4" style={{ color: '#A1A1AA' }}>REGISTROS RÁPIDOS</Text>
-              <View className="flex-row gap-3">
+            <View style={{ marginBottom: 20 }}>
+              <Text style={{ color: '#A1A1AA', fontSize: 12, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 3, marginBottom: 12 }}>REGISTROS RÁPIDOS</Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
                 <Pressable
                   onPress={() => setShowWaterModal(true)}
-                  className="flex-1 bg-blue-500/10 border border-blue-500/20 rounded-[24px] p-4 items-center active:scale-95"
+                  style={{ flex: 1, backgroundColor: 'rgba(59,130,246,0.1)', borderWidth: 1, borderColor: 'rgba(59,130,246,0.2)', borderRadius: 20, paddingVertical: 14, alignItems: 'center' }}
                 >
-                  <Text className="text-2xl mb-1">💧</Text>
-                  <Text className="font-bold text-blue-400 text-[9px] uppercase tracking-tight">Agua</Text>
-                  <Text className="text-[8px] text-blue-400/60 mt-0.5">{healthSummary?.water_ml || 0}ml</Text>
+                  <Text style={{ fontSize: 22, marginBottom: 4 }}>💧</Text>
+                  <Text style={{ color: '#60A5FA', fontWeight: '800', fontSize: 9, textTransform: 'uppercase' }}>Agua</Text>
+                  <Text style={{ color: 'rgba(96,165,250,0.6)', fontSize: 8, marginTop: 2 }}>{healthSummary?.water_ml || 0}ml</Text>
                 </Pressable>
 
                 <Pressable
                   onPress={() => setShowMeditationModal(true)}
-                  className="flex-1 bg-purple-500/10 border border-purple-500/20 rounded-[24px] p-4 items-center active:scale-95"
+                  style={{ flex: 1, backgroundColor: 'rgba(168,85,247,0.1)', borderWidth: 1, borderColor: 'rgba(168,85,247,0.2)', borderRadius: 20, paddingVertical: 14, alignItems: 'center' }}
                 >
-                  <Text className="text-2xl mb-1">🧘</Text>
-                  <Text className="font-bold text-purple-400 text-[9px] uppercase tracking-tight">Zen</Text>
-                  <Text className="text-[8px] text-purple-400/60 mt-0.5">Registrar</Text>
+                  <Text style={{ fontSize: 22, marginBottom: 4 }}>🧘</Text>
+                  <Text style={{ color: '#C084FC', fontWeight: '800', fontSize: 9, textTransform: 'uppercase' }}>Zen</Text>
+                  <Text style={{ color: 'rgba(192,132,252,0.6)', fontSize: 8, marginTop: 2 }}>Registrar</Text>
                 </Pressable>
 
                 <Pressable
                   onPress={() => setShowGymModal(true)}
-                  className="flex-1 bg-orange-500/10 border border-orange-500/20 rounded-[24px] p-4 items-center active:scale-95"
+                  style={{ flex: 1, backgroundColor: 'rgba(249,115,22,0.1)', borderWidth: 1, borderColor: 'rgba(249,115,22,0.2)', borderRadius: 20, paddingVertical: 14, alignItems: 'center' }}
                 >
-                  <Text className="text-2xl mb-1">💪</Text>
-                  <Text className="font-bold text-orange-400 text-[9px] uppercase tracking-tight">Gym</Text>
-                  <Text className="text-[8px] text-orange-400/60 mt-0.5">{healthSummary?.gymSessions ? '✓ Hecho' : 'Registrar'}</Text>
+                  <Text style={{ fontSize: 22, marginBottom: 4 }}>💪</Text>
+                  <Text style={{ color: '#FB923C', fontWeight: '800', fontSize: 9, textTransform: 'uppercase' }}>Gym</Text>
+                  <Text style={{ color: 'rgba(251,146,60,0.6)', fontSize: 8, marginTop: 2 }}>{healthSummary?.gymSessions ? '✓ Hecho' : 'Registrar'}</Text>
                 </Pressable>
 
                 <Pressable
                   onPress={() => setShowYogaModal(true)}
-                  className="flex-1 bg-emerald-500/10 border border-emerald-500/20 rounded-[24px] p-4 items-center active:scale-95"
+                  style={{ flex: 1, backgroundColor: 'rgba(16,185,129,0.1)', borderWidth: 1, borderColor: 'rgba(16,185,129,0.2)', borderRadius: 20, paddingVertical: 14, alignItems: 'center' }}
                 >
-                  <Text className="text-2xl mb-1">🧘‍♀️</Text>
-                  <Text className="font-bold text-emerald-400 text-[9px] uppercase tracking-tight">Yoga</Text>
-                  <Text className="text-[8px] text-emerald-400/60 mt-0.5">{healthSummary?.yogaSessions ? '✓ Hecho' : 'Registrar'}</Text>
+                  <Text style={{ fontSize: 22, marginBottom: 4 }}>🧘‍♀️</Text>
+                  <Text style={{ color: '#34D399', fontWeight: '800', fontSize: 9, textTransform: 'uppercase' }}>Yoga</Text>
+                  <Text style={{ color: 'rgba(52,211,153,0.6)', fontSize: 8, marginTop: 2 }}>{healthSummary?.yogaSessions ? '✓ Hecho' : 'Registrar'}</Text>
                 </Pressable>
               </View>
-              <Text className="text-[9px] text-muted/50 text-center mt-2" style={{ color: 'rgba(161,161,170,0.5)' }}>Toca para registrar</Text>
+              <Text style={{ color: 'rgba(161,161,170,0.5)', fontSize: 9, textAlign: 'center', marginTop: 6 }}>Toca para registrar</Text>
             </View>
 
             {/* Agua - indicador visual rápido */}
-            <View className="w-full px-3 mb-6">
+            <View style={{ marginBottom: 16 }}>
               <Pressable
                 onPress={() => setShowWaterModal(true)}
-                className="bg-blue-500/8 border border-blue-500/15 rounded-[24px] p-4"
+                style={{ backgroundColor: 'rgba(59,130,246,0.06)', borderWidth: 1, borderColor: 'rgba(59,130,246,0.15)', borderRadius: 20, padding: 14 }}
               >
-                <View className="flex-row justify-between items-center mb-3">
-                  <Text className="text-blue-400 font-bold text-sm">💧 Hidratación Hoy</Text>
-                  <Text className="text-blue-400/80 text-xs font-bold">{healthSummary?.water_ml || 0} / 2000 ml</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <Text style={{ color: '#60A5FA', fontWeight: '700', fontSize: 14 }}>💧 Hidratación Hoy</Text>
+                  <Text style={{ color: 'rgba(96,165,250,0.8)', fontSize: 12, fontWeight: '700' }}>{healthSummary?.water_ml || 0} / 2000 ml</Text>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
                   {[1,2,3,4,5,6,7,8].map(i => {
@@ -476,12 +485,12 @@ export default function HomeScreen() {
                     );
                   })}
                 </View>
-                <Text className="text-[9px] text-blue-400/50 text-center mt-2 font-medium">Toca para registrar</Text>
+                <Text style={{ color: 'rgba(96,165,250,0.5)', fontSize: 9, textAlign: 'center', marginTop: 6, fontWeight: '500' }}>Toca para registrar</Text>
               </Pressable>
             </View>
 
             {/* Mis Hábitos */}
-            <View className="w-full px-3 mb-8">
+            <View style={{ marginBottom: 20 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <Text style={{ color: '#A1A1AA', fontSize: 12, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 3 }}>
                   MIS HÁBITOS
@@ -620,35 +629,35 @@ export default function HomeScreen() {
             </View>
 
             {/* Acciones de Finanzas e IA */}
-            <View className="w-full px-3 mb-10">
-              <View className="flex-row gap-4">
+            <View style={{ marginBottom: 24 }}>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
                 <Pressable
                   onPress={() => openModal('expense')}
-                  className="flex-1 bg-rose-500/10 border border-rose-500/20 rounded-[28px] p-6 items-center active:scale-95"
+                  style={{ flex: 1, backgroundColor: 'rgba(244,63,94,0.1)', borderWidth: 1, borderColor: 'rgba(244,63,94,0.2)', borderRadius: 22, paddingVertical: 18, alignItems: 'center' }}
                 >
-                  <Text className="text-3xl mb-1">💸</Text>
-                  <Text className="font-bold text-rose-400 text-[10px] uppercase tracking-widest mt-2">Gasto</Text>
+                  <Text style={{ fontSize: 28, marginBottom: 4 }}>💸</Text>
+                  <Text style={{ color: '#FB7185', fontWeight: '800', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Gasto</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => openModal('income')}
-                  className="flex-1 bg-emerald-500/10 border border-emerald-500/20 rounded-[28px] p-6 items-center active:scale-95"
+                  style={{ flex: 1, backgroundColor: 'rgba(16,185,129,0.1)', borderWidth: 1, borderColor: 'rgba(16,185,129,0.2)', borderRadius: 22, paddingVertical: 18, alignItems: 'center' }}
                 >
-                  <Text className="text-3xl mb-1">💰</Text>
-                  <Text className="font-bold text-emerald-400 text-[10px] uppercase tracking-widest mt-2">Ingreso</Text>
+                  <Text style={{ fontSize: 28, marginBottom: 4 }}>💰</Text>
+                  <Text style={{ color: '#34D399', fontWeight: '800', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Ingreso</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => router.push('/ai-coach')}
-                  className="flex-1 bg-indigo-500/10 border border-indigo-500/20 rounded-[28px] p-6 items-center active:scale-95"
+                  style={{ flex: 1, backgroundColor: 'rgba(99,102,241,0.1)', borderWidth: 1, borderColor: 'rgba(99,102,241,0.2)', borderRadius: 22, paddingVertical: 18, alignItems: 'center' }}
                 >
-                  <Text className="text-3xl mb-1">🤖</Text>
-                  <Text className="font-bold text-indigo-400 text-[10px] uppercase tracking-widest mt-2">IA Coach</Text>
+                  <Text style={{ fontSize: 28, marginBottom: 4 }}>🤖</Text>
+                  <Text style={{ color: '#818CF8', fontWeight: '800', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>IA Coach</Text>
                 </Pressable>
               </View>
             </View>
 
             {/* C: Metas de Ahorro */}
             {savingsGoals && savingsGoals.length > 0 && (
-              <View className="w-full px-3 mb-8">
+              <View style={{ marginBottom: 20 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <Text style={{ color: '#A1A1AA', fontSize: 12, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 3 }}>
                     METAS DE AHORRO
@@ -704,7 +713,7 @@ export default function HomeScreen() {
             )}
 
             {/* D: Resumen Semanal */}
-            <View className="w-full px-3 mb-8">
+            <View style={{ marginBottom: 20 }}>
               <Text style={{ color: '#A1A1AA', fontSize: 12, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 3, marginBottom: 12 }}>
                 RESUMEN SEMANAL
               </Text>
@@ -791,31 +800,31 @@ export default function HomeScreen() {
             </View>
 
             {/* Accesos a Módulos */}
-            <View className="w-full px-3 mb-8">
-              <Text className="text-sm font-black text-muted uppercase tracking-[3px] mb-6" style={{ color: '#A1A1AA' }}>MÓDULOS</Text>
-              <View className="flex-row gap-4">
+            <View style={{ marginBottom: 20 }}>
+              <Text style={{ color: '#A1A1AA', fontSize: 12, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 3, marginBottom: 14 }}>MÓDULOS</Text>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
                 <Pressable
                   onPress={() => router.push('/productivity')}
-                  className="flex-1 glass-card rounded-[32px] p-6 flex-row items-center gap-4 active:scale-95"
+                  style={{ flex: 1, backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', borderRadius: 24, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}
                 >
-                  <View className="w-14 h-14 bg-primary/10 rounded-2xl items-center justify-center">
-                    <Text className="text-3xl">🎯</Text>
+                  <View style={{ width: 44, height: 44, backgroundColor: 'rgba(20,184,166,0.1)', borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 24 }}>🎯</Text>
                   </View>
                   <View>
-                    <Text className="font-bold text-foreground" style={{ color: '#FAFAFA' }}>Productividad</Text>
-                    <Text className="text-[10px] text-muted font-bold uppercase" style={{ color: '#A1A1AA' }}>Focus & Tareas</Text>
+                    <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 14 }}>Productividad</Text>
+                    <Text style={{ color: '#A1A1AA', fontSize: 9, fontWeight: '700', textTransform: 'uppercase' }}>Focus & Tareas</Text>
                   </View>
                 </Pressable>
                 <Pressable
                   onPress={() => router.push('/mind')}
-                  className="flex-1 glass-card rounded-[32px] p-6 flex-row items-center gap-4 active:scale-95"
+                  style={{ flex: 1, backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', borderRadius: 24, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}
                 >
-                  <View className="w-14 h-14 bg-warning/10 rounded-2xl items-center justify-center">
-                    <Text className="text-3xl">🧘</Text>
+                  <View style={{ width: 44, height: 44, backgroundColor: 'rgba(245,158,11,0.1)', borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 24 }}>🧘</Text>
                   </View>
                   <View>
-                    <Text className="font-bold text-foreground" style={{ color: '#FAFAFA' }}>Mente</Text>
-                    <Text className="text-[10px] text-muted font-bold uppercase" style={{ color: '#A1A1AA' }}>Zen & Puntos</Text>
+                    <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 14 }}>Mente</Text>
+                    <Text style={{ color: '#A1A1AA', fontSize: 9, fontWeight: '700', textTransform: 'uppercase' }}>Zen & Puntos</Text>
                   </View>
                 </Pressable>
               </View>
