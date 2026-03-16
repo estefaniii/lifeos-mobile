@@ -468,14 +468,14 @@ export default function HealthScreen() {
         </View>
 
         {/* Progress Rings */}
-        <View className="px-6 mb-6">
-          <View className="glass-card rounded-3xl p-6">
-            <Text className="text-base font-bold text-foreground mb-6" style={{ color: '#FAFAFA' }}>Progreso Hoy</Text>
-            <View className="flex-row justify-around items-center">
-              <ProgressRing progress={stepsProgress} label="Pasos" value={`${todayMetrics?.steps || 0}`} color={colors.primary} size={Platform.OS === 'web' ? 110 : 80} />
-              <ProgressRing progress={sleepProgress} label="Sueño" value={`${todayMetrics?.sleepHours?.toFixed(1) || 0}h`} color={colors.success} size={Platform.OS === 'web' ? 110 : 80} />
-              <ProgressRing progress={exerciseProgress} label="Ejercicio" value={`${todayMetrics?.exerciseMinutes || 0}m`} color={colors.warning} size={Platform.OS === 'web' ? 110 : 80} />
-              <ProgressRing progress={waterProgress} label="Agua" value={`${todayMetrics?.water_ml || 0}ml`} color="#60A5FA" size={Platform.OS === 'web' ? 110 : 80} />
+        <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
+          <View style={{ backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', borderRadius: 24, padding: 16 }}>
+            <Text style={{ color: '#FAFAFA', fontSize: 16, fontWeight: '700', marginBottom: 14 }}>Progreso Hoy</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              <ProgressRing progress={stepsProgress} label="Pasos" value={`${todayMetrics?.steps || 0}`} color={colors.primary} size={72} />
+              <ProgressRing progress={sleepProgress} label="Sueño" value={`${todayMetrics?.sleepHours?.toFixed(1) || 0}h`} color={colors.success} size={72} />
+              <ProgressRing progress={exerciseProgress} label="Ejercicio" value={`${todayMetrics?.exerciseMinutes || 0}m`} color={colors.warning} size={72} />
+              <ProgressRing progress={waterProgress} label="Agua" value={`${todayMetrics?.water_ml || 0}ml`} color="#60A5FA" size={72} />
             </View>
           </View>
         </View>
