@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   ScrollView,
   Text,
@@ -7,13 +7,14 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Keyboard,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColors } from '@/hooks/use-colors';
 import { useAuth } from '@/hooks/use-auth';
 import { useAICoach } from '@/hooks/use-ai-coach';
+import { supabase } from '@/lib/supabase';
 
 interface Message {
   id: string;
@@ -29,19 +30,50 @@ export default function AICoachScreen() {
   const { processMessage, loading: isTyping } = useAICoach();
   const genderEmoji = (user as any)?.gender === 'masculino' ? '👑' : (user as any)?.gender === 'otro' ? '✨' : '👸';
   const genderTitle = (user as any)?.gender === 'masculino' ? 'rey' : (user as any)?.gender === 'otro' ? '' : 'reina';
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: `¡Hola ${user?.name || genderTitle || 'tú'}! ${genderEmoji} Soy tu LifeOS Coach. Cuéntame sobre tus finanzas, salud o progreso mental. Guardaré todo lo importante por ti.`,
-      sender: 'ai',
-      timestamp: new Date(),
-    },
-  ]);
+
+  const welcomeMsg: Message = {
+    id: 'welcome',
+    text: `¡Hola ${user?.name || genderTitle || 'tú'}! ${genderEmoji} Soy tu LifeOS Coach. Cuéntame sobre tus finanzas, salud o progreso mental. Guardaré todo lo importante por ti.`,
+    sender: 'ai',
+    timestamp: new Date(),
+  };
+
+  const [messages, setMessages] = useState<Message[]>([welcomeMsg]);
   const [inputText, setInputText] = useState('');
+  const [loadingHistory, setLoadingHistory] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
 
-  // Handle keyboard on mobile web using visualViewport API
+  // Load chat history from Supabase
+  useEffect(() => {
+    if (!user?.id) { setLoadingHistory(false); return; }
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('chat_messages')
+          .select('id, text, sender, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true })
+          .limit(100);
+
+        if (data && data.length > 0) {
+          const loaded: Message[] = data.map((m: any) => ({
+            id: m.id,
+            text: m.text,
+            sender: m.sender,
+            timestamp: new Date(m.created_at),
+          }));
+          setMessages(loaded);
+        }
+      } catch (err) {
+        console.warn('[AI Coach] Could not load history:', err);
+      } finally {
+        setLoadingHistory(false);
+      }
+    })();
+  }, [user?.id]);
+
+  // Handle keyboard on mobile web
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     const vv = (window as any).visualViewport;
@@ -54,14 +86,36 @@ export default function AICoachScreen() {
     return () => vv.removeEventListener('resize', onResize);
   }, []);
 
-  const clearChat = () => {
-    setMessages([{
+  // Save message to Supabase
+  const saveMessage = useCallback(async (text: string, sender: 'user' | 'ai') => {
+    if (!user?.id) return;
+    try {
+      await supabase.from('chat_messages').insert({
+        user_id: user.id,
+        text,
+        sender,
+      });
+    } catch (err) {
+      console.warn('[AI Coach] Could not save message:', err);
+    }
+  }, [user?.id]);
+
+  const clearChat = useCallback(async () => {
+    // Delete from DB
+    if (user?.id) {
+      try {
+        await supabase.from('chat_messages').delete().eq('user_id', user.id);
+      } catch {}
+    }
+    const newWelcome: Message = {
       id: Date.now().toString(),
       text: `Nueva sesión iniciada. ¿En qué te enfocas hoy, ${user?.name || genderTitle || 'tú'}? ${genderEmoji}`,
       sender: 'ai',
       timestamp: new Date(),
-    }]);
-  };
+    };
+    setMessages([newWelcome]);
+    saveMessage(newWelcome.text, 'ai');
+  }, [user, genderTitle, genderEmoji, saveMessage]);
 
   const sendMessage = async () => {
     if (!inputText.trim() || isTyping) return;
@@ -76,28 +130,24 @@ export default function AICoachScreen() {
 
     setMessages((prev) => [...prev, userMessage]);
     setInputText('');
+    saveMessage(userText, 'user');
 
     const result = await processMessage(userText);
 
-    if (result && result.success) {
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: result.actionSummary
-          ? `${result.actionSummary}\n\n${result.aiResponse ?? ''}`
-          : (result.aiResponse ?? ''),
-        sender: 'ai',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, aiResponse]);
-    } else {
-      const errorResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: 'Lo siento, tuve un problema procesando eso. Inténtalo de nuevo, ¡tú puedes! 💪',
-        sender: 'ai',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorResponse]);
-    }
+    const aiText = result && result.success
+      ? (result.actionSummary
+        ? `${result.actionSummary}\n\n${result.aiResponse ?? ''}`
+        : (result.aiResponse ?? ''))
+      : 'Lo siento, tuve un problema procesando eso. Inténtalo de nuevo, ¡tú puedes! 💪';
+
+    const aiMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      text: aiText,
+      sender: 'ai',
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, aiMessage]);
+    saveMessage(aiText, 'ai');
   };
 
   return (
@@ -149,38 +199,45 @@ export default function AICoachScreen() {
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
           showsVerticalScrollIndicator={false}
         >
-          {messages.map((msg) => (
-            <View
-              key={msg.id}
-              style={{
-                maxWidth: '82%',
-                marginBottom: 10,
-                padding: 12,
-                borderRadius: 16,
-                alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                backgroundColor: msg.sender === 'user' ? colors.primary : '#27272A',
-                borderTopRightRadius: msg.sender === 'user' ? 4 : 16,
-                borderTopLeftRadius: msg.sender === 'user' ? 16 : 4,
-              }}
-            >
-              <Text style={{
-                fontSize: 14,
-                color: '#FAFAFA',
-                lineHeight: 20,
-              }}>
-                {msg.text}
-              </Text>
-              <Text style={{
-                fontSize: 9,
-                marginTop: 4,
-                opacity: 0.5,
-                color: '#A1A1AA',
-                textAlign: 'right',
-              }}>
-                {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </Text>
+          {loadingHistory ? (
+            <View style={{ alignItems: 'center', paddingTop: 40 }}>
+              <ActivityIndicator color={colors.primary} size="small" />
+              <Text style={{ color: '#71717A', fontSize: 12, marginTop: 8 }}>Cargando historial...</Text>
             </View>
-          ))}
+          ) : (
+            messages.map((msg) => (
+              <View
+                key={msg.id}
+                style={{
+                  maxWidth: '82%',
+                  marginBottom: 10,
+                  padding: 12,
+                  borderRadius: 16,
+                  alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+                  backgroundColor: msg.sender === 'user' ? colors.primary : '#27272A',
+                  borderTopRightRadius: msg.sender === 'user' ? 4 : 16,
+                  borderTopLeftRadius: msg.sender === 'user' ? 16 : 4,
+                }}
+              >
+                <Text style={{
+                  fontSize: 14,
+                  color: '#FAFAFA',
+                  lineHeight: 20,
+                }}>
+                  {msg.text}
+                </Text>
+                <Text style={{
+                  fontSize: 9,
+                  marginTop: 4,
+                  opacity: 0.5,
+                  color: '#A1A1AA',
+                  textAlign: 'right',
+                }}>
+                  {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </Text>
+              </View>
+            ))
+          )}
           {isTyping && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 8, marginBottom: 12 }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary, opacity: 1 }} />

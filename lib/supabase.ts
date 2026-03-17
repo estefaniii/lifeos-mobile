@@ -100,3 +100,11 @@ export interface HabitLog {
   date: string;
   completed: boolean;
 }
+
+export interface ChatMessage {
+  id: string;
+  user_id: string;
+  text: string;
+  sender: 'user' | 'ai';
+  created_at: string;
+}

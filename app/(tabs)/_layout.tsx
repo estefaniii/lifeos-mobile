@@ -1,16 +1,50 @@
-import { Tabs } from "expo-router";
+import { useEffect, useState } from "react";
+import { Tabs, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Platform } from "react-native";
 import { useColors } from "@/hooks/use-colors";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/lib/supabase";
 
 export default function TabLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const bottomPadding = Platform.OS === "web" ? 12 : Math.max(insets.bottom, 8);
   const tabBarHeight = 56 + bottomPadding;
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  // Check onboarding status
+  useEffect(() => {
+    if (loading || !user?.id) return;
+
+    // Quick check localStorage first (web)
+    if (Platform.OS === "web") {
+      try {
+        if (localStorage.getItem("lifeos_onboarded") === "true") return;
+      } catch {}
+    }
+
+    // Check Supabase
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("users")
+          .select("onboarding_completed")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (!data?.onboarding_completed) {
+          router.replace("/onboarding");
+        } else if (Platform.OS === "web") {
+          try { localStorage.setItem("lifeos_onboarded", "true"); } catch {}
+        }
+      } catch {}
+    })();
+  }, [user?.id, loading]);
 
   return (
     <Tabs
