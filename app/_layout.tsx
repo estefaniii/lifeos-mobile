@@ -39,6 +39,44 @@ export default function RootLayout() {
     initManusRuntime();
   }, []);
 
+  // Inject PWA meta tags on web for home screen icon
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    const head = document.head;
+
+    // Manifest link
+    if (!head.querySelector('link[rel="manifest"]')) {
+      const manifest = document.createElement("link");
+      manifest.rel = "manifest";
+      manifest.href = "/manifest.json";
+      head.appendChild(manifest);
+    }
+
+    // Apple touch icon
+    if (!head.querySelector('link[rel="apple-touch-icon"]')) {
+      const touchIcon = document.createElement("link");
+      touchIcon.rel = "apple-touch-icon";
+      touchIcon.setAttribute("sizes", "512x512");
+      touchIcon.href = "/icon-512.png";
+      head.appendChild(touchIcon);
+    }
+
+    // Apple PWA meta tags
+    const metaTags = [
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "LifeOS" },
+    ];
+    metaTags.forEach(({ name, content }) => {
+      if (!head.querySelector(`meta[name="${name}"]`)) {
+        const meta = document.createElement("meta");
+        meta.name = name;
+        meta.content = content;
+        head.appendChild(meta);
+      }
+    });
+  }, []);
+
   const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {
     setInsets(metrics.insets);
     setFrame(metrics.frame);
