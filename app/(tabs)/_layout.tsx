@@ -20,18 +20,21 @@ export default function TabLayout() {
   const router = useRouter();
   const { online, queueSize, syncNow } = useOnlineStatus();
 
-  // Check onboarding status
+  // Auth gate: redirect to login if not authenticated
   useEffect(() => {
-    if (loading || !user?.id) return;
+    if (loading) return;
+    if (!user?.id) {
+      router.replace("/login");
+      return;
+    }
 
-    // Quick check localStorage first (web)
+    // Check onboarding status
     if (Platform.OS === "web") {
       try {
-        if (localStorage.getItem("lifeos_onboarded") === "true") return;
+        if (localStorage.getItem(`lifeos_onboarded_${user.id}`) === "true") return;
       } catch {}
     }
 
-    // Check Supabase
     (async () => {
       try {
         const { data } = await supabase
@@ -43,7 +46,7 @@ export default function TabLayout() {
         if (!data?.onboarding_completed) {
           router.replace("/onboarding");
         } else if (Platform.OS === "web") {
-          try { localStorage.setItem("lifeos_onboarded", "true"); } catch {}
+          try { localStorage.setItem(`lifeos_onboarded_${user.id}`, "true"); } catch {}
         }
       } catch {}
     })();

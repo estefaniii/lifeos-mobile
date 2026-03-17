@@ -1,75 +1,20 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Platform } from "react-native";
-import * as Api from "@/lib/_core/api";
-import * as Auth from "@/lib/_core/auth";
 import { supabase } from "@/lib/supabase";
 
 // ---------------------------------------------------------------------------
-// Constants
+// Types
 // ---------------------------------------------------------------------------
 
-const DEFAULT_PWA_USER_ID = "pwa-user-1";
-
-// ---------------------------------------------------------------------------
-// Supabase helpers (moved from hooks/use-auth.ts)
-// ---------------------------------------------------------------------------
-
-async function fetchProfileFromSupabase(
-  userId: string,
-): Promise<{ name?: string | null; gender?: string | null; email?: string | null } | null> {
-  try {
-    const { data } = await supabase
-      .from("users")
-      .select("name, gender, email")
-      .eq("id", userId)
-      .maybeSingle();
-    return data as any;
-  } catch {
-    return null;
-  }
-}
-
-async function ensurePwaUser(userId: string): Promise<Auth.User> {
-  const profile = await fetchProfileFromSupabase(userId);
-  if (profile) {
-    return {
-      id: userId,
-      openId: userId,
-      name: profile.name ?? null,
-      email: profile.email ?? null,
-      loginMethod: "pwa",
-      lastSignedIn: new Date(),
-      gender: (profile.gender as any) ?? null,
-    };
-  }
-  // Create user row if it doesn't exist
-  await supabase.from("users").upsert(
-    {
-      id: userId,
-      name: null,
-      email: null,
-      last_active: new Date().toISOString(),
-    },
-    { onConflict: "id" },
-  );
-
-  return {
-    id: userId,
-    openId: userId,
-    name: null,
-    email: null,
-    loginMethod: "pwa",
-    lastSignedIn: new Date(),
-    gender: null,
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Context shape
-// ---------------------------------------------------------------------------
+export type User = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  gender?: 'femenino' | 'masculino' | 'otro' | null;
+};
 
 interface AuthContextValue {
-  user: Auth.User | null;
+  user: User | null;
   loading: boolean;
   error: Error | null;
   isAuthenticated: boolean;
@@ -80,88 +25,75 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+async function fetchProfile(userId: string): Promise<User> {
+  const { data } = await supabase
+    .from("users")
+    .select("id, name, email, gender")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (data) {
+    return {
+      id: data.id,
+      name: data.name ?? null,
+      email: data.email ?? null,
+      gender: data.gender ?? null,
+    };
+  }
+
+  return { id: userId, name: null, email: null, gender: null };
+}
+
+async function ensureUserRow(userId: string, email?: string | null) {
+  await supabase.from("users").upsert(
+    {
+      id: userId,
+      email: email ?? null,
+      last_active: new Date().toISOString(),
+    },
+    { onConflict: "id" },
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<Auth.User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchUser = useCallback(async () => {
+  // Load user from Supabase Auth session
+  const loadUser = useCallback(async () => {
     try {
-      setLoading(true);
       setError(null);
+      const { data: { session } } = await supabase.auth.getSession();
 
-      // Web platform: try cookie-based auth first, fallback to PWA standalone mode
-      if (Platform.OS === "web") {
-        let apiUser: any = null;
-        try {
-          apiUser = await Api.getMe();
-        } catch (err) {
-          console.warn("[useAuth] API server not available, using PWA standalone mode");
-        }
-
-        if (apiUser) {
-          // Manus API server is available -- use it
-          const baseUser: Auth.User = {
-            id: String(apiUser.id),
-            openId: apiUser.openId,
-            name: apiUser.name,
-            email: apiUser.email,
-            loginMethod: apiUser.loginMethod,
-            lastSignedIn: new Date(apiUser.lastSignedIn),
-          };
-          const profile = await fetchProfileFromSupabase(String(apiUser.id));
-          const userInfo: Auth.User = {
-            ...baseUser,
-            name: profile?.name ?? baseUser.name,
-            gender: (profile?.gender as any) ?? null,
-          };
-          setUser(userInfo);
-          await Auth.setUserInfo(userInfo);
-        } else {
-          // API server not available -- PWA standalone mode
-          const cachedUser = await Auth.getUserInfo();
-          const userId = cachedUser?.id || DEFAULT_PWA_USER_ID;
-
-          const pwaUser = await ensurePwaUser(userId);
-          setUser(pwaUser);
-          await Auth.setUserInfo(pwaUser);
-        }
-        return;
-      }
-
-      // Native platform: token-based auth
-      const sessionToken = await Auth.getSessionToken();
-      if (!sessionToken) {
+      if (!session?.user) {
         setUser(null);
+        setLoading(false);
         return;
       }
 
-      // 1. Show cached user immediately for responsiveness
-      const cachedUser = await Auth.getUserInfo();
-      if (cachedUser) {
-        setUser(cachedUser);
+      const authUser = session.user;
+      await ensureUserRow(authUser.id, authUser.email);
+      const profile = await fetchProfile(authUser.id);
+      // Use auth email if profile doesn't have one
+      profile.email = profile.email || authUser.email || null;
+      // Use auth name if profile doesn't have one
+      if (!profile.name && authUser.user_metadata?.full_name) {
+        profile.name = authUser.user_metadata.full_name;
       }
 
-      // 2. Fetch fresh name/gender from Supabase
-      if (cachedUser?.id) {
-        const profile = await fetchProfileFromSupabase(String(cachedUser.id));
-        if (profile) {
-          const updatedUser: Auth.User = {
-            ...cachedUser,
-            name: profile.name ?? cachedUser.name,
-            gender: (profile.gender as any) ?? (cachedUser as any).gender ?? null,
-          };
-          setUser(updatedUser);
-          await Auth.setUserInfo(updatedUser);
-        }
-      }
+      setUser(profile);
     } catch (err) {
-      const e = err instanceof Error ? err : new Error("Failed to fetch user");
-      console.error("[useAuth] fetchUser error:", e);
-      setError(e);
+      console.error("[Auth] loadUser error:", err);
+      setError(err instanceof Error ? err : new Error("Failed to load user"));
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -169,36 +101,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await Api.logout();
+      await supabase.auth.signOut();
     } catch (err) {
-      console.error("[Auth] Logout API call failed:", err);
-    } finally {
-      await Auth.removeSessionToken();
-      await Auth.clearUserInfo();
-      await supabase.auth.signOut().catch(() => {});
-      setUser(null);
-      setError(null);
+      console.error("[Auth] signOut error:", err);
+    }
+    setUser(null);
+    setError(null);
+    // Clear localStorage caches
+    if (Platform.OS === "web") {
+      try {
+        // Clear all user-specific onboarding keys
+        const keys = Object.keys(localStorage);
+        keys.forEach(k => {
+          if (k.startsWith("lifeos_onboarded_")) localStorage.removeItem(k);
+        });
+        localStorage.removeItem("lifeos_gender");
+        localStorage.removeItem("manus-runtime-user-info");
+      } catch {}
     }
   }, []);
 
-  const isAuthenticated = useMemo(() => Boolean(user), [user]);
-
-  // Auto-fetch on mount
+  // Listen for auth state changes (login, logout, token refresh)
   useEffect(() => {
-    if (Platform.OS === "web") {
-      fetchUser();
-    } else {
-      Auth.getUserInfo().then((cachedUser) => {
-        if (cachedUser) {
-          setUser(cachedUser);
+    // Initial load
+    loadUser();
+
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log("[Auth] State change:", event);
+        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          if (session?.user) {
+            await ensureUserRow(session.user.id, session.user.email);
+            const profile = await fetchProfile(session.user.id);
+            profile.email = profile.email || session.user.email || null;
+            if (!profile.name && session.user.user_metadata?.full_name) {
+              profile.name = session.user.user_metadata.full_name;
+            }
+            setUser(profile);
+            setLoading(false);
+          }
+        } else if (event === "SIGNED_OUT") {
+          setUser(null);
           setLoading(false);
-          fetchUser();
-        } else {
-          fetchUser();
         }
-      });
-    }
-  }, [fetchUser]);
+      },
+    );
+
+    return () => subscription.unsubscribe();
+  }, [loadUser]);
+
+  const isAuthenticated = useMemo(() => Boolean(user), [user]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -206,10 +159,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       error,
       isAuthenticated,
-      refresh: fetchUser,
+      refresh: loadUser,
       logout,
     }),
-    [user, loading, error, isAuthenticated, fetchUser, logout],
+    [user, loading, error, isAuthenticated, loadUser, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

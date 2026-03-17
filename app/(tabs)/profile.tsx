@@ -43,7 +43,7 @@ export default function ProfileScreen() {
     }
   }, [user?.name, (user as any)?.gender]);
 
-  const hasTelegram = user?.telegram_id != null;
+  const hasTelegram = (user as any)?.telegram_id != null;
 
   const [healthKitEnabled, setHealthKitEnabled] = useState(false);
 

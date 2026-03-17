@@ -31,10 +31,10 @@ export default function OnboardingScreen() {
         last_active: new Date().toISOString(),
       }, { onConflict: 'id' });
 
-      if (Platform.OS === 'web') {
+      if (Platform.OS === 'web' && user?.id) {
         try {
           localStorage.setItem('lifeos_gender', gender);
-          localStorage.setItem('lifeos_onboarded', 'true');
+          localStorage.setItem(`lifeos_onboarded_${user.id}`, 'true');
         } catch {}
       }
 
