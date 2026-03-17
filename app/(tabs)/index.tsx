@@ -831,20 +831,29 @@ export default function HomeScreen() {
               );
             })()}
 
-            {/* Reporte Mensual */}
-            <Pressable
-              onPress={() => router.push('/reports')}
-              style={{ marginBottom: 20, backgroundColor: '#18181B', borderWidth: 1, borderColor: 'rgba(20,184,166,0.2)', borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }}
-            >
-              <View style={{ width: 48, height: 48, backgroundColor: 'rgba(20,184,166,0.1)', borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 26 }}>📊</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 15 }}>Reporte Mensual</Text>
-                <Text style={{ color: '#A1A1AA', fontSize: 11 }}>Ver resumen completo de finanzas, salud y hábitos</Text>
-              </View>
-              <Text style={{ color: '#14B8A6', fontSize: 18 }}>→</Text>
-            </Pressable>
+            {/* Quick Actions */}
+            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+              <Pressable
+                onPress={() => router.push('/reports')}
+                style={{ flex: 1, backgroundColor: '#18181B', borderWidth: 1, borderColor: 'rgba(20,184,166,0.2)', borderRadius: 20, padding: 14, alignItems: 'center', gap: 8 }}
+              >
+                <View style={{ width: 44, height: 44, backgroundColor: 'rgba(20,184,166,0.1)', borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 22 }}>📊</Text>
+                </View>
+                <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 13 }}>Reporte</Text>
+                <Text style={{ color: '#A1A1AA', fontSize: 10 }}>Resumen mensual</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => router.push('/timeline')}
+                style={{ flex: 1, backgroundColor: '#18181B', borderWidth: 1, borderColor: 'rgba(139,92,246,0.2)', borderRadius: 20, padding: 14, alignItems: 'center', gap: 8 }}
+              >
+                <View style={{ width: 44, height: 44, backgroundColor: 'rgba(139,92,246,0.1)', borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 22 }}>📅</Text>
+                </View>
+                <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 13 }}>Timeline</Text>
+                <Text style={{ color: '#A1A1AA', fontSize: 10 }}>Actividad diaria</Text>
+              </Pressable>
+            </View>
 
             {/* Accesos a Módulos */}
             <View style={{ marginBottom: 20 }}>
