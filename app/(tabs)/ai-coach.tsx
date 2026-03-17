@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ScrollView,
   Text,
@@ -7,6 +7,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -38,6 +39,20 @@ export default function AICoachScreen() {
   ]);
   const [inputText, setInputText] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+  // Handle keyboard on mobile web using visualViewport API
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const vv = (window as any).visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      const isOpen = vv.height < window.innerHeight * 0.85;
+      setKeyboardOpen(isOpen);
+    };
+    vv.addEventListener('resize', onResize);
+    return () => vv.removeEventListener('resize', onResize);
+  }, []);
 
   const clearChat = () => {
     setMessages([{
@@ -179,7 +194,7 @@ export default function AICoachScreen() {
         <View style={{
           paddingHorizontal: 12,
           paddingTop: 10,
-          paddingBottom: Platform.OS === 'ios' ? insets.bottom + 60 : Platform.OS === 'web' ? 80 : 12,
+          paddingBottom: Platform.OS === 'ios' ? insets.bottom + 60 : Platform.OS === 'web' ? (keyboardOpen ? 10 : 80) : 12,
           backgroundColor: '#18181B',
           borderTopWidth: 1,
           borderTopColor: '#27272A',

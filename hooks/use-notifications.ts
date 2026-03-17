@@ -40,14 +40,50 @@ function storeSettings(settings: ReminderSettings) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch {}
 }
 
+// ─── Service Worker ──────────────────────────────────────────────────────────
+
+async function registerServiceWorker() {
+  if (Platform.OS !== 'web' || !('serviceWorker' in navigator)) return null;
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    return reg;
+  } catch {
+    return null;
+  }
+}
+
+function syncSettingsWithSW(settings: ReminderSettings) {
+  if (Platform.OS !== 'web' || !('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.ready.then((reg) => {
+    reg.active?.postMessage({ type: 'UPDATE_REMINDERS', settings });
+  });
+}
+
 // ─── Web Notifications ────────────────────────────────────────────────────────
 
 async function requestWebPermission(): Promise<boolean> {
   if (Platform.OS !== 'web' || !('Notification' in window)) return false;
-  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'granted') {
+    try { localStorage.setItem('lifeos_notif_granted', 'true'); } catch {}
+    return true;
+  }
   if (Notification.permission === 'denied') return false;
   const result = await Notification.requestPermission();
+  if (result === 'granted') {
+    try { localStorage.setItem('lifeos_notif_granted', 'true'); } catch {}
+    // Notify SW that permission was granted
+    const reg = await registerServiceWorker();
+    if (reg?.active) {
+      reg.active.postMessage({ type: 'NOTIFICATION_PERMISSION_GRANTED' });
+    }
+  }
   return result === 'granted';
+}
+
+export function hasNotificationPermission(): boolean {
+  if (Platform.OS !== 'web') return false;
+  if ('Notification' in window && Notification.permission === 'granted') return true;
+  try { return localStorage.getItem('lifeos_notif_granted') === 'true'; } catch { return false; }
 }
 
 function sendWebNotification(title: string, body: string, tag: string) {
@@ -120,7 +156,11 @@ async function scheduleInterval(id: string, title: string, body: string, interva
 export async function applyReminderSettings(settings: ReminderSettings) {
   storeSettings(settings);
 
-  if (Platform.OS === 'web') return; // Web uses interval timers in hook
+  if (Platform.OS === 'web') {
+    // Sync settings with service worker for background notifications
+    syncSettingsWithSW(settings);
+    return;
+  }
 
   const granted = await requestNotificationPermissions();
   if (!granted) return;
@@ -165,9 +205,16 @@ export function useNotificationSetup() {
 
   const startWebReminders = useCallback(async () => {
     if (Platform.OS !== 'web') return;
+
+    // Register service worker for background notifications
+    await registerServiceWorker();
+
     const ok = await requestWebPermission();
     if (!ok) return;
     const s = getStoredSettings();
+
+    // Sync settings with SW
+    syncSettingsWithSW(s);
 
     if (waterRef.current) clearInterval(waterRef.current);
     if (checkRef.current) clearInterval(checkRef.current);

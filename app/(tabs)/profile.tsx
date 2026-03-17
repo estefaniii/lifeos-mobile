@@ -4,7 +4,7 @@ import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
-import { applyReminderSettings, useNotificationSetup, type ReminderSettings } from '@/hooks/use-notifications';
+import { applyReminderSettings, useNotificationSetup, hasNotificationPermission, type ReminderSettings } from '@/hooks/use-notifications';
 
 /**
  * Profile & Settings Screen
@@ -350,8 +350,10 @@ export default function ProfileScreen() {
             ))}
           </View>
           {Platform.OS === 'web' && (
-            <Text style={{ color: '#52525B', fontSize: 10, textAlign: 'center', marginTop: 8 }}>
-              Las notificaciones web requieren permiso del navegador. Toca "Probar" para activarlas.
+            <Text style={{ color: hasNotificationPermission() ? '#14B8A6' : '#52525B', fontSize: 10, textAlign: 'center', marginTop: 8 }}>
+              {hasNotificationPermission()
+                ? '✅ Notificaciones activas — recibirás recordatorios a las horas configuradas.'
+                : 'Las notificaciones web requieren permiso del navegador. Toca "Probar" para activarlas.'}
             </Text>
           )}
         </View>
