@@ -8,6 +8,8 @@ import { AddSavingsGoalModal } from '@/components/modals/add-savings-goal-modal'
 import { useColors } from '@/hooks/use-colors';
 import { useFinancialSummary, useTransactions, useExpensesByCategory, useDeleteTransaction, useUpdateTransaction } from '@/hooks/use-transactions';
 import { useSavingsGoals, useDeleteSavingsGoal, useUpdateSavingsGoal } from '@/hooks/use-savings-goals';
+import { useBudgetProgress, useCreateBudget, useDeleteBudget } from '@/hooks/use-budgets';
+import { useRecurringTransactions, useCreateRecurring, useDeleteRecurring, useApplyRecurring } from '@/hooks/use-recurring';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -223,6 +225,25 @@ export default function FinancesScreen() {
   const updateSavingsGoal = useUpdateSavingsGoal();
   const [editTarget, setEditTarget] = useState<any>(null);
 
+  // Budgets & Recurring
+  const { data: budgetProgress } = useBudgetProgress();
+  const createBudget = useCreateBudget();
+  const deleteBudget = useDeleteBudget();
+  const { data: recurringTxns } = useRecurringTransactions();
+  const createRecurring = useCreateRecurring();
+  const deleteRecurring = useDeleteRecurring();
+  useApplyRecurring(); // Auto-apply recurring on mount
+
+  const [showBudgetModal, setShowBudgetModal] = useState(false);
+  const [budgetCategory, setBudgetCategory] = useState('');
+  const [budgetLimit, setBudgetLimit] = useState('');
+  const [showRecurringModal, setShowRecurringModal] = useState(false);
+  const [recurringType, setRecurringType] = useState<'income' | 'expense'>('expense');
+  const [recurringAmount, setRecurringAmount] = useState('');
+  const [recurringCategory, setRecurringCategory] = useState('');
+  const [recurringNote, setRecurringNote] = useState('');
+  const [recurringDay, setRecurringDay] = useState('1');
+
   // Prepare chart data
   const barChartData = [
     { x: 'Ingresos', y: summary?.income || 0 },
@@ -415,6 +436,103 @@ export default function FinancesScreen() {
           )}
         </View>
 
+        {/* Budgets Section */}
+        <View style={{ paddingHorizontal: 24, marginBottom: 32 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <Text style={{ color: '#FAFAFA', fontSize: 20, fontWeight: '800' }}>Presupuestos</Text>
+            <Pressable onPress={() => setShowBudgetModal(true)}>
+              <Text style={{ color: '#14B8A6', fontSize: 14, fontWeight: '600' }}>+ Nuevo</Text>
+            </Pressable>
+          </View>
+
+          {budgetProgress && budgetProgress.length > 0 ? (
+            <View style={{ gap: 10 }}>
+              {budgetProgress.map((b: any) => {
+                const isOver = b.percentage >= 100;
+                const isWarning = b.percentage >= 75 && !isOver;
+                const barColor = isOver ? '#EF4444' : isWarning ? '#F59E0B' : '#14B8A6';
+                return (
+                  <View key={b.id} style={{ backgroundColor: '#18181B', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: isOver ? 'rgba(239,68,68,0.3)' : '#27272A' }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 14 }}>{b.category}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text style={{ color: isOver ? '#EF4444' : '#A1A1AA', fontSize: 12, fontWeight: '600' }}>
+                          ${b.spent} / ${b.limit_amount}
+                        </Text>
+                        <Pressable onPress={() => deleteBudget.mutate(b.id)}>
+                          <Text style={{ color: '#52525B', fontSize: 11 }}>✕</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                    <View style={{ height: 6, backgroundColor: '#27272A', borderRadius: 3, overflow: 'hidden' }}>
+                      <View style={{ height: '100%', width: `${Math.min(100, b.percentage)}%`, backgroundColor: barColor, borderRadius: 3 }} />
+                    </View>
+                    {isOver && (
+                      <Text style={{ color: '#EF4444', fontSize: 10, fontWeight: '700', marginTop: 4 }}>
+                        ⚠️ Excedido por ${(b.spent - b.limit_amount).toFixed(0)}
+                      </Text>
+                    )}
+                    {isWarning && (
+                      <Text style={{ color: '#F59E0B', fontSize: 10, fontWeight: '700', marginTop: 4 }}>
+                        ⚡ {b.percentage}% usado — cuidado
+                      </Text>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          ) : (
+            <Pressable
+              onPress={() => setShowBudgetModal(true)}
+              style={{ backgroundColor: '#18181B', borderWidth: 1, borderStyle: 'dashed', borderColor: '#27272A', borderRadius: 16, padding: 20, alignItems: 'center' }}
+            >
+              <Text style={{ color: '#71717A', fontSize: 13, marginBottom: 4 }}>Sin presupuestos configurados</Text>
+              <Text style={{ color: '#14B8A6', fontSize: 13, fontWeight: '600' }}>+ Crear presupuesto</Text>
+            </Pressable>
+          )}
+        </View>
+
+        {/* Recurring Transactions */}
+        <View style={{ paddingHorizontal: 24, marginBottom: 32 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <Text style={{ color: '#FAFAFA', fontSize: 20, fontWeight: '800' }}>Recurrentes</Text>
+            <Pressable onPress={() => setShowRecurringModal(true)}>
+              <Text style={{ color: '#14B8A6', fontSize: 14, fontWeight: '600' }}>+ Nuevo</Text>
+            </Pressable>
+          </View>
+
+          {recurringTxns && recurringTxns.length > 0 ? (
+            <View style={{ gap: 10 }}>
+              {recurringTxns.map((r: any) => (
+                <View key={r.id} style={{ backgroundColor: '#18181B', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: '#27272A', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 14 }}>{r.note || r.category}</Text>
+                    <Text style={{ color: '#71717A', fontSize: 11, marginTop: 2 }}>
+                      {r.type === 'income' ? '📈' : '📉'} ${Math.abs(r.amount)} — día {r.day_of_month} de cada mes
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={{ color: r.type === 'income' ? '#10B981' : '#EF4444', fontWeight: '700', fontSize: 14 }}>
+                      {r.type === 'income' ? '+' : '-'}${Math.abs(r.amount)}
+                    </Text>
+                    <Pressable onPress={() => deleteRecurring.mutate(r.id)}>
+                      <Text style={{ color: '#52525B', fontSize: 11 }}>✕</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Pressable
+              onPress={() => setShowRecurringModal(true)}
+              style={{ backgroundColor: '#18181B', borderWidth: 1, borderStyle: 'dashed', borderColor: '#27272A', borderRadius: 16, padding: 20, alignItems: 'center' }}
+            >
+              <Text style={{ color: '#71717A', fontSize: 13, marginBottom: 4 }}>Sin gastos/ingresos fijos</Text>
+              <Text style={{ color: '#14B8A6', fontSize: 13, fontWeight: '600' }}>+ Agregar recurrente</Text>
+            </Pressable>
+          )}
+        </View>
+
         {/* Recent Transactions */}
         <View className="px-6 flex-row flex-wrap -mx-2 items-start mb-4">
           <View className="w-full lg:w-2/3 px-2 mb-8">
@@ -524,6 +642,120 @@ export default function FinancesScreen() {
           transaction={editTarget}
           onSave={(data) => updateTransaction.mutate(data)}
         />
+
+        {/* Budget Modal */}
+        <Modal visible={showBudgetModal} transparent animationType="slide">
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
+            <View style={{ backgroundColor: '#18181B', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 36 }}>
+              <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '800', marginBottom: 16 }}>Nuevo Presupuesto</Text>
+              <Text style={{ color: '#A1A1AA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Categoría</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                {['Comida', 'Transporte', 'Salidas', 'Compras Online', 'Suscripciones', 'Salud', 'Universidad', 'Materiales', 'Otros'].map((cat) => (
+                  <Pressable
+                    key={cat}
+                    onPress={() => setBudgetCategory(cat)}
+                    style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 99, backgroundColor: budgetCategory === cat ? '#14B8A6' : '#27272A' }}
+                  >
+                    <Text style={{ color: budgetCategory === cat ? '#fff' : '#E4E4E7', fontSize: 12, fontWeight: '600' }}>{cat}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <Text style={{ color: '#A1A1AA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Límite Mensual</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#27272A', borderRadius: 14, paddingHorizontal: 16, marginBottom: 20 }}>
+                <Text style={{ color: '#71717A', fontWeight: '700', marginRight: 6 }}>$</Text>
+                <TextInput
+                  style={{ flex: 1, color: '#FAFAFA', fontSize: 20, paddingVertical: 14, fontWeight: '700' }}
+                  keyboardType="decimal-pad"
+                  value={budgetLimit}
+                  onChangeText={setBudgetLimit}
+                  placeholder="0"
+                  placeholderTextColor="#52525B"
+                />
+              </View>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <Pressable onPress={() => { setShowBudgetModal(false); setBudgetCategory(''); setBudgetLimit(''); }} style={{ flex: 1, backgroundColor: '#27272A', borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}>
+                  <Text style={{ color: '#A1A1AA', fontWeight: '700' }}>Cancelar</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    const n = parseFloat(budgetLimit);
+                    if (budgetCategory && !isNaN(n) && n > 0 && user?.id) {
+                      createBudget.mutate({ user_id: String(user.id), category: budgetCategory, limit_amount: n });
+                      setShowBudgetModal(false); setBudgetCategory(''); setBudgetLimit('');
+                    }
+                  }}
+                  style={{ flex: 2, backgroundColor: '#14B8A6', borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>Guardar</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Recurring Modal */}
+        <Modal visible={showRecurringModal} transparent animationType="slide">
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
+            <View style={{ backgroundColor: '#18181B', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 36 }}>
+              <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '800', marginBottom: 16 }}>Nuevo Recurrente</Text>
+
+              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+                <Pressable onPress={() => setRecurringType('expense')} style={{ flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', backgroundColor: recurringType === 'expense' ? '#EF4444' : '#27272A' }}>
+                  <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 13 }}>Gasto</Text>
+                </Pressable>
+                <Pressable onPress={() => setRecurringType('income')} style={{ flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', backgroundColor: recurringType === 'income' ? '#10B981' : '#27272A' }}>
+                  <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 13 }}>Ingreso</Text>
+                </Pressable>
+              </View>
+
+              <Text style={{ color: '#A1A1AA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Monto</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#27272A', borderRadius: 14, paddingHorizontal: 16, marginBottom: 12 }}>
+                <Text style={{ color: '#71717A', fontWeight: '700', marginRight: 6 }}>$</Text>
+                <TextInput style={{ flex: 1, color: '#FAFAFA', fontSize: 18, paddingVertical: 12, fontWeight: '700' }} keyboardType="decimal-pad" value={recurringAmount} onChangeText={setRecurringAmount} />
+              </View>
+
+              <Text style={{ color: '#A1A1AA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Descripción</Text>
+              <TextInput style={{ backgroundColor: '#27272A', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, color: '#FAFAFA', fontSize: 14, marginBottom: 12 }} value={recurringNote} onChangeText={setRecurringNote} placeholder="Ej: Netflix, Renta, Sueldo" placeholderTextColor="#52525B" />
+
+              <Text style={{ color: '#A1A1AA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Categoría</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                {(recurringType === 'income'
+                  ? ['Sueldo', 'Freelance', 'Inversiones', 'Otros']
+                  : ['Suscripciones', 'Transporte', 'Comida', 'Salud', 'Universidad', 'Otros']
+                ).map((cat) => (
+                  <Pressable key={cat} onPress={() => setRecurringCategory(cat)} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 99, backgroundColor: recurringCategory === cat ? '#14B8A6' : '#27272A' }}>
+                    <Text style={{ color: recurringCategory === cat ? '#fff' : '#E4E4E7', fontSize: 12, fontWeight: '600' }}>{cat}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text style={{ color: '#A1A1AA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Día del mes</Text>
+              <TextInput style={{ backgroundColor: '#27272A', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, color: '#FAFAFA', fontSize: 16, fontWeight: '700', marginBottom: 20 }} keyboardType="number-pad" value={recurringDay} onChangeText={setRecurringDay} placeholder="1" placeholderTextColor="#52525B" />
+
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <Pressable onPress={() => { setShowRecurringModal(false); setRecurringAmount(''); setRecurringNote(''); setRecurringCategory(''); }} style={{ flex: 1, backgroundColor: '#27272A', borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}>
+                  <Text style={{ color: '#A1A1AA', fontWeight: '700' }}>Cancelar</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    const amt = parseFloat(recurringAmount);
+                    const day = parseInt(recurringDay) || 1;
+                    if (recurringCategory && !isNaN(amt) && amt > 0 && user?.id) {
+                      createRecurring.mutate({
+                        user_id: String(user.id), type: recurringType, amount: amt,
+                        category: recurringCategory, note: recurringNote, frequency: 'monthly', day_of_month: day,
+                      });
+                      setShowRecurringModal(false); setRecurringAmount(''); setRecurringNote(''); setRecurringCategory('');
+                    }
+                  }}
+                  style={{ flex: 2, backgroundColor: '#14B8A6', borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>Guardar</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </ScreenContainer>
   );

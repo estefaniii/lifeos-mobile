@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { AddTransactionModal } from '@/components/modals/add-transaction-modal';
 import { AddHabitModal } from '@/components/modals/add-habit-modal';
 import { useAuth } from '@/hooks/use-auth';
+import { useAchievements } from '@/hooks/use-achievements';
 
 // ─── Mini Modals ─────────────────────────────────────────────────────────────
 
@@ -798,6 +799,37 @@ export default function HomeScreen() {
                 )}
               </View>
             </View>
+
+            {/* Logros */}
+            {(() => {
+              const { data: achievements } = useAchievements();
+              if (!achievements) return null;
+              const unlocked = achievements.filter((a) => a.unlocked);
+              const locked = achievements.filter((a) => !a.unlocked);
+              const pct = achievements.length > 0 ? Math.round((unlocked.length / achievements.length) * 100) : 0;
+              return (
+                <View style={{ marginBottom: 20 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                    <Text style={{ color: '#A1A1AA', fontSize: 12, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 3 }}>LOGROS</Text>
+                    <Text style={{ color: '#14B8A6', fontSize: 12, fontWeight: '700' }}>{unlocked.length}/{achievements.length} ({pct}%)</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                    {unlocked.map((a) => (
+                      <View key={a.id} style={{ backgroundColor: 'rgba(20,184,166,0.1)', borderWidth: 1, borderColor: 'rgba(20,184,166,0.3)', borderRadius: 16, padding: 10, alignItems: 'center', width: 80 }}>
+                        <Text style={{ fontSize: 24, marginBottom: 4 }}>{a.icon}</Text>
+                        <Text style={{ color: '#FAFAFA', fontSize: 9, fontWeight: '700', textAlign: 'center' }} numberOfLines={2}>{a.title}</Text>
+                      </View>
+                    ))}
+                    {locked.slice(0, 3).map((a) => (
+                      <View key={a.id} style={{ backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', borderRadius: 16, padding: 10, alignItems: 'center', width: 80, opacity: 0.5 }}>
+                        <Text style={{ fontSize: 24, marginBottom: 4 }}>🔒</Text>
+                        <Text style={{ color: '#71717A', fontSize: 9, fontWeight: '700', textAlign: 'center' }} numberOfLines={2}>{a.title}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              );
+            })()}
 
             {/* Accesos a Módulos */}
             <View style={{ marginBottom: 20 }}>
