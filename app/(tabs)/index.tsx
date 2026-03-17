@@ -831,6 +831,21 @@ export default function HomeScreen() {
               );
             })()}
 
+            {/* Reporte Mensual */}
+            <Pressable
+              onPress={() => router.push('/reports')}
+              style={{ marginBottom: 20, backgroundColor: '#18181B', borderWidth: 1, borderColor: 'rgba(20,184,166,0.2)', borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }}
+            >
+              <View style={{ width: 48, height: 48, backgroundColor: 'rgba(20,184,166,0.1)', borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 26 }}>📊</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 15 }}>Reporte Mensual</Text>
+                <Text style={{ color: '#A1A1AA', fontSize: 11 }}>Ver resumen completo de finanzas, salud y hábitos</Text>
+              </View>
+              <Text style={{ color: '#14B8A6', fontSize: 18 }}>→</Text>
+            </Pressable>
+
             {/* Accesos a Módulos */}
             <View style={{ marginBottom: 20 }}>
               <Text style={{ color: '#A1A1AA', fontSize: 12, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 3, marginBottom: 14 }}>MÓDULOS</Text>
