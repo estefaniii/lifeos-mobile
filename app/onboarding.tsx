@@ -12,7 +12,7 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const { user, refresh } = useAuth();
   const [step, setStep] = useState(0);
-  const [name, setName] = useState('');
+  const [name, setName] = useState(user?.name || '');
   const [gender, setGender] = useState<Gender>('femenino');
   const [saving, setSaving] = useState(false);
 

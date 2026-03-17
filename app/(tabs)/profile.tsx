@@ -71,6 +71,16 @@ export default function ProfileScreen() {
   };
 
   const handleSignOut = async () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+        try {
+          await logout();
+        } catch {
+          window.alert('No se pudo cerrar la sesión');
+        }
+      }
+      return;
+    }
     Alert.alert('Cerrar sesión', '¿Estás seguro de que deseas cerrar sesión?', [
       { text: 'Cancelar', onPress: () => { } },
       {
@@ -455,15 +465,28 @@ export default function ProfileScreen() {
         </View>
 
         {/* Danger Zone */}
-        <View className="px-6 mb-8">
-          <Text className="text-lg font-bold text-error mb-4">Peligro</Text>
+        <View style={{ paddingHorizontal: 24, marginBottom: 32 }}>
+          <Text style={{ color: '#ef4444', fontSize: 18, fontWeight: '800', marginBottom: 16 }}>Zona de Peligro</Text>
 
           <Pressable
             onPress={handleSignOut}
-            className="bg-error/10 rounded-lg p-4 items-center border border-error/30"
+            style={{
+              backgroundColor: 'rgba(239,68,68,0.1)',
+              borderRadius: 16,
+              padding: 16,
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: 'rgba(239,68,68,0.3)',
+            }}
           >
-            <Text className="text-error font-semibold">Cerrar Sesión</Text>
+            <Text style={{ color: '#ef4444', fontWeight: '700', fontSize: 15 }}>Cerrar Sesión</Text>
           </Pressable>
+
+          {user?.email && (
+            <Text style={{ color: '#52525B', fontSize: 11, textAlign: 'center', marginTop: 8 }}>
+              Sesión iniciada como {user.email}
+            </Text>
+          )}
         </View>
 
         {/* Version Info */}
