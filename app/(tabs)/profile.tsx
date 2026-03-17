@@ -5,6 +5,7 @@ import { useColors } from '@/hooks/use-colors';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
 import { applyReminderSettings, useNotificationSetup, hasNotificationPermission, type ReminderSettings } from '@/hooks/use-notifications';
+import { useThemeContext } from '@/lib/theme-provider';
 
 /**
  * Profile & Settings Screen
@@ -20,6 +21,7 @@ import { applyReminderSettings, useNotificationSetup, hasNotificationPermission,
 export default function ProfileScreen() {
   const colors = useColors();
   const { user, logout, refresh } = useAuth();
+  const { colorScheme, toggleColorScheme } = useThemeContext();
 
   const [name, setName] = useState(user?.name || '');
   const [gender, setGender] = useState<'femenino' | 'masculino' | 'otro'>((user as any)?.gender || 'femenino');
@@ -400,17 +402,55 @@ export default function ProfileScreen() {
 
         {/* Sistema */}
         <View className="px-6 mb-8">
-          <Text className="text-lg font-bold text-foreground mb-4" style={{ color: '#FAFAFA' }}>Sistema</Text>
+          <Text className="text-lg font-bold text-foreground mb-4" style={{ color: colors.text }}>Sistema</Text>
+
+          {/* Theme Toggle */}
+          <View style={{
+            backgroundColor: colors.surface,
+            borderRadius: 24,
+            padding: 20,
+            marginBottom: 12,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: colors.border,
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(161,161,170,0.08)', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 18 }}>{colorScheme === 'dark' ? '🌙' : '☀️'}</Text>
+              </View>
+              <View>
+                <Text style={{ color: colors.text, fontWeight: '700', fontSize: 14 }}>Modo {colorScheme === 'dark' ? 'Oscuro' : 'Claro'}</Text>
+                <Text style={{ color: colors.muted, fontSize: 10 }}>Toca para cambiar el tema</Text>
+              </View>
+            </View>
+            <Switch
+              value={colorScheme === 'dark'}
+              onValueChange={toggleColorScheme}
+              trackColor={{ false: '#e2e8f0', true: '#14B8A6' }}
+              thumbColor={colorScheme === 'dark' ? '#fff' : '#64748b'}
+            />
+          </View>
 
           <Pressable
             onPress={handleExportData}
-            className="glass-card rounded-3xl p-6 flex-row justify-between items-center active:bg-primary/5"
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 24,
+              padding: 20,
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
           >
-            <View className="flex-1">
-              <Text className="text-base font-bold text-foreground" style={{ color: '#FAFAFA' }}>Exportar Datos</Text>
-              <Text className="text-xs text-muted mt-1" style={{ color: '#A1A1AA' }}>Descarga todos tus datos en JSON</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.text, fontWeight: '700', fontSize: 14 }}>Exportar Datos</Text>
+              <Text style={{ color: colors.muted, fontSize: 10 }}>Descarga todos tus datos en JSON</Text>
             </View>
-            <Text className="text-xl">⬇️</Text>
+            <Text style={{ fontSize: 20 }}>⬇️</Text>
           </Pressable>
         </View>
 

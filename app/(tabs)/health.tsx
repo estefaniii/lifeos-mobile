@@ -23,6 +23,12 @@ function ActivityLogModal({ visible, onClose, activityType, userId, onSave }: {
   const [minutes, setMinutes] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  // Nutrition fields (food only)
+  const [calories, setCalories] = useState('');
+  const [protein, setProtein] = useState('');
+  const [carbs, setCarbs] = useState('');
+  const [fat, setFat] = useState('');
+  const [mealType, setMealType] = useState<'desayuno' | 'almuerzo' | 'merienda' | 'cena'>('almuerzo');
 
   const config = {
     gym: { emoji: '💪', label: 'Gimnasio', color: '#F97316', bg: 'rgba(249,115,22,0.12)', border: 'rgba(249,115,22,0.3)' },
@@ -32,6 +38,15 @@ function ActivityLogModal({ visible, onClose, activityType, userId, onSave }: {
   };
   const c = config[activityType];
 
+  const QUICK_MEALS = [
+    { label: 'Pollo + Arroz', cal: 450, p: 40, c: 50, f: 8 },
+    { label: 'Ensalada', cal: 250, p: 15, c: 20, f: 12 },
+    { label: 'Proteína Shake', cal: 200, p: 30, c: 15, f: 3 },
+    { label: 'Pasta', cal: 550, p: 18, c: 70, f: 15 },
+    { label: 'Huevos + Tostada', cal: 350, p: 25, c: 30, f: 15 },
+    { label: 'Fruta + Yogurt', cal: 180, p: 8, c: 30, f: 4 },
+  ];
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -40,15 +55,29 @@ function ActivityLogModal({ visible, onClose, activityType, userId, onSave }: {
       if (activityType === 'gym') fields.gym_session = true;
       if (activityType === 'yoga') fields.yoga_session = true;
       if (activityType === 'massage') fields.massage_session = true;
-      if (activityType === 'food') fields.meals_tracked = true;
+      if (activityType === 'food') {
+        fields.meals_tracked = true;
+        // For food, we need to ADD to existing macros (not overwrite)
+      }
       if (minutes) fields.exercise_minutes = parseInt(minutes) || 0;
 
       const { data: existing } = await supabase
         .from('health_metrics')
-        .select('id')
+        .select('id, calories, protein_g, carbs_g, fat_g')
         .eq('user_id', userId)
         .eq('date', today)
         .maybeSingle();
+
+      if (activityType === 'food') {
+        const addCal = parseInt(calories) || 0;
+        const addP = parseInt(protein) || 0;
+        const addC = parseInt(carbs) || 0;
+        const addF = parseInt(fat) || 0;
+        fields.calories = (existing?.calories || 0) + addCal;
+        fields.protein_g = (existing?.protein_g || 0) + addP;
+        fields.carbs_g = (existing?.carbs_g || 0) + addC;
+        fields.fat_g = (existing?.fat_g || 0) + addF;
+      }
 
       if (existing) {
         await supabase.from('health_metrics').update(fields).eq('id', existing.id);
@@ -61,14 +90,26 @@ function ActivityLogModal({ visible, onClose, activityType, userId, onSave }: {
     setSaving(false);
     setMinutes('');
     setNotes('');
+    setCalories('');
+    setProtein('');
+    setCarbs('');
+    setFat('');
     onSave();
     onClose();
+  };
+
+  const applyQuickMeal = (meal: typeof QUICK_MEALS[0]) => {
+    setCalories(String(meal.cal));
+    setProtein(String(meal.p));
+    setCarbs(String(meal.c));
+    setFat(String(meal.f));
+    setNotes(meal.label);
   };
 
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-        <View style={{ backgroundColor: '#18181B', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 36 }}>
+        <View style={{ backgroundColor: '#18181B', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 36, maxHeight: '85%' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 }}>
             <View style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: c.bg, borderWidth: 1, borderColor: c.border, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ fontSize: 22 }}>{c.emoji}</Text>
@@ -76,7 +117,7 @@ function ActivityLogModal({ visible, onClose, activityType, userId, onSave }: {
             <View>
               <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '800' }}>Registrar {c.label}</Text>
               <Text style={{ color: '#71717A', fontSize: 10, textTransform: 'uppercase', letterSpacing: 2, fontWeight: '700', marginTop: 2 }}>
-                Sesión de hoy
+                {activityType === 'food' ? 'Agrega macros a tu día' : 'Sesión de hoy'}
               </Text>
             </View>
           </View>
@@ -98,6 +139,122 @@ function ActivityLogModal({ visible, onClose, activityType, userId, onSave }: {
                 <Text style={{ color: '#71717A', fontWeight: '700' }}>min</Text>
               </View>
             </View>
+          )}
+
+          {activityType === 'food' && (
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 380 }}>
+              {/* Meal type selector */}
+              <View style={{ flexDirection: 'row', gap: 6, marginBottom: 14 }}>
+                {(['desayuno', 'almuerzo', 'merienda', 'cena'] as const).map((m) => (
+                  <Pressable
+                    key={m}
+                    onPress={() => setMealType(m)}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 8,
+                      borderRadius: 12,
+                      alignItems: 'center',
+                      backgroundColor: mealType === m ? '#EAB308' : '#27272A',
+                    }}
+                  >
+                    <Text style={{ color: mealType === m ? '#18181B' : '#71717A', fontSize: 10, fontWeight: '700', textTransform: 'uppercase' }}>
+                      {m}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {/* Quick meals */}
+              <Text style={{ color: '#A1A1AA', fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+                Comidas Rápidas
+              </Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }}>
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  {QUICK_MEALS.map((meal) => (
+                    <Pressable
+                      key={meal.label}
+                      onPress={() => applyQuickMeal(meal)}
+                      style={{
+                        backgroundColor: notes === meal.label ? 'rgba(234,179,8,0.15)' : '#27272A',
+                        borderWidth: 1,
+                        borderColor: notes === meal.label ? 'rgba(234,179,8,0.3)' : '#3F3F46',
+                        borderRadius: 12,
+                        paddingHorizontal: 12,
+                        paddingVertical: 8,
+                      }}
+                    >
+                      <Text style={{ color: '#FAFAFA', fontSize: 11, fontWeight: '600' }}>{meal.label}</Text>
+                      <Text style={{ color: '#71717A', fontSize: 9 }}>{meal.cal} kcal</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </ScrollView>
+
+              {/* Macro inputs */}
+              <Text style={{ color: '#A1A1AA', fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+                Macros (se suman al total del día)
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#71717A', fontSize: 9, marginBottom: 4, textAlign: 'center' }}>Calorías</Text>
+                  <View style={{ backgroundColor: '#27272A', borderRadius: 12, borderWidth: 1, borderColor: '#3F3F46', paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center' }}>
+                    <TextInput
+                      style={{ flex: 1, color: '#FAFAFA', fontSize: 15, paddingVertical: 10, textAlign: 'center' }}
+                      placeholder="0"
+                      placeholderTextColor="#52525B"
+                      keyboardType="number-pad"
+                      value={calories}
+                      onChangeText={setCalories}
+                    />
+                    <Text style={{ color: '#71717A', fontSize: 10 }}>kcal</Text>
+                  </View>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#14B8A6', fontSize: 9, marginBottom: 4, textAlign: 'center' }}>Proteína</Text>
+                  <View style={{ backgroundColor: '#27272A', borderRadius: 12, borderWidth: 1, borderColor: '#3F3F46', paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center' }}>
+                    <TextInput
+                      style={{ flex: 1, color: '#FAFAFA', fontSize: 15, paddingVertical: 10, textAlign: 'center' }}
+                      placeholder="0"
+                      placeholderTextColor="#52525B"
+                      keyboardType="number-pad"
+                      value={protein}
+                      onChangeText={setProtein}
+                    />
+                    <Text style={{ color: '#71717A', fontSize: 10 }}>g</Text>
+                  </View>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#34d399', fontSize: 9, marginBottom: 4, textAlign: 'center' }}>Carbos</Text>
+                  <View style={{ backgroundColor: '#27272A', borderRadius: 12, borderWidth: 1, borderColor: '#3F3F46', paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center' }}>
+                    <TextInput
+                      style={{ flex: 1, color: '#FAFAFA', fontSize: 15, paddingVertical: 10, textAlign: 'center' }}
+                      placeholder="0"
+                      placeholderTextColor="#52525B"
+                      keyboardType="number-pad"
+                      value={carbs}
+                      onChangeText={setCarbs}
+                    />
+                    <Text style={{ color: '#71717A', fontSize: 10 }}>g</Text>
+                  </View>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#fbbf24', fontSize: 9, marginBottom: 4, textAlign: 'center' }}>Grasas</Text>
+                  <View style={{ backgroundColor: '#27272A', borderRadius: 12, borderWidth: 1, borderColor: '#3F3F46', paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center' }}>
+                    <TextInput
+                      style={{ flex: 1, color: '#FAFAFA', fontSize: 15, paddingVertical: 10, textAlign: 'center' }}
+                      placeholder="0"
+                      placeholderTextColor="#52525B"
+                      keyboardType="number-pad"
+                      value={fat}
+                      onChangeText={setFat}
+                    />
+                    <Text style={{ color: '#71717A', fontSize: 10 }}>g</Text>
+                  </View>
+                </View>
+              </View>
+            </ScrollView>
           )}
 
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
