@@ -6,7 +6,7 @@ import { ProgressRing } from '@/components/progress-ring';
 import { useColors } from '@/hooks/use-colors';
 import { useFinancialSummary } from '@/hooks/use-transactions';
 import { useTodayHealthSummary } from '@/hooks/use-health';
-import { useDailyAffirmation } from '@/hooks/use-mind-wellness';
+import { useDailyAffirmation } from '@/hooks/usemind-wellness';
 import { useHabits, useTodayHabitLogs, useHabitStreaks, useToggleHabit, useCreateHabit, useDeleteHabit } from '@/hooks/use-habits';
 import { useTransactions, useFinancialSummary as useWeekFinancialSummary } from '@/hooks/use-transactions';
 import { useHealthMetrics } from '@/hooks/use-health';
@@ -329,7 +329,7 @@ export default function HomeScreen() {
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
-        className="pb-32"
+        className="pb-4"
       >
         <View style={{ flex: 1, paddingHorizontal: 16, paddingVertical: 24, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
 
