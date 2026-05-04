@@ -37,24 +37,19 @@ async function fetchProfile(userId: string): Promise<User> {
 
   if (data) {
     return {
-      id: data.id,
+      id: userId,
       name: data.name ?? null,
       email: data.email ?? null,
       gender: data.gender ?? null,
     };
   }
-
   return { id: userId, name: null, email: null, gender: null };
 }
 
-async function ensureUserRow(userId: string, email?: string | null) {
+async function ensureUserRow(userId: string, email: string | null) {
   await supabase.from("users").upsert(
-    {
-      id: userId,
-      email: email ?? null,
-      last_active: new Date().toISOString(),
-    },
-    { onConflict: "id" },
+    { id: userId, email: email ?? null, last_active: new Date().toISOString() },
+    { onConflict: "id" }
   );
 }
 
@@ -67,28 +62,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Load user from Supabase Auth session
   const loadUser = useCallback(async () => {
     try {
       setError(null);
       const { data: { session } } = await supabase.auth.getSession();
-
       if (!session?.user) {
         setUser(null);
         setLoading(false);
         return;
       }
-
       const authUser = session.user;
-      await ensureUserRow(authUser.id, authUser.email);
+      await ensureUserRow(authUser.id, authUser.email ?? null);
       const profile = await fetchProfile(authUser.id);
-      // Use auth email if profile doesn't have one
-      profile.email = profile.email || authUser.email || null;
-      // Use auth name if profile doesn't have one
-      if (!profile.name && authUser.user_metadata?.full_name) {
-        profile.name = authUser.user_metadata.full_name;
-      }
-
+      if (!profile.email) profile.email = authUser.email ?? null;
+      if (!profile.name) profile.name = authUser.user_metadata?.full_name ?? null;
       setUser(profile);
     } catch (err) {
       console.error("[Auth] loadUser error:", err);
@@ -107,45 +94,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setUser(null);
     setError(null);
-    // Clear localStorage caches
     if (Platform.OS === "web") {
       try {
-        // Clear all user-specific onboarding keys
         const keys = Object.keys(localStorage);
-        keys.forEach(k => {
+        keys.forEach((k) => {
           if (k.startsWith("lifeos_onboarded_")) localStorage.removeItem(k);
         });
         localStorage.removeItem("lifeos_gender");
         localStorage.removeItem("manus-runtime-user-info");
-      } catch {}
+      } catch (_) {}
     }
   }, []);
 
-  // Listen for auth state changes (login, logout, token refresh)
   useEffect(() => {
-    // Initial load
     loadUser();
 
-    // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("[Auth] State change:", event);
-        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        console.log("[Auth] State change:", event, !!session?.user);
+
+        if (
+          event === "SIGNED_IN" ||
+          event === "TOKEN_REFRESHED" ||
+          event === "INITIAL_SESSION"
+        ) {
           if (session?.user) {
-            await ensureUserRow(session.user.id, session.user.email);
-            const profile = await fetchProfile(session.user.id);
-            profile.email = profile.email || session.user.email || null;
-            if (!profile.name && session.user.user_metadata?.full_name) {
-              profile.name = session.user.user_metadata.full_name;
-            }
-            setUser(profile);
+            (async () => {
+              try {
+                await ensureUserRow(session.user.id, session.user.email ?? null);
+                const profile = await fetchProfile(session.user.id);
+                if (!profile.email) profile.email = session.user.email ?? null;
+                if (!profile.name)
+                  profile.name = session.user.user_metadata?.full_name ?? null;
+                setUser(profile);
+              } catch (e) {
+                console.error("[Auth] profile load error:", e);
+                setUser({
+                  id: session.user.id,
+                  email: session.user.email ?? null,
+                  name: session.user.user_metadata?.full_name ?? null,
+                  gender: null,
+                });
+              } finally {
+                setLoading(false);
+              }
+            })();
+          } else {
+            setUser(null);
             setLoading(false);
           }
         } else if (event === "SIGNED_OUT") {
           setUser(null);
           setLoading(false);
         }
-      },
+      }
     );
 
     return () => subscription.unsubscribe();
@@ -154,18 +156,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useMemo(() => Boolean(user), [user]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({
-      user,
-      loading,
-      error,
-      isAuthenticated,
-      refresh: loadUser,
-      logout,
-    }),
-    [user, loading, error, isAuthenticated, loadUser, logout],
+    () => ({ user, loading, error, isAuthenticated, refresh: loadUser, logout }),
+    [user, loading, error, isAuthenticated, loadUser, logout]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -174,8 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (ctx === undefined) {
+  if (ctx === undefined)
     throw new Error("useAuth must be used within an <AuthProvider>");
-  }
   return ctx;
 }
