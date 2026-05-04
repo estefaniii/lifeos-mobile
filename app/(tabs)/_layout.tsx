@@ -19,18 +19,18 @@ export default function TabLayout() {
   const router = useRouter();
   const { online, queueSize, syncNow } = useOnlineStatus();
 
-  // Auth guard — usa ref para poder cancelar el timer al limpiar
+  // Guard de autenticación — usa ref para cancelar el timer al limpiar
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // Todavia cargando — espera, cancela cualquier redirect pendiente
+    // Todavía cargando — espera y cancela cualquier redirect pendiente
     if (loading) {
       if (redirectTimer.current) clearTimeout(redirectTimer.current);
       return;
     }
 
     if (user) {
-      // Autenticado — cancela redirect programado
+      // Autenticado — cancela redirect programado si lo hay
       if (redirectTimer.current) {
         clearTimeout(redirectTimer.current);
         redirectTimer.current = null;
@@ -143,9 +143,9 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="habits"
+          name="productivity"
           options={{
-            title: "Hábitos",
+            title: "Productividad",
             tabBarIcon: ({ color }) => (
               <IconSymbol size={24} name="checkmark.circle.fill" color={color} />
             ),
@@ -161,11 +161,29 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="finance"
+          name="finances"
           options={{
             title: "Finanzas",
             tabBarIcon: ({ color }) => (
               <IconSymbol size={24} name="dollarsign.circle.fill" color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="mind"
+          options={{
+            title: "Mente",
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={24} name="brain.fill" color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="ai-coach"
+          options={{
+            title: "IA",
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={24} name="sparkles" color={color} />
             ),
           }}
         />
