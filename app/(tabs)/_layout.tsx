@@ -175,15 +175,6 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="ai-coach"
-          options={{
-            title: "IA",
-            tabBarIcon: ({ color }) => (
-              <IconSymbol size={24} name="sparkles" color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
           name="profile"
           options={{
             title: "Perfil",
