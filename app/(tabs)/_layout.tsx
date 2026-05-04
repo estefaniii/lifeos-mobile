@@ -183,7 +183,9 @@ export default function TabLayout() {
             ),
           }}
         />
-      </Tabs>
+      
+      <Tabs.Screen name="ai-coach" options={{ href: null }} />
+    </Tabs>
     </View>
   );
 }
