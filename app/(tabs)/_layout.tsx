@@ -21,17 +21,29 @@ export default function TabLayout() {
   const { online, queueSize, syncNow } = useOnlineStatus();
 
   // Auth gate: redirect to login if not authenticated
+  // We use a two-stage check: wait for loading to finish, then give a
+  // short grace period in case the auth-provider is still processing
+  // the onAuthStateChange event (e.g. right after Google OAuth callback).
   useEffect(() => {
     if (loading) return;
-    if (!user?.id) {
-      router.replace("/login");
-      return;
-    }
+    if (user?.id) return; // authenticated — do nothing
 
-    // Check onboarding status
+    // Give the auth provider 800ms to process any pending auth state change
+    // before concluding the user is truly logged out.
+    const timer = setTimeout(() => {
+      router.replace("/login");
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [user?.id, loading]);
+
+  // Check onboarding status
+  useEffect(() => {
+    if (loading) return;
+    if (!user?.id) return;
+
     if (Platform.OS === "web") {
       try {
-        if (localStorage.getItem(`lifeos_onboarded_${user.id}`) === "true") return;
+        if (localStorage.getItem(`lifeos_onboarded_${user.id}`)) return;
       } catch {}
     }
 
@@ -46,7 +58,8 @@ export default function TabLayout() {
         if (!data?.onboarding_completed) {
           router.replace("/onboarding");
         } else if (Platform.OS === "web") {
-          try { localStorage.setItem(`lifeos_onboarded_${user.id}`, "true"); } catch {}
+          try { localStorage.setItem(`lifeos_onboarded_${user.id}`, "1"); }
+          catch {}
         }
       } catch {}
     })();
@@ -65,107 +78,82 @@ export default function TabLayout() {
           alignItems: 'center',
           gap: 8,
         }}>
-          <Text style={{ color: '#18181B', fontSize: 12, fontWeight: '700' }}>
-            Sin conexión — los cambios se guardarán localmente
+          <Text style={{ color: '#1c1917', fontSize: 12, fontWeight: '600' }}>
+            Sin conexión
           </Text>
+          {queueSize > 0 && (
+            <Text style={{ color: '#1c1917', fontSize: 12 }}>
+              · {queueSize} cambio{queueSize !== 1 ? 's' : ''} pendiente{queueSize !== 1 ? 's' : ''}
+            </Text>
+          )}
+          {queueSize > 0 && (
+            <Pressable onPress={syncNow} style={{ marginLeft: 8 }}>
+              <Text style={{ color: '#1c1917', fontSize: 12, textDecorationLine: 'underline' }}>
+                Sincronizar
+              </Text>
+            </Pressable>
+          )}
         </View>
-      )}
-
-      {/* Sync Banner (when back online with queued items) */}
-      {online && queueSize > 0 && (
-        <Pressable
-          onPress={syncNow}
-          style={{
-            backgroundColor: '#14b8a6',
-            paddingVertical: 6,
-            paddingHorizontal: 16,
-            flexDirection: 'row',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>
-            {queueSize} cambio{queueSize > 1 ? 's' : ''} pendiente{queueSize > 1 ? 's' : ''} — Toca para sincronizar
-          </Text>
-        </Pressable>
       )}
 
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: colors.primary,
-          tabBarInactiveTintColor: colors.muted,
+          tabBarActiveTintColor: colors.tint,
+          tabBarInactiveTintColor: colors.tabIconDefault,
           headerShown: false,
           tabBarButton: HapticTab,
-          tabBarLabelStyle: {
-            fontSize: 10,
-            fontWeight: "600",
-            marginBottom: Platform.OS === "ios" ? 0 : 4,
-          },
           tabBarStyle: {
-            paddingTop: 12,
-            paddingBottom: bottomPadding,
-            height: tabBarHeight + 10,
             backgroundColor: colors.background,
-            borderTopWidth: 0,
-            elevation: 20,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: -4 },
-            shadowOpacity: 0.1,
-            shadowRadius: 10,
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
+            borderTopColor: colors.border,
+            height: tabBarHeight,
+            paddingBottom: bottomPadding,
+            paddingTop: 4,
           },
         }}
       >
         <Tabs.Screen
           name="index"
           options={{
-            title: "Home",
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+            title: "Inicio",
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={26} name="house.fill" color={color} />
+            ),
           }}
         />
         <Tabs.Screen
-          name="finances"
+          name="habits"
           options={{
-            title: "Finanzas",
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="dollarsign.circle.fill" color={color} />,
+            title: "Hábitos",
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={26} name="checkmark.circle.fill" color={color} />
+            ),
           }}
         />
         <Tabs.Screen
           name="health"
           options={{
             title: "Salud",
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="heart.fill" color={color} />,
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={26} name="heart.fill" color={color} />
+            ),
           }}
         />
         <Tabs.Screen
-          name="ai-coach"
+          name="finance"
           options={{
-            title: "IA Coach",
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="brain.head.profile" color={color} />,
+            title: "Finanzas",
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={26} name="dollarsign.circle.fill" color={color} />
+            ),
           }}
         />
         <Tabs.Screen
           name="profile"
           options={{
             title: "Perfil",
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
-          }}
-        />
-        {/* Ocultar pestañas secundarias para limpiar el Navbar */}
-        <Tabs.Screen
-          name="productivity"
-          options={{
-            href: null,
-          }}
-        />
-        <Tabs.Screen
-          name="mind"
-          options={{
-            href: null,
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={26} name="person.fill" color={color} />
+            ),
           }}
         />
       </Tabs>
