@@ -1,11 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Tabs, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { View, Text, Pressable } from "react-native";
-
+import { View, Text, Pressable, Platform } from "react-native";
 import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Platform } from "react-native";
 import { useColors } from "@/hooks/use-colors";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
@@ -14,37 +12,54 @@ import { useOnlineStatus } from "@/hooks/use-offline";
 export default function TabLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const bottomPadding = Platform.OS === "web" ? 12 : Math.max(insets.bottom, 8);
-  const tabBarHeight = 56 + bottomPadding;
+  const bottomPadding = Platform.OS === "web" ? 8 : Math.max(insets.bottom, 8);
+  const tabBarHeight = bottomPadding + 56;
+
   const { user, loading } = useAuth();
   const router = useRouter();
   const { online, queueSize, syncNow } = useOnlineStatus();
 
-  // Auth gate: redirect to login if not authenticated
-  // We use a two-stage check: wait for loading to finish, then give a
-  // short grace period in case the auth-provider is still processing
-  // the onAuthStateChange event (e.g. right after Google OAuth callback).
-  useEffect(() => {
-    if (loading) return;
-    if (user?.id) return; // authenticated — do nothing
+  // Auth guard — usa ref para poder cancelar el timer al limpiar
+  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Give the auth provider 800ms to process any pending auth state change
-    // before concluding the user is truly logged out.
-    const timer = setTimeout(() => {
+  useEffect(() => {
+    // Todavia cargando — espera, cancela cualquier redirect pendiente
+    if (loading) {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+      return;
+    }
+
+    if (user) {
+      // Autenticado — cancela redirect programado
+      if (redirectTimer.current) {
+        clearTimeout(redirectTimer.current);
+        redirectTimer.current = null;
+      }
+      return;
+    }
+
+    // user es null y loading terminó — da 1.5 s de gracia para que el
+    // auth-provider procese el evento SIGNED_IN que llega justo después
+    // del callback de Google OAuth antes de decidir que no está autenticado.
+    redirectTimer.current = setTimeout(() => {
+      redirectTimer.current = null;
       router.replace("/login");
-    }, 800);
-    return () => clearTimeout(timer);
-  }, [user?.id, loading]);
+    }, 1500);
 
-  // Check onboarding status
+    return () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    };
+  }, [user, loading]);
+
+  // Verificar estado de onboarding
   useEffect(() => {
     if (loading) return;
-    if (!user?.id) return;
+    if (!user) return;
 
     if (Platform.OS === "web") {
       try {
         if (localStorage.getItem(`lifeos_onboarded_${user.id}`)) return;
-      } catch {}
+      } catch (_) {}
     }
 
     (async () => {
@@ -54,45 +69,52 @@ export default function TabLayout() {
           .select("onboarding_completed")
           .eq("id", user.id)
           .maybeSingle();
-
         if (!data?.onboarding_completed) {
           router.replace("/onboarding");
         } else if (Platform.OS === "web") {
-          try { localStorage.setItem(`lifeos_onboarded_${user.id}`, "1"); }
-          catch {}
+          try {
+            localStorage.setItem(`lifeos_onboarded_${user.id}`, "1");
+          } catch (_) {}
         }
-      } catch {}
+      } catch (_) {}
     })();
-  }, [user?.id, loading]);
+  }, [user, loading]);
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Offline Banner */}
+      {/* Banner Sin Conexión */}
       {!online && (
-        <View style={{
-          backgroundColor: '#f59e0b',
-          paddingVertical: 6,
-          paddingHorizontal: 16,
-          flexDirection: 'row',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: 8,
-        }}>
-          <Text style={{ color: '#1c1917', fontSize: 12, fontWeight: '600' }}>
+        <View
+          style={{
+            backgroundColor: "#f59e0b",
+            paddingVertical: 6,
+            paddingHorizontal: 16,
+            flexDirection: "row",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <Text style={{ color: "#1c1917", fontSize: 13, fontWeight: "600" }}>
             Sin conexión
           </Text>
           {queueSize > 0 && (
-            <Text style={{ color: '#1c1917', fontSize: 12 }}>
-              · {queueSize} cambio{queueSize !== 1 ? 's' : ''} pendiente{queueSize !== 1 ? 's' : ''}
+            <Text style={{ color: "#1c1917", fontSize: 13 }}>
+              · {queueSize} cambio{queueSize !== 1 ? "s" : ""} pendiente
+              {queueSize !== 1 ? "s" : ""}
             </Text>
           )}
-          {queueSize > 0 && (
-            <Pressable onPress={syncNow} style={{ marginLeft: 8 }}>
-              <Text style={{ color: '#1c1917', fontSize: 12, textDecorationLine: 'underline' }}>
-                Sincronizar
-              </Text>
-            </Pressable>
-          )}
+          <Pressable onPress={syncNow} style={{ marginLeft: 8 }}>
+            <Text
+              style={{
+                color: "#1c1917",
+                fontSize: 13,
+                textDecorationLine: "underline",
+              }}
+            >
+              Sincronizar
+            </Text>
+          </Pressable>
         </View>
       )}
 
@@ -107,7 +129,7 @@ export default function TabLayout() {
             borderTopColor: colors.border,
             height: tabBarHeight,
             paddingBottom: bottomPadding,
-            paddingTop: 4,
+            paddingTop: 8,
           },
         }}
       >
@@ -116,7 +138,7 @@ export default function TabLayout() {
           options={{
             title: "Inicio",
             tabBarIcon: ({ color }) => (
-              <IconSymbol size={26} name="house.fill" color={color} />
+              <IconSymbol size={24} name="house.fill" color={color} />
             ),
           }}
         />
@@ -125,7 +147,7 @@ export default function TabLayout() {
           options={{
             title: "Hábitos",
             tabBarIcon: ({ color }) => (
-              <IconSymbol size={26} name="checkmark.circle.fill" color={color} />
+              <IconSymbol size={24} name="checkmark.circle.fill" color={color} />
             ),
           }}
         />
@@ -134,7 +156,7 @@ export default function TabLayout() {
           options={{
             title: "Salud",
             tabBarIcon: ({ color }) => (
-              <IconSymbol size={26} name="heart.fill" color={color} />
+              <IconSymbol size={24} name="heart.fill" color={color} />
             ),
           }}
         />
@@ -143,7 +165,7 @@ export default function TabLayout() {
           options={{
             title: "Finanzas",
             tabBarIcon: ({ color }) => (
-              <IconSymbol size={26} name="dollarsign.circle.fill" color={color} />
+              <IconSymbol size={24} name="dollarsign.circle.fill" color={color} />
             ),
           }}
         />
@@ -152,7 +174,7 @@ export default function TabLayout() {
           options={{
             title: "Perfil",
             tabBarIcon: ({ color }) => (
-              <IconSymbol size={26} name="person.fill" color={color} />
+              <IconSymbol size={24} name="person.fill" color={color} />
             ),
           }}
         />
