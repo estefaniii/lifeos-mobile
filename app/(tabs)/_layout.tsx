@@ -19,18 +19,16 @@ export default function TabLayout() {
   const router = useRouter();
   const { online, queueSize, syncNow } = useOnlineStatus();
 
-  // Guard de autenticación — usa ref para cancelar el timer al limpiar
+  // Guard de autenticación
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // Todavía cargando — espera y cancela cualquier redirect pendiente
     if (loading) {
       if (redirectTimer.current) clearTimeout(redirectTimer.current);
       return;
     }
 
     if (user) {
-      // Autenticado — cancela redirect programado si lo hay
       if (redirectTimer.current) {
         clearTimeout(redirectTimer.current);
         redirectTimer.current = null;
@@ -38,9 +36,7 @@ export default function TabLayout() {
       return;
     }
 
-    // user es null y loading terminó — da 1.5 s de gracia para que el
-    // auth-provider procese el evento SIGNED_IN que llega justo después
-    // del callback de Google OAuth antes de decidir que no está autenticado.
+    // 1.5 s de gracia tras OAuth de Google
     redirectTimer.current = setTimeout(() => {
       redirectTimer.current = null;
       router.replace("/login");
@@ -51,7 +47,7 @@ export default function TabLayout() {
     };
   }, [user, loading]);
 
-  // Verificar estado de onboarding
+  // Verificar onboarding
   useEffect(() => {
     if (loading) return;
     if (!user) return;
@@ -145,7 +141,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="productivity"
           options={{
-            title: "Productividad",
+            title: "Tareas",
             tabBarIcon: ({ color }) => (
               <IconSymbol size={24} name="checkmark.circle.fill" color={color} />
             ),
@@ -174,7 +170,7 @@ export default function TabLayout() {
           options={{
             title: "Mente",
             tabBarIcon: ({ color }) => (
-              <IconSymbol size={24} name="brain.fill" color={color} />
+              <IconSymbol size={24} name="brain.head.profile" color={color} />
             ),
           }}
         />
