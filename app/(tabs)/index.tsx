@@ -6,7 +6,7 @@ import { ProgressRing } from '@/components/progress-ring';
 import { useColors } from '@/hooks/use-colors';
 import { useFinancialSummary } from '@/hooks/use-transactions';
 import { useTodayHealthSummary } from '@/hooks/use-health';
-import { useDailyAffirmation } from '@/hooks/usemind-wellness';
+import { useDailyAffirmation } from '@/hooks/use-mind-wellness';
 import { useHabits, useTodayHabitLogs, useHabitStreaks, useToggleHabit, useCreateHabit, useDeleteHabit } from '@/hooks/use-habits';
 import { useTransactions, useFinancialSummary as useWeekFinancialSummary } from '@/hooks/use-transactions';
 import { useHealthMetrics } from '@/hooks/use-health';
