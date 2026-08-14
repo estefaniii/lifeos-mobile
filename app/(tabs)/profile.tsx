@@ -192,7 +192,7 @@ export default function ProfileScreen() {
         {/* Header */}
         <View className="px-6 pt-6 pb-4">
           <Text className="text-3xl font-bold text-foreground" style={{ color: '#FAFAFA' }}>Perfil</Text>
-          <Text className="text-sm text-muted mt-1" style={{ color: '#A1A1AA' }}>v2.2 - Tu Sistema de Vida IA</Text>
+          <Text className="text-sm text-muted mt-1" style={{ color: '#A1A1AA' }}>Tu centro de vida personal</Text>
         </View>
 
         {/* User Info Card */}
@@ -337,7 +337,7 @@ export default function ProfileScreen() {
           {Platform.OS === 'web' && (
             <Text style={{ color: hasNotificationPermission() ? '#14B8A6' : '#52525B', fontSize: 10, textAlign: 'center', marginTop: 8 }}>
               {hasNotificationPermission()
-                ? '✅ Notificaciones activas — recibirás recordatorios a las horas configuradas.'
+                ? '✅ Permiso activo. En web verás los recordatorios mientras la app esté abierta; para avisos con la app cerrada, usa la app móvil.'
                 : 'Las notificaciones web requieren permiso del navegador. Toca "Probar" para activarlas.'}
             </Text>
           )}
@@ -438,8 +438,8 @@ export default function ProfileScreen() {
 
         {/* Version Info */}
         <View className="px-6 mb-8 items-center">
-          <Text className="text-xs text-muted" style={{ color: '#A1A1AA' }}>LifeOS v2.2 - Edición Elite</Text>
-          <Text className="text-xs text-muted mt-1" style={{ color: '#A1A1AA' }}>Tu Sistema de Vida Inteligente</Text>
+          <Text className="text-xs text-muted" style={{ color: '#A1A1AA' }}>LifeOS · v2.2</Text>
+          <Text className="text-xs text-muted mt-1" style={{ color: '#A1A1AA' }}>Tu centro de vida personal</Text>
         </View>
       </ScrollView>
     </ScreenContainer>
