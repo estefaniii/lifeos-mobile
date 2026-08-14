@@ -342,12 +342,20 @@ export default function HomeScreen() {
                 Hola, {user?.name || user?.email?.split('@')[0] || 'Tú'} 👋
               </Text>
             </View>
-            <Pressable
-              onPress={() => router.push('/profile')}
-              style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Text style={{ fontSize: 20 }}>{(user as any)?.gender === 'masculino' ? '👑' : (user as any)?.gender === 'otro' ? '✨' : '👸'}</Text>
-            </Pressable>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Pressable
+                onPress={() => router.push('/notes')}
+                style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ fontSize: 18 }}>📝</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => router.push('/profile')}
+                style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text style={{ fontSize: 20 }}>{(user as any)?.gender === 'masculino' ? '👑' : (user as any)?.gender === 'otro' ? '✨' : '👸'}</Text>
+              </Pressable>
+            </View>
           </View>
 
           {/* Grid Principal */}
