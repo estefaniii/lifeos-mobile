@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, Text, View, Pressable, Switch, Alert, TextInput, Share, Platform, Linking } from 'react-native';
+import { ScrollView, Text, View, Pressable, Switch, Alert, TextInput, Share, Platform } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import { useAuth } from '@/hooks/use-auth';
@@ -13,9 +13,7 @@ import { useThemeContext } from '@/lib/theme-provider';
  * Displays user profile and settings:
  * - User information
  * - Notification preferences
- * - HealthKit settings
- * - Telegram integration
- * - Theme preferences
+ * - HealthKit settings (iOS)
  * - Data export
  */
 export default function ProfileScreen() {
@@ -42,8 +40,6 @@ export default function ProfileScreen() {
       } catch {}
     }
   }, [user?.name, (user as any)?.gender]);
-
-  const hasTelegram = (user as any)?.telegram_id != null;
 
   const [healthKitEnabled, setHealthKitEnabled] = useState(false);
 
@@ -96,16 +92,6 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const handleConnectTelegram = () => {
-    Alert.alert(
-      'Conectar Telegram',
-      'Busca @LifeOS_Coach_Bot en Telegram y envía /start para vincular tu cuenta.',
-      [
-        { text: 'Abrir Telegram', onPress: () => Linking.openURL('https://t.me/LifeOS_Coach_Bot') },
-        { text: 'Cancelar', style: 'cancel' },
-      ]
-    );
-  };
 
   const handleUpdateName = async () => {
     if (!name.trim()) return;

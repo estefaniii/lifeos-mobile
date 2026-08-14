@@ -137,7 +137,7 @@ export default function OnboardingScreen() {
               {name ? `¡Hola, ${name}!` : '¡Hola!'}
             </Text>
             <Text style={{ fontSize: 14, color: '#A1A1AA', textAlign: 'center', marginBottom: 32, lineHeight: 20 }}>
-              Elige cómo quieres que te hable{'\n'}tu AI Coach.
+              Elige cómo quieres personalizar{'\n'}tu experiencia.
             </Text>
 
             <View style={{ width: '100%', gap: 12 }}>

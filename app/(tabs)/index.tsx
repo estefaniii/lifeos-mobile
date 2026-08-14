@@ -319,6 +319,9 @@ export default function HomeScreen() {
   const productivityProgress = healthSummary
     ? Math.min((healthSummary.exerciseMinutes / 30) * 100, 100)
     : 0;
+  const waterProgress = healthSummary
+    ? Math.min(((healthSummary.water_ml || 0) / 2000) * 100, 100)
+    : 0;
 
   const onRefresh = async () => {
     setIsRefreshing(true);
@@ -351,7 +354,7 @@ export default function HomeScreen() {
           {/* Header */}
           <View style={{ marginBottom: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: '#14B8A6', fontSize: 11, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 3, marginBottom: 4 }}>LIFEOS ELITE</Text>
+              <Text style={{ color: '#14B8A6', fontSize: 11, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 3, marginBottom: 4 }}>LIFEOS</Text>
               <Text style={{ color: '#FAFAFA', fontSize: 26, fontWeight: '700' }}>
                 Hola, {user?.name || user?.email?.split('@')[0] || 'Tú'} 👋
               </Text>
@@ -458,12 +461,7 @@ export default function HomeScreen() {
               borderWidth: 1,
               borderColor: '#27272A',
             }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '700' }}>Métricas Vitales</Text>
-                <View style={{ backgroundColor: 'rgba(16,185,129,0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, borderWidth: 1, borderColor: 'rgba(16,185,129,0.2)' }}>
-                  <Text style={{ fontSize: 9, fontWeight: '900', color: '#10B981', letterSpacing: 1 }}>EN VIVO</Text>
-                </View>
-              </View>
+              <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '700', marginBottom: 16 }}>Métricas Vitales</Text>
               <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }}>
                 <ProgressRing
                   progress={financesProgress}
@@ -474,10 +472,10 @@ export default function HomeScreen() {
                   onPress={() => router.push('/finances')}
                 />
                 <ProgressRing
-                  progress={healthProgress}
-                  label="Pasos"
-                  value={`${healthSummary?.steps || 0}`}
-                  color={colors.primary}
+                  progress={waterProgress}
+                  label="Agua"
+                  value={`${Math.round((healthSummary?.water_ml || 0) / 250)} 🥛`}
+                  color="#60A5FA"
                   size={85}
                   onPress={() => router.push('/health')}
                 />
