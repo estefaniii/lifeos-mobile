@@ -3,34 +3,6 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { useQueryClient } from '@tanstack/react-query';
 
-// ─── System Prompt ───────────────────────────────────────────────────────────
-
-function buildSystemPrompt(userName: string | null, gender: string | null) {
-  const name = userName || 'Reina';
-  const isFem = !gender || gender === 'femenino';
-
-  return `Eres la Coach de LifeOS Elite para ${name}. Habla en ${isFem ? 'femenino' : 'masculino'}.
-Tu filosofía es la Ley de Asunción (Neville Goddard): el deseo ya está cumplido.
-Usa el nombre "${name}" en tu respuesta.
-
-RESPONDE SIEMPRE en JSON válido con esta estructura EXACTA:
-{
-  "intent": "transaction" | "health" | "water" | "food" | "none",
-  "data": {},
-  "ai_response": "Tu respuesta breve e inspiradora"
-}
-
-REGLAS:
-- Si el usuario habla de dinero, gastos o ingresos → intent: "transaction", data: { "type": "income"|"expense", "amount": número, "category": "comida"|"transporte"|"ocio"|"salud"|"otros" }
-- Si habla de gym, yoga, masaje, meditación → intent: "health", data: { "activity": "gym"|"yoga"|"meditation"|"massage", "duration": minutos_si_aplica }
-- Si habla de agua o tomar agua → intent: "water", data: { "amount": mililitros }
-- Si habla de comida o nutrición → intent: "food", data: { "item": "nombre", "calories": num, "protein": num, "carbs": num, "fat": num }
-- Si es saludo, pregunta general o conversación → intent: "none", data: {}
-- ai_response SIEMPRE debe tener un mensaje inspirador personalizado para ${name}`;
-}
-
-// ─── OpenAI direct call ──────────────────────────────────────────────────────
-
 // ─── Offline fallback responses ─────────────────────────────────────────────
 
 function getOfflineResponse(message: string, userName: string | null): { intent: 'none'; data: {}; ai_response: string } {
@@ -47,57 +19,31 @@ function getOfflineResponse(message: string, userName: string | null): { intent:
   return { intent: 'none', data: {}, ai_response: `${name}, estoy en modo offline porque la API de IA no está disponible. 🔌\n\nPuedes:\n• Registrar gastos/ingresos desde el Home\n• Agregar agua, gym, yoga desde Registros Rápidos\n• Revisar tu progreso en cada módulo\n\n💡 Para activar el coach IA, verifica tu API key de OpenAI en las variables de entorno de Vercel.` };
 }
 
-async function callOpenAI(message: string, userName: string | null, gender: string | null) {
-  const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
-  if (!apiKey) {
-    // No API key — use offline mode
-    return getOfflineResponse(message, userName);
-  }
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: buildSystemPrompt(userName, gender) },
-        { role: 'user', content: message },
-      ],
-      response_format: { type: 'json_object' },
-      max_tokens: 500,
-      temperature: 0.7,
-    }),
-  });
-
-  if (!response.ok) {
-    const status = response.status;
-    if (status === 429) {
-      return { intent: 'none' as const, data: {}, ai_response: `${userName || 'Reina'}, la API de OpenAI se quedó sin créditos. 💳\n\nPara solucionarlo:\n1. Ve a platform.openai.com/billing\n2. Agrega créditos a tu cuenta\n3. O cambia la API key en Vercel\n\nMientras tanto, puedes usar todos los módulos de LifeOS normalmente.` };
-    }
-    if (status === 401) {
-      return { intent: 'none' as const, data: {}, ai_response: `La API key de OpenAI no es válida. 🔑 Verifica la variable EXPO_PUBLIC_OPENAI_API_KEY en Vercel.` };
-    }
-    const errText = await response.text();
-    throw new Error(`OpenAI ${status}: ${errText.substring(0, 150)}`);
-  }
-
-  const result = await response.json();
-  const content = result.choices?.[0]?.message?.content;
-
-  if (!content) throw new Error('Respuesta vacía de OpenAI');
-
+async function callAICoach(message: string, userName: string | null, gender: string | null) {
+  // Calls our serverless API route (which holds the OpenAI key on the server).
+  // Falls back to offline mode on any network failure.
   try {
-    const parsed = JSON.parse(content);
+    const res = await fetch('/api/ai-coach', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, userName, gender }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      console.warn('[AI Coach] API error', res.status, errText.substring(0, 200));
+      return getOfflineResponse(message, userName);
+    }
+
+    const parsed = await res.json();
     return {
-      intent: (parsed.intent || 'none') as 'transaction' | 'health' | 'water' | 'food' | 'none',
-      data: parsed.data || {},
-      ai_response: parsed.ai_response || 'Todo está fluyendo perfectamente.',
+      intent: (parsed?.intent || 'none') as 'transaction' | 'health' | 'water' | 'food' | 'none',
+      data: parsed?.data || {},
+      ai_response: parsed?.ai_response || 'Todo está fluyendo perfectamente.',
     };
-  } catch {
-    return { intent: 'none' as const, data: {}, ai_response: content.substring(0, 500) };
+  } catch (err) {
+    console.warn('[AI Coach] Network error', err);
+    return getOfflineResponse(message, userName);
   }
 }
 
@@ -113,7 +59,7 @@ export function useAICoach() {
     setLoading(true);
 
     try {
-      const nlpResult = await callOpenAI(text, user.name ?? null, (user as any).gender ?? null);
+      const nlpResult = await callAICoach(text, user.name ?? null, (user as any).gender ?? null);
 
       // Execute action based on detected intent
       let actionSummary = '';

@@ -289,14 +289,15 @@ function WaterModal({ visible, onClose, currentWater, userId, onSave }: {
   userId: string;
   onSave: () => void;
 }) {
-  const AMOUNTS = [150, 250, 350, 500, 750, 1000];
+  const VASOS = [1, 2, 3, 4];
+  const ML_POR_VASO = 250;
   const [saving, setSaving] = useState(false);
 
-  const handleAdd = async (ml: number) => {
+  const handleAdd = async (vasos: number) => {
     setSaving(true);
     try {
       const today = new Date().toISOString().split('T')[0];
-      const newTotal = currentWater + ml;
+      const newTotal = currentWater + vasos * ML_POR_VASO;
       const { data: existing } = await supabase
         .from('health_metrics')
         .select('id')
@@ -323,13 +324,13 @@ function WaterModal({ visible, onClose, currentWater, userId, onSave }: {
         <View style={{ backgroundColor: '#18181B', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 36 }}>
           <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '800', marginBottom: 4 }}>💧 Registrar Agua</Text>
           <Text style={{ color: '#71717A', fontSize: 11, marginBottom: 20, textTransform: 'uppercase', letterSpacing: 2, fontWeight: '700' }}>
-            Total hoy: {currentWater} ml — Meta: 2000 ml
+            Hoy: {Math.round(currentWater / ML_POR_VASO)} vasos — Meta: 8 vasos
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
-            {AMOUNTS.map((ml) => (
+            {VASOS.map((v) => (
               <Pressable
-                key={ml}
-                onPress={() => handleAdd(ml)}
+                key={v}
+                onPress={() => handleAdd(v)}
                 disabled={saving}
                 style={{
                   flex: 1,
@@ -343,7 +344,7 @@ function WaterModal({ visible, onClose, currentWater, userId, onSave }: {
                 }}
               >
                 <Text style={{ color: '#60A5FA', fontWeight: '800', fontSize: 15 }}>
-                  +{ml >= 1000 ? `${ml / 1000}L` : `${ml}ml`}
+                  +{v} {v === 1 ? 'vaso' : 'vasos'}
                 </Text>
               </Pressable>
             ))}
@@ -632,7 +633,7 @@ export default function HealthScreen() {
               <ProgressRing progress={stepsProgress} label="Pasos" value={`${todayMetrics?.steps || 0}`} color={colors.primary} size={72} />
               <ProgressRing progress={sleepProgress} label="Sueño" value={`${todayMetrics?.sleepHours?.toFixed(1) || 0}h`} color={colors.success} size={72} />
               <ProgressRing progress={exerciseProgress} label="Ejercicio" value={`${todayMetrics?.exerciseMinutes || 0}m`} color={colors.warning} size={72} />
-              <ProgressRing progress={waterProgress} label="Agua" value={`${todayMetrics?.water_ml || 0}ml`} color="#60A5FA" size={72} />
+              <ProgressRing progress={waterProgress} label="Agua" value={`${Math.round((todayMetrics?.water_ml || 0) / 250)} 🥛`} color="#60A5FA" size={72} />
             </View>
           </View>
         </View>
@@ -788,7 +789,7 @@ export default function HealthScreen() {
           <View className="glass-card rounded-3xl p-6">
             <View className="flex-row justify-between items-center mb-4">
               <Text className="text-base font-bold text-foreground" style={{ color: '#FAFAFA' }}>💧 Hidratación</Text>
-              <Text className="text-sm font-bold text-blue-400">{todayMetrics?.water_ml || 0} / 2000 ml</Text>
+              <Text className="text-sm font-bold text-blue-400">{Math.round((todayMetrics?.water_ml || 0) / 250)} / 8 vasos</Text>
             </View>
             {/* Cuadros de agua - color más claro */}
             <View className="flex-row gap-2 mb-4">
@@ -1012,7 +1013,7 @@ export default function HealthScreen() {
                       </View>
                       <View>
                         <Text className="text-[9px] text-muted uppercase font-bold" style={{ color: '#A1A1AA' }}>Agua</Text>
-                        <Text className="text-xs font-semibold text-foreground" style={{ color: '#FAFAFA' }}>{entry.water_ml ? `${entry.water_ml}ml` : '—'}</Text>
+                        <Text className="text-xs font-semibold text-foreground" style={{ color: '#FAFAFA' }}>{entry.water_ml ? `${Math.round(entry.water_ml / 250)} vasos` : '—'}</Text>
                       </View>
                       <View>
                         <Text className="text-[9px] text-muted uppercase font-bold" style={{ color: '#A1A1AA' }}>Calorías</Text>

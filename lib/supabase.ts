@@ -120,3 +120,53 @@ export interface ChatMessage {
   sender: 'user' | 'ai';
   created_at: string;
 }
+
+export type PostPlatform =
+  | 'instagram'
+  | 'facebook'
+  | 'tiktok'
+  | 'linkedin'
+  | 'x'
+  | 'youtube'
+  | 'otro';
+
+export type PostStatus = 'idea' | 'en_diseno' | 'listo' | 'publicado';
+
+export interface Post {
+  id: string;
+  user_id: string;
+  client: string;
+  platform: PostPlatform;
+  title: string;
+  content?: string;
+  publish_date: string; // YYYY-MM-DD
+  publish_time?: string;
+  status: PostStatus;
+  link?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Client {
+  id: string;
+  user_id: string;
+  name: string;
+  color?: string;
+  notes?: string;
+  created_at?: string;
+}
+
+export type TaskPriority = 'baja' | 'media' | 'alta';
+
+export interface Task {
+  id: string;
+  user_id: string;
+  client?: string;
+  title: string;
+  notes?: string;
+  due_date?: string | null; // YYYY-MM-DD
+  priority: TaskPriority;
+  done: boolean;
+  created_at?: string;
+  updated_at?: string;
+}

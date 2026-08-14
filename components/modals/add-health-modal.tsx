@@ -19,7 +19,7 @@ export function AddHealthModal({ visible, onClose, userId }: AddHealthModalProps
   const [yoga, setYoga] = useState(false);
   const [massage, setMassage] = useState(false);
   const [steps, setSteps] = useState('');
-  const [waterMl, setWaterMl] = useState('');
+  const [waterGlasses, setWaterGlasses] = useState('');
   const [sleepHours, setSleepHours] = useState('');
   const [calories, setCalories] = useState('');
   const [protein, setProtein] = useState('');
@@ -30,7 +30,7 @@ export function AddHealthModal({ visible, onClose, userId }: AddHealthModalProps
       setYoga(false);
       setMassage(false);
       setSteps('');
-      setWaterMl('');
+      setWaterGlasses('');
       setSleepHours('');
       setCalories('');
       setProtein('');
@@ -47,7 +47,7 @@ export function AddHealthModal({ visible, onClose, userId }: AddHealthModalProps
       if (yoga) upsertData.yoga_session = true;
       if (massage) upsertData.massage_session = true;
       if (steps) upsertData.steps = parseInt(steps);
-      if (waterMl) upsertData.water_ml = parseInt(waterMl);
+      if (waterGlasses) upsertData.water_ml = Math.round(parseFloat(waterGlasses) * 250);
       if (sleepHours) upsertData.sleep_minutes = Math.round(parseFloat(sleepHours) * 60);
       if (calories) { upsertData.calories = parseInt(calories); upsertData.meals_tracked = true; }
       if (protein) upsertData.protein_g = parseFloat(protein);
@@ -146,15 +146,15 @@ export function AddHealthModal({ visible, onClose, userId }: AddHealthModalProps
             <NumericField label="Pasos" emoji="👟" value={steps} onChange={setSteps} placeholder="0" unit="pasos" />
             <NumericField label="Sueño" emoji="😴" value={sleepHours} onChange={setSleepHours} placeholder="7.5" unit="horas" />
 
-            <NumericField label="Agua" emoji="💧" value={waterMl} onChange={setWaterMl} placeholder="0" unit="ml" />
+            <NumericField label="Agua" emoji="💧" value={waterGlasses} onChange={setWaterGlasses} placeholder="0" unit="vasos" />
             <View className="flex-row gap-2 mb-4 -mt-2">
-              {[250, 500, 750, 1000].map((ml) => (
+              {[1, 2, 3, 4].map((v) => (
                 <Pressable
-                  key={ml}
-                  onPress={() => setWaterMl(((parseInt(waterMl) || 0) + ml).toString())}
+                  key={v}
+                  onPress={() => setWaterGlasses(((parseInt(waterGlasses) || 0) + v).toString())}
                   className="flex-1 bg-surface py-2 rounded-xl items-center"
                 >
-                  <Text className="text-xs text-foreground font-bold" style={{ color: '#FAFAFA' }}>+{ml}ml</Text>
+                  <Text className="text-xs text-foreground font-bold" style={{ color: '#FAFAFA' }}>+{v} {v === 1 ? 'vaso' : 'vasos'}</Text>
                 </Pressable>
               ))}
             </View>

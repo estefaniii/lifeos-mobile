@@ -27,14 +27,15 @@ function WaterModal({ visible, onClose, currentWater, userId, onSave }: {
   userId: string;
   onSave: () => void;
 }) {
-  const AMOUNTS = [150, 250, 350, 500, 750, 1000];
+  const VASOS = [1, 2, 3, 4];
+  const ML_POR_VASO = 250;
   const [saving, setSaving] = useState(false);
 
-  const handleAdd = async (ml: number) => {
+  const handleAdd = async (vasos: number) => {
     setSaving(true);
     try {
       const today = new Date().toISOString().split('T')[0];
-      const newTotal = currentWater + ml;
+      const newTotal = currentWater + vasos * ML_POR_VASO;
       const { data: existing } = await supabase
         .from('health_metrics')
         .select('id')
@@ -61,13 +62,13 @@ function WaterModal({ visible, onClose, currentWater, userId, onSave }: {
         <View style={{ backgroundColor: '#18181B', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24 }}>
           <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '800', marginBottom: 4 }}>💧 Registrar Agua</Text>
           <Text style={{ color: '#71717A', fontSize: 11, marginBottom: 20, textTransform: 'uppercase', letterSpacing: 2, fontWeight: '700' }}>
-            Total hoy: {currentWater} ml
+            Hoy: {Math.round(currentWater / ML_POR_VASO)} vasos — Meta: 8 vasos
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
-            {AMOUNTS.map((ml) => (
+            {VASOS.map((v) => (
               <Pressable
-                key={ml}
-                onPress={() => handleAdd(ml)}
+                key={v}
+                onPress={() => handleAdd(v)}
                 disabled={saving}
                 style={{
                   flex: 1,
@@ -80,7 +81,7 @@ function WaterModal({ visible, onClose, currentWater, userId, onSave }: {
                   alignItems: 'center',
                 }}
               >
-                <Text style={{ color: '#60A5FA', fontWeight: '800', fontSize: 15 }}>+{ml >= 1000 ? `${ml / 1000}L` : `${ml}ml`}</Text>
+                <Text style={{ color: '#60A5FA', fontWeight: '800', fontSize: 15 }}>+{v} {v === 1 ? 'vaso' : 'vasos'}</Text>
               </Pressable>
             ))}
           </View>
@@ -424,7 +425,7 @@ export default function HomeScreen() {
                 >
                   <Text style={{ fontSize: 22, marginBottom: 4 }}>💧</Text>
                   <Text style={{ color: '#60A5FA', fontWeight: '800', fontSize: 9, textTransform: 'uppercase' }}>Agua</Text>
-                  <Text style={{ color: 'rgba(96,165,250,0.6)', fontSize: 8, marginTop: 2 }}>{healthSummary?.water_ml || 0}ml</Text>
+                  <Text style={{ color: 'rgba(96,165,250,0.6)', fontSize: 8, marginTop: 2 }}>{Math.round((healthSummary?.water_ml || 0) / 250)} vasos</Text>
                 </Pressable>
 
                 <Pressable
@@ -465,7 +466,7 @@ export default function HomeScreen() {
               >
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                   <Text style={{ color: '#60A5FA', fontWeight: '700', fontSize: 14 }}>💧 Hidratación Hoy</Text>
-                  <Text style={{ color: 'rgba(96,165,250,0.8)', fontSize: 12, fontWeight: '700' }}>{healthSummary?.water_ml || 0} / 2000 ml</Text>
+                  <Text style={{ color: 'rgba(96,165,250,0.8)', fontSize: 12, fontWeight: '700' }}>{Math.round((healthSummary?.water_ml || 0) / 250)} / 8 vasos</Text>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 6 }}>
                   {[1,2,3,4,5,6,7,8].map(i => {

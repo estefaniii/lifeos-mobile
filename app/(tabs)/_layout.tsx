@@ -120,11 +120,19 @@ export default function TabLayout() {
           },
         }}
       >
+        {/* ===== 5 hubs ===== */}
         <Tabs.Screen
           name="index"
           options={{
-            title: "Home",
+            title: "Inicio",
             tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="trabajo"
+          options={{
+            title: "Trabajo",
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="briefcase.fill" color={color} />,
           }}
         />
         <Tabs.Screen
@@ -137,15 +145,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="health"
           options={{
-            title: "Salud",
+            title: "Bienestar",
             tabBarIcon: ({ color }) => <IconSymbol size={28} name="heart.fill" color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="ai-coach"
-          options={{
-            title: "IA Coach",
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="brain.head.profile" color={color} />,
           }}
         />
         <Tabs.Screen
@@ -155,19 +156,11 @@ export default function TabLayout() {
             tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
           }}
         />
-        {/* Ocultar pestañas secundarias para limpiar el Navbar */}
-        <Tabs.Screen
-          name="productivity"
-          options={{
-            href: null,
-          }}
-        />
-        <Tabs.Screen
-          name="mind"
-          options={{
-            href: null,
-          }}
-        />
+        {/* ===== Ocultas (accesibles desde los hubs) ===== */}
+        <Tabs.Screen name="posts" options={{ href: null }} />
+        <Tabs.Screen name="productivity" options={{ href: null }} />
+        <Tabs.Screen name="ai-coach" options={{ href: null }} />
+        <Tabs.Screen name="mind" options={{ href: null }} />
       </Tabs>
     </View>
   );

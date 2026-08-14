@@ -27,6 +27,9 @@ const MAPPING = {
   "plus": "add",
   "calendar": "calendar-today",
   "doc.text.fill": "description",
+  "checkmark.circle.fill": "check-circle",
+  "calendar.badge.clock": "event",
+  "briefcase.fill": "work",
 } as IconMapping;
 
 /**
