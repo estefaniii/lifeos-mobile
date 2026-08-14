@@ -21,6 +21,7 @@ import { useTasks } from '@/hooks/use-tasks';
 import { usePosts } from '@/hooks/use-posts';
 import { useNotes } from '@/hooks/use-notes';
 import { FadeInView } from '@/components/fade-in-view';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 
 // ─── Mini Modals ─────────────────────────────────────────────────────────────
 
@@ -361,19 +362,13 @@ export default function HomeScreen() {
                 onPress={() => router.push('/insights')}
                 style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', alignItems: 'center', justifyContent: 'center' }}
               >
-                <Text style={{ fontSize: 18 }}>📊</Text>
+                <IconSymbol name="chart.bar.fill" size={20} color="#E4E4E7" />
               </Pressable>
               <Pressable
                 onPress={() => router.push('/notes')}
                 style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', alignItems: 'center', justifyContent: 'center' }}
               >
-                <Text style={{ fontSize: 18 }}>📝</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => router.push('/profile')}
-                style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Text style={{ fontSize: 20 }}>{(user as any)?.gender === 'masculino' ? '👑' : (user as any)?.gender === 'otro' ? '✨' : '👸'}</Text>
+                <IconSymbol name="doc.text.fill" size={20} color="#E4E4E7" />
               </Pressable>
             </View>
           </View>
