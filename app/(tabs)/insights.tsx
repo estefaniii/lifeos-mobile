@@ -92,6 +92,18 @@ export default function InsightsScreen() {
           </View>
         )}
 
+        {/* Más vistas */}
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 24 }}>
+          <Pressable onPress={() => router.push('/reports')} style={{ flex: 1, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: 16, padding: 14, alignItems: 'center', gap: 6 }}>
+            <Text style={{ fontSize: 20 }}>📈</Text>
+            <Text style={{ color: COLORS.text, fontSize: 13, fontWeight: '700' }}>Reporte mensual</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push('/timeline')} style={{ flex: 1, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, borderRadius: 16, padding: 14, alignItems: 'center', gap: 6 }}>
+            <Text style={{ fontSize: 20 }}>📅</Text>
+            <Text style={{ color: COLORS.text, fontSize: 13, fontWeight: '700' }}>Timeline diario</Text>
+          </Pressable>
+        </View>
+
         <Text style={{ color: COLORS.subtle, fontSize: 11, textAlign: 'center', marginTop: 24, lineHeight: 16 }}>
           Los números se calculan en vivo desde tus tareas, publicaciones, finanzas y notas.
         </Text>

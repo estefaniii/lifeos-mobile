@@ -872,61 +872,6 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {/* Quick Actions */}
-            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
-              <Pressable
-                onPress={() => router.push('/reports')}
-                style={{ flex: 1, backgroundColor: '#18181B', borderWidth: 1, borderColor: 'rgba(20,184,166,0.2)', borderRadius: 20, padding: 14, alignItems: 'center', gap: 8 }}
-              >
-                <View style={{ width: 44, height: 44, backgroundColor: 'rgba(20,184,166,0.1)', borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 22 }}>📊</Text>
-                </View>
-                <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 13 }}>Reporte</Text>
-                <Text style={{ color: '#A1A1AA', fontSize: 10 }}>Resumen mensual</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => router.push('/timeline')}
-                style={{ flex: 1, backgroundColor: '#18181B', borderWidth: 1, borderColor: 'rgba(139,92,246,0.2)', borderRadius: 20, padding: 14, alignItems: 'center', gap: 8 }}
-              >
-                <View style={{ width: 44, height: 44, backgroundColor: 'rgba(139,92,246,0.1)', borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ fontSize: 22 }}>📅</Text>
-                </View>
-                <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 13 }}>Timeline</Text>
-                <Text style={{ color: '#A1A1AA', fontSize: 10 }}>Actividad diaria</Text>
-              </Pressable>
-            </View>
-
-            {/* Accesos a Módulos */}
-            <View style={{ marginBottom: 20 }}>
-              <Text style={{ color: '#A1A1AA', fontSize: 12, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 3, marginBottom: 14 }}>MÓDULOS</Text>
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <Pressable
-                  onPress={() => router.push('/productivity')}
-                  style={{ flex: 1, backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', borderRadius: 24, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}
-                >
-                  <View style={{ width: 44, height: 44, backgroundColor: 'rgba(20,184,166,0.1)', borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ fontSize: 24 }}>🎯</Text>
-                  </View>
-                  <View>
-                    <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 14 }}>Productividad</Text>
-                    <Text style={{ color: '#A1A1AA', fontSize: 9, fontWeight: '700', textTransform: 'uppercase' }}>Focus & Tareas</Text>
-                  </View>
-                </Pressable>
-                <Pressable
-                  onPress={() => router.push('/mind')}
-                  style={{ flex: 1, backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', borderRadius: 24, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}
-                >
-                  <View style={{ width: 44, height: 44, backgroundColor: 'rgba(245,158,11,0.1)', borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ fontSize: 24 }}>🧘</Text>
-                  </View>
-                  <View>
-                    <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 14 }}>Mente</Text>
-                    <Text style={{ color: '#A1A1AA', fontSize: 9, fontWeight: '700', textTransform: 'uppercase' }}>Zen & Puntos</Text>
-                  </View>
-                </Pressable>
-              </View>
-            </View>
-
           </View>
         </View>
 
