@@ -330,7 +330,7 @@ export default function HomeScreen() {
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
-        className="pb-32"
+        className="pb-4"
       >
         <View style={{ flex: 1, paddingHorizontal: 16, paddingVertical: 24, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
 
@@ -647,13 +647,7 @@ export default function HomeScreen() {
                   <Text style={{ fontSize: 28, marginBottom: 4 }}>💰</Text>
                   <Text style={{ color: '#34D399', fontWeight: '800', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Ingreso</Text>
                 </Pressable>
-                <Pressable
-                  onPress={() => router.push('/ai-coach')}
-                  style={{ flex: 1, backgroundColor: 'rgba(99,102,241,0.1)', borderWidth: 1, borderColor: 'rgba(99,102,241,0.2)', borderRadius: 22, paddingVertical: 18, alignItems: 'center' }}
-                >
-                  <Text style={{ fontSize: 28, marginBottom: 4 }}>🤖</Text>
-                  <Text style={{ color: '#818CF8', fontWeight: '800', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>IA Coach</Text>
-                </Pressable>
+                
               </View>
             </View>
 

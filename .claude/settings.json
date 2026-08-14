@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(grep -r \"useNotificationSetup\\\\|applyReminderSettings\\\\|requestNotificationPermissions\" /Users/humbertotorres/Downloads/lifeos_mobile/app --include=*.tsx --include=*.ts)",
+      "Bash(grep -r \"manifest\\\\|service.worker\\\\|sw\\\\.\" /Users/humbertotorres/Downloads/lifeos_mobile --include=*.json --include=*.ts --include=*.tsx --include=*.js)",
+      "Bash(grep -r \"service.worker\\\\|ServiceWorker\\\\|''''sw''''\\\\|sw\" /Users/humbertotorres/Downloads/lifeos_mobile --include=*.ts --include=*.tsx --include=*.js --include=*.json)",
+      "Bash(find /Users/humbertotorres/Downloads/lifeos_mobile/server -type f -name *.ts)",
+      "Bash(git add:*)"
     ]
   }
 }
