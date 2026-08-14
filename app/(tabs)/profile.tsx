@@ -283,33 +283,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Telegram Integration - PREMIUM STYLE */}
-        <View className="px-6 mb-8">
-          <Text className="text-lg font-bold text-foreground mb-4" style={{ color: '#FAFAFA' }}>Integración Digital</Text>
-          <Pressable
-            onPress={handleConnectTelegram}
-            className={`glass-card rounded-3xl p-6 flex-row justify-between items-center ${hasTelegram ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-sky-500/10 border-sky-500/20'
-              }`}
-          >
-            <View className="flex-1">
-              <View className="flex-row items-center gap-2 mb-1">
-                <Text className="text-lg">✈️</Text>
-                <Text className={`text-base font-bold ${hasTelegram ? 'text-emerald-500' : 'text-sky-500'}`}>
-                  {hasTelegram ? 'Telegram Vinculado' : 'Conectar Telegram'}
-                </Text>
-              </View>
-              <Text className="text-xs text-muted leading-tight" style={{ color: '#A1A1AA' }}>
-                {hasTelegram
-                  ? 'Recibiendo afirmaciones y alertas de salud.'
-                  : 'Sincroniza tus finanzas y recibe recordatorios IA.'}
-              </Text>
-            </View>
-            <View className={`w-10 h-10 rounded-full items-center justify-center ${hasTelegram ? 'bg-emerald-500' : 'bg-sky-500'}`}>
-              <Text className="text-white font-bold">{hasTelegram ? '✓' : '→'}</Text>
-            </View>
-          </Pressable>
-        </View>
-
         {/* Reminders Section */}
         <View className="px-6 mb-8">
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -370,7 +343,8 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* Health Section */}
+        {/* Health Section (solo iOS — Apple Health no aplica en web) */}
+        {Platform.OS === 'ios' && (
         <View className="px-6 mb-8">
           <Text className="text-lg font-bold text-foreground mb-4" style={{ color: '#FAFAFA' }}>Salud & Sync</Text>
 
@@ -409,6 +383,7 @@ export default function ProfileScreen() {
             )}
           </View>
         </View>
+        )}
 
         {/* Sistema */}
         <View className="px-6 mb-8">
