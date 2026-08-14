@@ -196,90 +196,83 @@ export default function ProfileScreen() {
         </View>
 
         {/* User Info Card */}
-        <View className="mx-6 mb-8 bg-surface border border-border rounded-[32px] p-8 shadow-sm">
-          <View className="flex-row items-center mb-6">
-            <View className="w-20 h-20 rounded-full bg-primary/10 items-center justify-center border-4 border-primary/20">
-              <Text className="text-4xl">{gender === 'masculino' ? '👑' : gender === 'otro' ? '✨' : '👸'}</Text>
+        <View className="mx-6 mb-8 bg-surface border border-border rounded-[28px] p-6">
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>
+            <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(20,184,166,0.1)', borderWidth: 2, borderColor: 'rgba(20,184,166,0.25)', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 30 }}>{gender === 'masculino' ? '👑' : gender === 'otro' ? '✨' : '👸'}</Text>
             </View>
-            <View className="flex-1 ml-6">
-              <Text className="text-xl font-bold text-foreground" style={{ color: '#FAFAFA' }}>{user?.name || user?.email?.split('@')[0] || 'Usuario'}</Text>
-              <Text className="text-xs font-medium text-muted uppercase tracking-widest mt-1" style={{ color: '#A1A1AA' }}>EDICIÓN ELITE</Text>
+            <View style={{ flex: 1, marginLeft: 16 }}>
+              <Text style={{ color: '#FAFAFA', fontSize: 20, fontWeight: '800' }} numberOfLines={1}>{user?.name || user?.email?.split('@')[0] || 'Usuario'}</Text>
+              <Text style={{ color: '#A1A1AA', fontSize: 12, marginTop: 2 }} numberOfLines={1}>{user?.email || ''}</Text>
             </View>
           </View>
 
-          {/* Edit Profile Section */}
-          <View className="pt-6 border-t border-border/50">
-            <Text className="text-sm font-bold text-foreground mb-3" style={{ color: '#FAFAFA' }}>Mi Nombre</Text>
-            <View className="flex-row gap-3 mb-4">
-              <TextInput
-                className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-foreground"
-                style={{ color: '#FAFAFA' }}
-                placeholder="¿Cómo quieres que te llame?"
-                placeholderTextColor={colors.muted}
-                value={name || ''}
-                onChangeText={(text) => setName(text)}
-              />
-              <Pressable
-                onPress={handleUpdateName}
-                disabled={isUpdating}
-                className={`bg-primary rounded-xl px-6 py-3 items-center justify-center ${isUpdating ? 'opacity-50' : ''}`}
-              >
-                <Text className="text-background font-bold text-xs uppercase">{isUpdating ? '...' : 'Guardar'}</Text>
-              </Pressable>
-            </View>
-            <Text style={{ color: '#FAFAFA', fontSize: 14, fontWeight: '700', marginBottom: 10 }}>Género (personaliza tu avatar)</Text>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              {(['femenino', 'masculino', 'otro'] as const).map((g) => {
-                const selected = gender === g;
-                return (
-                  <Pressable
-                    key={g}
-                    onPress={async () => {
-                      setGender(g);
-                      if (!user?.id) return;
-                      try {
-                        // Use update instead of upsert to avoid overwriting other fields
-                        const { error } = await supabase
-                          .from('users')
-                          .update({ gender: g, last_active: new Date().toISOString() })
-                          .eq('id', String(user.id));
+          <View style={{ height: 1, backgroundColor: 'rgba(63,63,70,0.5)', marginBottom: 18 }} />
 
-                        if (error) {
-                          // If row doesn't exist yet, insert it
-                          await supabase.from('users').upsert({
-                            id: String(user.id),
-                            name: user.name || '',
-                            email: user.email || '',
-                            gender: g,
-                            last_active: new Date().toISOString(),
-                          }, { onConflict: 'id' });
-                        }
-                        await refresh();
-                        if (Platform.OS === 'web') {
-                          // Save to localStorage as backup
-                          try { localStorage.setItem('lifeos_gender', g); } catch {}
-                        }
-                      } catch (err) {
-                        console.error('[Profile] Gender save error:', err);
+          <Text style={{ color: '#FAFAFA', fontSize: 13, fontWeight: '700', marginBottom: 8 }}>Mi nombre</Text>
+          <TextInput
+            style={[{ backgroundColor: '#09090B', borderWidth: 1, borderColor: '#27272A', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: '#FAFAFA', fontSize: 14 }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null]}
+            placeholder="¿Cómo quieres que te llame?"
+            placeholderTextColor={colors.muted}
+            value={name || ''}
+            onChangeText={(text) => setName(text)}
+          />
+          <Pressable
+            onPress={handleUpdateName}
+            disabled={isUpdating}
+            style={{ alignSelf: 'flex-start', marginTop: 10, backgroundColor: '#14B8A6', borderRadius: 12, paddingHorizontal: 22, paddingVertical: 10, opacity: isUpdating ? 0.5 : 1 }}
+          >
+            <Text style={{ color: '#09090B', fontWeight: '800', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }}>{isUpdating ? '...' : 'Guardar'}</Text>
+          </Pressable>
+
+          <Text style={{ color: '#FAFAFA', fontSize: 13, fontWeight: '700', marginTop: 22, marginBottom: 10 }}>Género</Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {(['femenino', 'masculino', 'otro'] as const).map((g) => {
+              const selected = gender === g;
+              return (
+                <Pressable
+                  key={g}
+                  onPress={async () => {
+                    setGender(g);
+                    if (!user?.id) return;
+                    try {
+                      const { error } = await supabase
+                        .from('users')
+                        .update({ gender: g, last_active: new Date().toISOString() })
+                        .eq('id', String(user.id));
+                      if (error) {
+                        await supabase.from('users').upsert({
+                          id: String(user.id),
+                          name: user.name || '',
+                          email: user.email || '',
+                          gender: g,
+                          last_active: new Date().toISOString(),
+                        }, { onConflict: 'id' });
                       }
-                    }}
-                    style={{
-                      flex: 1,
-                      paddingVertical: 10,
-                      borderRadius: 12,
-                      alignItems: 'center',
-                      borderWidth: 1,
-                      backgroundColor: selected ? '#14B8A6' : '#09090B',
-                      borderColor: selected ? '#14B8A6' : '#27272A',
-                    }}
-                  >
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: selected ? '#fff' : '#FAFAFA' }}>
-                      {g === 'femenino' ? '👸 Femenino' : g === 'masculino' ? '👑 Masculino' : '✨ Otro'}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+                      await refresh();
+                      if (Platform.OS === 'web') {
+                        try { localStorage.setItem('lifeos_gender', g); } catch {}
+                      }
+                    } catch (err) {
+                      console.error('[Profile] Gender save error:', err);
+                    }
+                  }}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 10,
+                    borderRadius: 12,
+                    alignItems: 'center',
+                    borderWidth: 1,
+                    backgroundColor: selected ? '#14B8A6' : '#09090B',
+                    borderColor: selected ? '#14B8A6' : '#27272A',
+                  }}
+                >
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: selected ? '#fff' : '#FAFAFA' }}>
+                    {g === 'femenino' ? '👸 Femenino' : g === 'masculino' ? '👑 Masculino' : '✨ Otro'}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
 
