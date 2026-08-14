@@ -227,7 +227,7 @@ export default function ProfileScreen() {
                 <Text className="text-background font-bold text-xs uppercase">{isUpdating ? '...' : 'Guardar'}</Text>
               </Pressable>
             </View>
-            <Text style={{ color: '#FAFAFA', fontSize: 14, fontWeight: '700', marginBottom: 10 }}>Género (para el AI Coach)</Text>
+            <Text style={{ color: '#FAFAFA', fontSize: 14, fontWeight: '700', marginBottom: 10 }}>Género (personaliza tu avatar)</Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               {(['femenino', 'masculino', 'otro'] as const).map((g) => {
                 const selected = gender === g;
@@ -415,34 +415,6 @@ export default function ProfileScreen() {
           <Text className="text-lg font-bold text-foreground mb-4" style={{ color: colors.text }}>Sistema</Text>
 
           {/* Theme Toggle */}
-          <View style={{
-            backgroundColor: colors.surface,
-            borderRadius: 24,
-            padding: 20,
-            marginBottom: 12,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderWidth: 1,
-            borderColor: colors.border,
-          }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(161,161,170,0.08)', alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 18 }}>{colorScheme === 'dark' ? '🌙' : '☀️'}</Text>
-              </View>
-              <View>
-                <Text style={{ color: colors.text, fontWeight: '700', fontSize: 14 }}>Modo {colorScheme === 'dark' ? 'Oscuro' : 'Claro'}</Text>
-                <Text style={{ color: colors.muted, fontSize: 10 }}>Toca para cambiar el tema</Text>
-              </View>
-            </View>
-            <Switch
-              value={colorScheme === 'dark'}
-              onValueChange={toggleColorScheme}
-              trackColor={{ false: '#e2e8f0', true: '#14B8A6' }}
-              thumbColor={colorScheme === 'dark' ? '#fff' : '#64748b'}
-            />
-          </View>
-
           <Pressable
             onPress={handleExportData}
             style={{
