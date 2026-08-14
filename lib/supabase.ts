@@ -180,6 +180,7 @@ export interface Note {
   pinned: boolean;
   client?: string;
   archived?: boolean;
+  remind_at?: string | null;
   created_at?: string;
   updated_at?: string;
 }

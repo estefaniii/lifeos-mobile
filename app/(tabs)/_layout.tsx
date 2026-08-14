@@ -181,6 +181,7 @@ export default function TabLayout() {
         <Tabs.Screen name="ai-coach" options={{ href: null }} />
         <Tabs.Screen name="mind" options={{ href: null }} />
         <Tabs.Screen name="notes" options={{ href: null }} />
+        <Tabs.Screen name="insights" options={{ href: null }} />
       </Tabs>
     </View>
   );

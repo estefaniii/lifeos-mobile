@@ -20,6 +20,8 @@ const COLORS = {
 };
 
 const SWATCHES = ['#18181B', '#1E3A3A', '#3B2E1E', '#2E1E3B', '#3B1E2E', '#1E293B', '#23331E'];
+const todayISO = () => new Date().toISOString().split('T')[0];
+const shiftISO = (d: number) => { const x = new Date(); x.setDate(x.getDate() + d); return x.toISOString().split('T')[0]; };
 
 export function AddNoteModal({ visible, onClose, note, clientSuggestions = [], defaultClient }: AddNoteModalProps) {
   const isEdit = !!note;
@@ -33,6 +35,7 @@ export function AddNoteModal({ visible, onClose, note, clientSuggestions = [], d
   const [pinned, setPinned] = useState(false);
   const [client, setClient] = useState('');
   const [archived, setArchived] = useState(false);
+  const [remindAt, setRemindAt] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -44,6 +47,7 @@ export function AddNoteModal({ visible, onClose, note, clientSuggestions = [], d
     setPinned(note?.pinned ?? false);
     setClient(note?.client ?? defaultClient ?? '');
     setArchived(note?.archived ?? false);
+    setRemindAt(note?.remind_at ?? '');
     setError(null);
     setSaving(false);
   }, [visible, note, defaultClient]);
@@ -51,9 +55,10 @@ export function AddNoteModal({ visible, onClose, note, clientSuggestions = [], d
   const submit = async () => {
     setError(null);
     if (!title.trim() && !content.trim()) return setError('Escribe un título o algo de contenido.');
+    if (remindAt && !/^\d{4}-\d{2}-\d{2}$/.test(remindAt.trim())) return setError('El recordatorio debe ser AAAA-MM-DD (o vacío).');
     setSaving(true);
     try {
-      const payload = { title: title.trim() || 'Sin título', content: content.trim(), color, pinned, client: client.trim(), archived };
+      const payload = { title: title.trim() || 'Sin título', content: content.trim(), color, pinned, client: client.trim(), archived, remind_at: remindAt.trim() || null };
       if (isEdit && note) await updateNote.mutateAsync({ id: note.id, ...payload });
       else await createNote.mutateAsync(payload);
       onClose();
@@ -126,6 +131,19 @@ export function AddNoteModal({ visible, onClose, note, clientSuggestions = [], d
                   ))}
                 </View>
               )}
+
+              <Text style={styles.label}>⏰ Recordatorio (opcional)</Text>
+              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                {[{ label: 'Hoy', v: todayISO() }, { label: 'Mañana', v: shiftISO(1) }, { label: '+7 días', v: shiftISO(7) }, { label: 'Quitar', v: '' }].map((q) => {
+                  const active = remindAt === q.v;
+                  return (
+                    <Pressable key={q.label} onPress={() => setRemindAt(q.v)} style={{ paddingHorizontal: 11, paddingVertical: 7, borderRadius: 99, backgroundColor: active ? COLORS.primary : COLORS.bg, borderWidth: 1, borderColor: active ? COLORS.primary : COLORS.border }}>
+                      <Text style={{ color: active ? '#fff' : COLORS.textDim, fontSize: 11, fontWeight: '600' }}>{q.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <TextInput value={remindAt} onChangeText={setRemindAt} placeholder="AAAA-MM-DD" placeholderTextColor={COLORS.subtle} autoCapitalize="none" style={[{ backgroundColor: COLORS.bg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11, color: COLORS.text, fontSize: 14, marginBottom: 16 }, webNoOutline]} />
 
               {isEdit && (
                 <Pressable onPress={() => setArchived((a) => !a)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.bg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 16 }}>

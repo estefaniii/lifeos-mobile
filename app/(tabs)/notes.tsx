@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, RefreshControl, TextInput, Platform 
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { AddNoteModal } from '@/components/modals/add-note-modal';
+import { FadeInView } from '@/components/fade-in-view';
 import { useNotes } from '@/hooks/use-notes';
 import { useClients } from '@/hooks/use-clients';
 import type { Note } from '@/lib/supabase';
@@ -11,6 +12,7 @@ const COLORS = {
   bg: '#09090B', card: '#0F0F12', surface: '#18181B', border: '#27272A',
   text: '#FAFAFA', textDim: '#E4E4E7', muted: '#A1A1AA', subtle: '#52525B', primary: '#14B8A6',
 };
+const todayISO = new Date().toISOString().split('T')[0];
 
 export default function NotesScreen() {
   const router = useRouter();
@@ -97,7 +99,7 @@ export default function NotesScreen() {
               )}
             </View>
           ) : (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+            <FadeInView style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
               {filtered.map((n) => (
                 <View key={n.id} style={{ width: '50%', padding: 6 }}>
                   <Pressable
@@ -121,15 +123,22 @@ export default function NotesScreen() {
                         {n.content}
                       </Text>
                     )}
-                    {!!n.client && (
-                      <View style={{ alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, backgroundColor: 'rgba(20,184,166,0.15)' }}>
-                        <Text style={{ color: COLORS.primary, fontSize: 10, fontWeight: '700' }}>{n.client}</Text>
-                      </View>
-                    )}
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                      {!!n.remind_at && (
+                        <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, backgroundColor: n.remind_at <= todayISO ? 'rgba(245,158,11,0.18)' : 'rgba(161,161,170,0.15)' }}>
+                          <Text style={{ color: n.remind_at <= todayISO ? '#F59E0B' : COLORS.muted, fontSize: 10, fontWeight: '700' }}>⏰ {n.remind_at.slice(5)}</Text>
+                        </View>
+                      )}
+                      {!!n.client && (
+                        <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, backgroundColor: 'rgba(20,184,166,0.15)' }}>
+                          <Text style={{ color: COLORS.primary, fontSize: 10, fontWeight: '700' }}>{n.client}</Text>
+                        </View>
+                      )}
+                    </View>
                   </Pressable>
                 </View>
               ))}
-            </View>
+            </FadeInView>
           )}
         </ScrollView>
 
