@@ -178,6 +178,8 @@ export interface Note {
   content?: string;
   color?: string;
   pinned: boolean;
+  client?: string;
+  archived?: boolean;
   created_at?: string;
   updated_at?: string;
 }

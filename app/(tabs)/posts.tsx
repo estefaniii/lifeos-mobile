@@ -48,6 +48,12 @@ export function PostsView({ embedded = false }: { embedded?: boolean }) {
   const [editing, setEditing] = useState<Post | null>(null);
   const [clientFilter, setClientFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<PostStatus | null>(null);
+  const [view, setView] = useState<'lista' | 'mes'>('lista');
+  const [monthAnchor, setMonthAnchor] = useState(() => {
+    const d = new Date();
+    return { y: d.getFullYear(), m: d.getMonth() };
+  });
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   const all = posts ?? [];
 
@@ -121,12 +127,21 @@ export function PostsView({ embedded = false }: { embedded?: boolean }) {
           </ScrollView>
         </View>
 
-        {/* Lista */}
+        {/* Toggle Lista / Mes */}
+        <View style={{ flexDirection: 'row', gap: 6, marginHorizontal: 20, marginTop: 12, backgroundColor: COLORS.surface, borderRadius: 12, padding: 4, borderWidth: 1, borderColor: COLORS.border }}>
+          {(['lista', 'mes'] as const).map((v) => (
+            <Pressable key={v} onPress={() => setView(v)} style={{ flex: 1, paddingVertical: 7, borderRadius: 9, alignItems: 'center', backgroundColor: view === v ? COLORS.primary : 'transparent' }}>
+              <Text style={{ color: view === v ? '#fff' : COLORS.muted, fontSize: 12, fontWeight: '700' }}>{v === 'lista' ? '☰ Lista' : '🗓️ Mes'}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Contenido */}
         {isLoading ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <ActivityIndicator color={COLORS.primary} />
           </View>
-        ) : (
+        ) : view === 'lista' ? (
           <ScrollView
             style={{ flex: 1, marginTop: 12 }}
             contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 140 }}
@@ -158,6 +173,15 @@ export function PostsView({ embedded = false }: { embedded?: boolean }) {
               ))
             )}
           </ScrollView>
+        ) : (
+          <MonthCalendar
+            posts={filtered}
+            anchor={monthAnchor}
+            setAnchor={setMonthAnchor}
+            selectedDay={selectedDay}
+            onSelectDay={setSelectedDay}
+            onEditPost={openEdit}
+          />
         )}
 
         {/* FAB */}
@@ -318,5 +342,98 @@ function EmptyState({ onAdd, hasPosts }: { onAdd: () => void; hasPosts: boolean 
         </Pressable>
       )}
     </View>
+  );
+}
+
+const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+function MonthCalendar({ posts, anchor, setAnchor, selectedDay, onSelectDay, onEditPost }: {
+  posts: Post[];
+  anchor: { y: number; m: number };
+  setAnchor: (a: { y: number; m: number }) => void;
+  selectedDay: string | null;
+  onSelectDay: (d: string | null) => void;
+  onEditPost: (p: Post) => void;
+}) {
+  const { y, m } = anchor;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const iso = (d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const firstOffset = (new Date(y, m, 1).getDay() + 6) % 7; // semana inicia lunes
+  const todayISO = new Date().toISOString().split('T')[0];
+
+  const byDate = new Map<string, Post[]>();
+  const monthPrefix = `${y}-${pad(m + 1)}`;
+  for (const p of posts) {
+    if (p.publish_date.startsWith(monthPrefix)) {
+      if (!byDate.has(p.publish_date)) byDate.set(p.publish_date, []);
+      byDate.get(p.publish_date)!.push(p);
+    }
+  }
+
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const prev = () => { onSelectDay(null); setAnchor(m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 }); };
+  const next = () => { onSelectDay(null); setAnchor(m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 }); };
+  const dayPosts = selectedDay ? (byDate.get(selectedDay) ?? []) : [];
+
+  return (
+    <ScrollView style={{ flex: 1, marginTop: 12 }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 160 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingHorizontal: 4 }}>
+        <Pressable onPress={prev} hitSlop={10} style={{ padding: 6 }}><Text style={{ color: COLORS.primary, fontSize: 22, fontWeight: '800' }}>‹</Text></Pressable>
+        <Text style={{ color: COLORS.text, fontSize: 16, fontWeight: '800' }}>{MONTH_NAMES[m]} {y}</Text>
+        <Pressable onPress={next} hitSlop={10} style={{ padding: 6 }}><Text style={{ color: COLORS.primary, fontSize: 22, fontWeight: '800' }}>›</Text></Pressable>
+      </View>
+
+      <View style={{ flexDirection: 'row', marginBottom: 6 }}>
+        {WEEKDAYS.map((w, i) => (
+          <View key={i} style={{ flex: 1, alignItems: 'center' }}>
+            <Text style={{ color: COLORS.subtle, fontSize: 11, fontWeight: '700' }}>{w}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+        {cells.map((d, i) => {
+          if (d === null) return <View key={`e${i}`} style={{ width: '14.2857%', aspectRatio: 1 }} />;
+          const dISO = iso(d);
+          const dayItems = byDate.get(dISO) ?? [];
+          const isToday = dISO === todayISO;
+          const isSel = dISO === selectedDay;
+          return (
+            <Pressable key={dISO} onPress={() => onSelectDay(isSel ? null : dISO)} style={{ width: '14.2857%', aspectRatio: 1, padding: 3 }}>
+              <View style={{ flex: 1, borderRadius: 10, backgroundColor: isSel ? COLORS.primary : (dayItems.length ? COLORS.card : 'transparent'), borderWidth: isToday && !isSel ? 1 : 0, borderColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: isSel ? '#fff' : (isToday ? COLORS.primary : COLORS.textDim), fontSize: 13, fontWeight: isToday || isSel ? '800' : '500' }}>{d}</Text>
+                {dayItems.length > 0 && (
+                  <View style={{ flexDirection: 'row', gap: 2, marginTop: 2 }}>
+                    {dayItems.slice(0, 3).map((p, idx) => (
+                      <View key={idx} style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: isSel ? '#fff' : platformMeta(p.platform).color }} />
+                    ))}
+                  </View>
+                )}
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <View style={{ marginTop: 18 }}>
+        {selectedDay ? (
+          dayPosts.length ? (
+            <>
+              <Text style={{ color: COLORS.muted, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>{formatDateHeader(selectedDay)}</Text>
+              {dayPosts.map((p) => <PostCard key={p.id} post={p} onPress={() => onEditPost(p)} />)}
+            </>
+          ) : (
+            <Text style={{ color: COLORS.subtle, fontSize: 13, textAlign: 'center', marginTop: 10 }}>Sin publicaciones ese día.</Text>
+          )
+        ) : (
+          <Text style={{ color: COLORS.subtle, fontSize: 13, textAlign: 'center', marginTop: 10 }}>Toca un día para ver sus publicaciones.</Text>
+        )}
+      </View>
+    </ScrollView>
   );
 }

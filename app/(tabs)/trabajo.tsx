@@ -6,11 +6,13 @@ import { PostsView } from '@/app/(tabs)/posts';
 import { AddTaskModal } from '@/components/modals/add-task-modal';
 import { AddClientModal } from '@/components/modals/add-client-modal';
 import { AddPostModal } from '@/components/modals/add-post-modal';
+import { AddNoteModal } from '@/components/modals/add-note-modal';
 import { useTasks, useToggleTask } from '@/hooks/use-tasks';
 import { usePosts } from '@/hooks/use-posts';
 import { useClients } from '@/hooks/use-clients';
+import { useNotes } from '@/hooks/use-notes';
 import { platformMeta, statusMeta } from '@/constants/posts';
-import type { Task, Post, Client } from '@/lib/supabase';
+import type { Task, Post, Client, Note } from '@/lib/supabase';
 
 const COLORS = {
   bg: '#09090B', card: '#0F0F12', surface: '#18181B', border: '#27272A',
@@ -37,6 +39,7 @@ export default function TrabajoScreen() {
   const { data: tasks = [], refetch: refetchTasks, isRefetching } = useTasks();
   const { data: posts = [] } = usePosts();
   const { data: clients = [] } = useClients();
+  const { data: notes = [] } = useNotes();
   const toggleTask = useToggleTask();
 
   const [taskModal, setTaskModal] = useState(false);
@@ -46,6 +49,7 @@ export default function TrabajoScreen() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [clientDefaultName, setClientDefaultName] = useState<string | undefined>(undefined);
   const [postModal, setPostModal] = useState(false);
+  const [noteModal, setNoteModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
 
   const clientNames = useMemo(() => {
@@ -88,7 +92,7 @@ export default function TrabajoScreen() {
         {segment === 'hoy' && <WeekView tasks={tasks} posts={posts} onToggle={toggleTask} onEditTask={openEditTask} onEditPost={() => setSegment('calendario')} refetch={refetchTasks} isRefetching={isRefetching} onAdd={() => openNewTask()} />}
         {segment === 'clientes' && (
           selectedClient
-            ? <ClientDetail name={selectedClient} clients={clients} tasks={tasks} posts={posts} onBack={() => setSelectedClient(null)} onToggle={toggleTask} onEditTask={openEditTask} onAddTask={() => openNewTask(selectedClient)} onAddPost={() => setPostModal(true)} onEditClient={(c) => { const real = c && c.id; setEditingClient(real ? c : null); setClientDefaultName(real ? undefined : c?.name); setClientModal(true); }} />
+            ? <ClientDetail name={selectedClient} clients={clients} tasks={tasks} posts={posts} notes={notes} onBack={() => setSelectedClient(null)} onToggle={toggleTask} onEditTask={openEditTask} onAddTask={() => openNewTask(selectedClient)} onAddPost={() => setPostModal(true)} onAddNote={() => setNoteModal(true)} onEditClient={(c) => { const real = c && c.id; setEditingClient(real ? c : null); setClientDefaultName(real ? undefined : c?.name); setClientModal(true); }} />
             : <ClientsList names={clientNames} clients={clients} tasks={tasks} posts={posts} onOpen={setSelectedClient} onAdd={() => { setEditingClient(null); setClientDefaultName(undefined); setClientModal(true); }} />
         )}
         {segment === 'calendario' && <View style={{ flex: 1, marginTop: 8 }}><PostsView embedded /></View>}
@@ -107,6 +111,7 @@ export default function TrabajoScreen() {
       <AddTaskModal visible={taskModal} onClose={() => setTaskModal(false)} task={editingTask} defaultClient={taskDefaultClient} clientSuggestions={clientNames} />
       <AddClientModal visible={clientModal} onClose={() => setClientModal(false)} client={editingClient} defaultName={clientDefaultName} />
       <AddPostModal visible={postModal} onClose={() => setPostModal(false)} clientSuggestions={clientNames} />
+      <AddNoteModal visible={noteModal} onClose={() => setNoteModal(false)} defaultClient={selectedClient ?? undefined} clientSuggestions={clientNames} />
     </ScreenContainer>
   );
 }
@@ -231,10 +236,11 @@ function ClientsList({ names, clients, tasks, posts, onOpen, onAdd }: any) {
   );
 }
 
-function ClientDetail({ name, clients, tasks, posts, onBack, onToggle, onEditTask, onAddTask, onAddPost, onEditClient }: any) {
+function ClientDetail({ name, clients, tasks, posts, notes, onBack, onToggle, onEditTask, onAddTask, onAddPost, onAddNote, onEditClient }: any) {
   const rec: Client | undefined = clients.find((c: Client) => c.name === name);
   const clientTasks = tasks.filter((t: Task) => t.client === name);
   const clientPosts = posts.filter((p: Post) => p.client === name);
+  const clientNotes = (notes ?? []).filter((n: Note) => n.client === name && !n.archived);
   return (
     <ScrollView style={{ flex: 1, marginTop: 12 }} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 140 }}>
       <Pressable onPress={onBack} style={{ marginBottom: 12 }}><Text style={{ color: COLORS.primary, fontSize: 14, fontWeight: '700' }}>‹ Clientes</Text></Pressable>
@@ -264,6 +270,17 @@ function ClientDetail({ name, clients, tasks, posts, onBack, onToggle, onEditTas
       </View>
       {clientPosts.length ? clientPosts.map((p: Post) => <PostRow key={p.id} post={p} onPress={() => {}} />)
         : <Text style={{ color: COLORS.subtle, fontSize: 13 }}>Sin publicaciones.</Text>}
+
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, marginTop: 18 }}>
+        <Text style={sectionStyle}>Notas</Text>
+        <Pressable onPress={onAddNote}><Text style={{ color: COLORS.primary, fontSize: 13, fontWeight: '700' }}>+ Nota</Text></Pressable>
+      </View>
+      {clientNotes.length ? clientNotes.map((n: Note) => (
+        <View key={n.id} style={{ backgroundColor: n.color || COLORS.card, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, padding: 14, marginBottom: 8 }}>
+          <Text style={{ color: COLORS.text, fontSize: 14, fontWeight: '700' }} numberOfLines={1}>{n.title}</Text>
+          {!!n.content && <Text style={{ color: COLORS.muted, fontSize: 12, marginTop: 3 }} numberOfLines={3}>{n.content}</Text>}
+        </View>
+      )) : <Text style={{ color: COLORS.subtle, fontSize: 13 }}>Sin notas.</Text>}
     </ScrollView>
   );
 }

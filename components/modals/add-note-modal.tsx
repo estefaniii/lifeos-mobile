@@ -10,6 +10,8 @@ interface AddNoteModalProps {
   visible: boolean;
   onClose: () => void;
   note?: Note | null;
+  clientSuggestions?: string[];
+  defaultClient?: string;
 }
 
 const COLORS = {
@@ -19,7 +21,7 @@ const COLORS = {
 
 const SWATCHES = ['#18181B', '#1E3A3A', '#3B2E1E', '#2E1E3B', '#3B1E2E', '#1E293B', '#23331E'];
 
-export function AddNoteModal({ visible, onClose, note }: AddNoteModalProps) {
+export function AddNoteModal({ visible, onClose, note, clientSuggestions = [], defaultClient }: AddNoteModalProps) {
   const isEdit = !!note;
   const createNote = useCreateNote();
   const updateNote = useUpdateNote();
@@ -29,6 +31,8 @@ export function AddNoteModal({ visible, onClose, note }: AddNoteModalProps) {
   const [content, setContent] = useState('');
   const [color, setColor] = useState(SWATCHES[0]);
   const [pinned, setPinned] = useState(false);
+  const [client, setClient] = useState('');
+  const [archived, setArchived] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -38,16 +42,18 @@ export function AddNoteModal({ visible, onClose, note }: AddNoteModalProps) {
     setContent(note?.content ?? '');
     setColor(note?.color ?? SWATCHES[0]);
     setPinned(note?.pinned ?? false);
+    setClient(note?.client ?? defaultClient ?? '');
+    setArchived(note?.archived ?? false);
     setError(null);
     setSaving(false);
-  }, [visible, note]);
+  }, [visible, note, defaultClient]);
 
   const submit = async () => {
     setError(null);
     if (!title.trim() && !content.trim()) return setError('Escribe un título o algo de contenido.');
     setSaving(true);
     try {
-      const payload = { title: title.trim() || 'Sin título', content: content.trim(), color, pinned };
+      const payload = { title: title.trim() || 'Sin título', content: content.trim(), color, pinned, client: client.trim(), archived };
       if (isEdit && note) await updateNote.mutateAsync({ id: note.id, ...payload });
       else await createNote.mutateAsync(payload);
       onClose();
@@ -64,6 +70,7 @@ export function AddNoteModal({ visible, onClose, note }: AddNoteModalProps) {
   };
 
   const webNoOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
+  const uniqueClients = Array.from(new Set(clientSuggestions.filter(Boolean))).slice(0, 8);
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -101,6 +108,33 @@ export function AddNoteModal({ visible, onClose, note }: AddNoteModalProps) {
                   <Pressable key={c} onPress={() => setColor(c)} style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: c, borderWidth: color === c ? 2 : 1, borderColor: color === c ? COLORS.primary : COLORS.border }} />
                 ))}
               </View>
+
+              <Text style={styles.label}>Cliente (opcional)</Text>
+              <TextInput
+                value={client}
+                onChangeText={setClient}
+                placeholder="Vincular a un cliente"
+                placeholderTextColor={COLORS.subtle}
+                style={[{ backgroundColor: COLORS.bg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11, color: COLORS.text, fontSize: 14, marginBottom: uniqueClients.length ? 8 : 16 }, webNoOutline]}
+              />
+              {uniqueClients.length > 0 && (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+                  {uniqueClients.map((c) => (
+                    <Pressable key={c} onPress={() => setClient(c === client ? '' : c)} style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 99, backgroundColor: c === client ? COLORS.primary : COLORS.bg, borderWidth: 1, borderColor: c === client ? COLORS.primary : COLORS.border }}>
+                      <Text style={{ color: c === client ? '#fff' : COLORS.muted, fontSize: 11, fontWeight: '600' }}>{c}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+
+              {isEdit && (
+                <Pressable onPress={() => setArchived((a) => !a)} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.bg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 16 }}>
+                  <Text style={{ color: COLORS.textDim, fontSize: 14, fontWeight: '600' }}>🗄️ Archivada</Text>
+                  <View style={{ width: 44, height: 26, borderRadius: 13, backgroundColor: archived ? COLORS.primary : COLORS.border, justifyContent: 'center', paddingHorizontal: 3 }}>
+                    <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff', alignSelf: archived ? 'flex-end' : 'flex-start' }} />
+                  </View>
+                </Pressable>
+              )}
 
               {error && <View style={styles.alert}><Text style={{ color: '#FCA5A5', fontSize: 13, textAlign: 'center' }}>{error}</Text></View>}
 

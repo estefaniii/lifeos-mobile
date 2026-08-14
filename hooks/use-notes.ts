@@ -22,7 +22,7 @@ export function useNotes() {
   });
 }
 
-export type NewNote = { title: string; content?: string; color?: string; pinned?: boolean };
+export type NewNote = { title: string; content?: string; color?: string; pinned?: boolean; client?: string; archived?: boolean };
 
 export function useCreateNote() {
   const queryClient = useQueryClient();
@@ -39,6 +39,7 @@ export function useCreateNote() {
           content: note.content || '',
           color: note.color || '#18181B',
           pinned: note.pinned ?? false,
+          client: note.client || '',
         },
       ]);
       if (error) throw error;

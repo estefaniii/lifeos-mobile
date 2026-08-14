@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { AddNoteModal } from '@/components/modals/add-note-modal';
 import { useNotes } from '@/hooks/use-notes';
+import { useClients } from '@/hooks/use-clients';
 import type { Note } from '@/lib/supabase';
 
 const COLORS = {
@@ -14,17 +15,29 @@ const COLORS = {
 export default function NotesScreen() {
   const router = useRouter();
   const { data: notes = [], refetch, isRefetching } = useNotes();
+  const { data: clients = [] } = useClients();
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<Note | null>(null);
   const [q, setQ] = useState('');
+  const [clientFilter, setClientFilter] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
+
+  const clientNames = useMemo(() => {
+    const s = new Set<string>();
+    clients.forEach((c) => c.name && s.add(c.name));
+    notes.forEach((n) => n.client && s.add(n.client));
+    return Array.from(s).sort();
+  }, [clients, notes]);
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return notes;
-    return notes.filter(
-      (n) => n.title.toLowerCase().includes(term) || (n.content ?? '').toLowerCase().includes(term)
-    );
-  }, [notes, q]);
+    return notes.filter((n) => {
+      if (showArchived ? !n.archived : n.archived) return false;
+      if (clientFilter && n.client !== clientFilter) return false;
+      if (term && !n.title.toLowerCase().includes(term) && !(n.content ?? '').toLowerCase().includes(term)) return false;
+      return true;
+    });
+  }, [notes, q, clientFilter, showArchived]);
 
   const openNew = () => { setEditing(null); setModal(true); };
   const openEdit = (n: Note) => { setEditing(n); setModal(true); };
@@ -50,6 +63,17 @@ export default function NotesScreen() {
             placeholderTextColor={COLORS.subtle}
             style={[{ backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11, color: COLORS.text, fontSize: 14 }, webNoOutline]}
           />
+        </View>
+
+        {/* Filtros */}
+        <View style={{ paddingLeft: 20, paddingTop: 10 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20, gap: 8, alignItems: 'center' }}>
+            <Chip label="Todas" active={!clientFilter && !showArchived} onPress={() => { setClientFilter(null); setShowArchived(false); }} />
+            {clientNames.map((c) => (
+              <Chip key={c} label={c} active={clientFilter === c && !showArchived} onPress={() => { setShowArchived(false); setClientFilter(clientFilter === c ? null : c); }} />
+            ))}
+            <Chip label="🗄️ Archivadas" active={showArchived} onPress={() => { setClientFilter(null); setShowArchived((s) => !s); }} />
+          </ScrollView>
         </View>
 
         <ScrollView
@@ -97,6 +121,11 @@ export default function NotesScreen() {
                         {n.content}
                       </Text>
                     )}
+                    {!!n.client && (
+                      <View style={{ alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, backgroundColor: 'rgba(20,184,166,0.15)' }}>
+                        <Text style={{ color: COLORS.primary, fontSize: 10, fontWeight: '700' }}>{n.client}</Text>
+                      </View>
+                    )}
                   </Pressable>
                 </View>
               ))}
@@ -117,7 +146,18 @@ export default function NotesScreen() {
         </Pressable>
       </View>
 
-      <AddNoteModal visible={modal} onClose={() => setModal(false)} note={editing} />
+      <AddNoteModal visible={modal} onClose={() => setModal(false)} note={editing} clientSuggestions={clientNames} defaultClient={clientFilter ?? undefined} />
     </ScreenContainer>
+  );
+}
+
+function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 99, backgroundColor: active ? COLORS.primary : COLORS.surface, borderWidth: 1, borderColor: active ? COLORS.primary : COLORS.border }}
+    >
+      <Text style={{ color: active ? '#fff' : COLORS.textDim, fontSize: 12, fontWeight: '600' }}>{label}</Text>
+    </Pressable>
   );
 }
