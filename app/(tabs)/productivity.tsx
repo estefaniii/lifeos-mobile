@@ -9,6 +9,7 @@ import { useProductivityByProject, useTodayProductivity, useProjects, useDeleteP
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
+import { useRouter } from 'expo-router';
 
 const TIMER_PRESETS = [
   { label: '25 min', minutes: 25 },
@@ -19,6 +20,7 @@ const TIMER_PRESETS = [
 
 export default function ProductivityScreen() {
   const colors = useColors();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -154,8 +156,11 @@ export default function ProductivityScreen() {
       >
         {/* Header */}
         <View style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16 }}>
-          <Text style={{ color: '#FAFAFA', fontSize: 28, fontWeight: '800' }}>Productividad</Text>
-          <Text style={{ color: '#A1A1AA', fontSize: 13, marginTop: 4 }}>Focus timer y seguimiento de proyectos</Text>
+          <Pressable onPress={() => router.push('/trabajo')} style={{ marginBottom: 8 }}>
+            <Text style={{ color: colors.primary, fontSize: 14, fontWeight: '700' }}>‹ Trabajo</Text>
+          </Pressable>
+          <Text style={{ color: '#FAFAFA', fontSize: 28, fontWeight: '800' }}>Enfoque</Text>
+          <Text style={{ color: '#A1A1AA', fontSize: 13, marginTop: 4 }}>Pomodoro y seguimiento de proyectos</Text>
         </View>
 
         {/* Pomodoro Timer */}

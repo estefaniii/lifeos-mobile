@@ -10,6 +10,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
 import { useHealthKitSync } from '@/hooks/use-healthkit-sync';
+import { useRouter } from 'expo-router';
 
 // ─── Activity Modal ───────────────────────────────────────────────────────────
 
@@ -557,6 +558,7 @@ const WEEKLY_PLAN = [
 
 export default function HealthScreen() {
   const colors = useColors();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -614,14 +616,24 @@ export default function HealthScreen() {
         {/* Header */}
         <View className="px-6 pt-6 pb-4 flex-row justify-between items-center">
           <View>
-            <Text className="text-3xl font-bold text-foreground" style={{ color: '#FAFAFA' }}>Salud</Text>
-            <Text className="text-sm text-muted mt-1" style={{ color: '#A1A1AA' }}>Tu bienestar en tiempo real</Text>
+            <Text className="text-3xl font-bold text-foreground" style={{ color: '#FAFAFA' }}>Bienestar</Text>
+            <Text className="text-sm text-muted mt-1" style={{ color: '#A1A1AA' }}>Cuerpo y mente en un solo lugar</Text>
           </View>
           <Pressable
             onPress={() => setShowAddModal(true)}
             className="w-12 h-12 rounded-full bg-primary items-center justify-center shadow-lg shadow-primary/30 active:scale-95"
           >
             <Text className="text-background text-3xl font-bold" style={{ marginTop: -2 }}>+</Text>
+          </Pressable>
+        </View>
+
+        {/* Segmento Salud / Mente */}
+        <View style={{ flexDirection: 'row', gap: 6, marginHorizontal: 24, marginBottom: 12, backgroundColor: '#18181B', borderRadius: 14, padding: 4, borderWidth: 1, borderColor: '#27272A' }}>
+          <View style={{ flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center', backgroundColor: colors.primary }}>
+            <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>💪 Salud</Text>
+          </View>
+          <Pressable onPress={() => router.push('/mind')} style={{ flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center' }}>
+            <Text style={{ color: '#A1A1AA', fontSize: 13, fontWeight: '700' }}>🧠 Mente</Text>
           </Pressable>
         </View>
 

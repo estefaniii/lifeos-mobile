@@ -15,6 +15,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
+import { useRouter } from 'expo-router';
 
 /**
  * Mind & Assumption Screen
@@ -28,6 +29,7 @@ import { supabase } from '@/lib/supabase';
  */
 export default function MindScreen() {
   const colors = useColors();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -123,10 +125,10 @@ export default function MindScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Modern Header */}
-        <View className="px-8 pt-10 pb-6">
+        <View className="px-8 pt-10 pb-4">
           <View className="flex-row justify-between items-end">
             <View>
-              <Text className="text-4xl font-black text-foreground tracking-tight" style={{ color: '#FAFAFA' }}>Mente</Text>
+              <Text className="text-4xl font-black text-foreground tracking-tight" style={{ color: '#FAFAFA' }}>Bienestar</Text>
               <Text className="text-lg text-primary font-medium">Asunción Lograda</Text>
             </View>
             <Pressable
@@ -135,6 +137,16 @@ export default function MindScreen() {
             >
               <IconSymbol name="plus" size={28} color="white" />
             </Pressable>
+          </View>
+        </View>
+
+        {/* Segmento Salud / Mente */}
+        <View style={{ flexDirection: 'row', gap: 6, marginHorizontal: 24, marginBottom: 16, backgroundColor: '#18181B', borderRadius: 14, padding: 4, borderWidth: 1, borderColor: '#27272A' }}>
+          <Pressable onPress={() => router.push('/health')} style={{ flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center' }}>
+            <Text style={{ color: '#A1A1AA', fontSize: 13, fontWeight: '700' }}>💪 Salud</Text>
+          </Pressable>
+          <View style={{ flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center', backgroundColor: colors.primary }}>
+            <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>🧠 Mente</Text>
           </View>
         </View>
 

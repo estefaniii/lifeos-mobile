@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native';
+import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { PostsView } from '@/app/(tabs)/posts';
 import { AddTaskModal } from '@/components/modals/add-task-modal';
@@ -31,6 +32,7 @@ function dayLabel(iso: string) {
 type Segment = 'hoy' | 'clientes' | 'calendario';
 
 export default function TrabajoScreen() {
+  const router = useRouter();
   const [segment, setSegment] = useState<Segment>('hoy');
   const { data: tasks = [], refetch: refetchTasks, isRefetching } = useTasks();
   const { data: posts = [] } = usePosts();
@@ -60,8 +62,15 @@ export default function TrabajoScreen() {
   return (
     <ScreenContainer containerClassName="bg-background">
       <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
-        <View style={{ paddingHorizontal: 20, paddingTop: 8 }}>
+        <View style={{ paddingHorizontal: 20, paddingTop: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={{ color: COLORS.text, fontSize: 28, fontWeight: '800' }}>Trabajo</Text>
+          <Pressable
+            onPress={() => router.push('/productivity')}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 99, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border }}
+          >
+            <Text style={{ fontSize: 13 }}>⏱️</Text>
+            <Text style={{ color: COLORS.textDim, fontSize: 12, fontWeight: '700' }}>Enfoque</Text>
+          </Pressable>
         </View>
 
         {/* Segmented control */}
@@ -82,10 +91,10 @@ export default function TrabajoScreen() {
             ? <ClientDetail name={selectedClient} clients={clients} tasks={tasks} posts={posts} onBack={() => setSelectedClient(null)} onToggle={toggleTask} onEditTask={openEditTask} onAddTask={() => openNewTask(selectedClient)} onAddPost={() => setPostModal(true)} onEditClient={(c) => { const real = c && c.id; setEditingClient(real ? c : null); setClientDefaultName(real ? undefined : c?.name); setClientModal(true); }} />
             : <ClientsList names={clientNames} clients={clients} tasks={tasks} posts={posts} onOpen={setSelectedClient} onAdd={() => { setEditingClient(null); setClientDefaultName(undefined); setClientModal(true); }} />
         )}
-        {segment === 'calendario' && <View style={{ flex: 1, marginTop: 8 }}><PostsView /></View>}
+        {segment === 'calendario' && <View style={{ flex: 1, marginTop: 8 }}><PostsView embedded /></View>}
 
         {/* FAB (no en calendario, que tiene el suyo) */}
-        {segment !== 'calendario' && (
+        {(segment === 'hoy' || (segment === 'clientes' && !selectedClient)) && (
           <Pressable
             onPress={() => segment === 'clientes' && !selectedClient ? (setEditingClient(null), setClientDefaultName(undefined), setClientModal(true)) : openNewTask(selectedClient ?? undefined)}
             style={({ pressed }) => ({ position: 'absolute', right: 20, bottom: 24, width: 60, height: 60, borderRadius: 30, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 8, opacity: pressed ? 0.9 : 1 })}

@@ -42,7 +42,7 @@ function formatDateHeader(iso: string): string {
   return fmt.charAt(0).toUpperCase() + fmt.slice(1);
 }
 
-export function PostsView() {
+export function PostsView({ embedded = false }: { embedded?: boolean }) {
   const { data: posts, isLoading, refetch, isRefetching } = usePosts();
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState<Post | null>(null);
@@ -87,13 +87,15 @@ export function PostsView() {
   return (
     <>
       <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
-        {/* Header */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 }}>
-          <Text style={{ color: COLORS.text, fontSize: 28, fontWeight: '800' }}>Publicaciones</Text>
-          <Text style={{ color: COLORS.muted, fontSize: 13, marginTop: 2 }}>
-            Calendario de contenido de tus clientes
-          </Text>
-        </View>
+        {/* Header (se oculta cuando va embebido dentro del hub de Trabajo) */}
+        {!embedded && (
+          <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 }}>
+            <Text style={{ color: COLORS.text, fontSize: 28, fontWeight: '800' }}>Publicaciones</Text>
+            <Text style={{ color: COLORS.muted, fontSize: 13, marginTop: 2 }}>
+              Calendario de contenido de tus clientes
+            </Text>
+          </View>
+        )}
 
         {/* Filtros */}
         <View style={{ paddingLeft: 20, paddingTop: 10 }}>
