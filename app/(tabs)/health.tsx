@@ -544,15 +544,7 @@ function SleepModal({ visible, onClose, userId, currentData, onSave }: {
 
 // ─── Meal Plan ────────────────────────────────────────────────────────────────
 
-const WEEKLY_PLAN = [
-  { day: 'Lunes', meals: ['🥣 Avena + proteína + fruta', '🥗 Ensalada + pollo + arroz', '🍎 Frutos secos', '🐟 Salmón + verduras al vapor'] },
-  { day: 'Martes', meals: ['🍳 Huevos + aguacate + tostada', '🌯 Wrap de atún + vegetales', '🍌 Plátano + mantequilla de maní', '🍗 Pollo + quinoa + brócoli'] },
-  { day: 'Miércoles', meals: ['🥤 Smoothie proteico + nueces', '🍲 Lentejas + arroz + zanahoria', '🧃 Jugo verde + almendras', '🥩 Carne magra + patata + espinaca'] },
-  { day: 'Jueves', meals: ['🥣 Yogur griego + granola + miel', '🍱 Arroz integral + pavo + pepino', '🍇 Frutas variadas', '🐠 Tilapia + vegetales asados'] },
-  { day: 'Viernes', meals: ['🍳 Tortilla de claras + aguacate', '🥙 Ensalada mediterránea + pollo', '🥜 Mix de nueces', '🍗 Pollo al horno + ensalada verde'] },
-  { day: 'Sábado', meals: ['🥞 Pancakes proteicos + miel', '🌮 Bowl de quinoa + vegetales', '🍓 Fresas + yogur', '🥩 Chuleta + arroz + espárragos'] },
-  { day: 'Domingo', meals: ['🍌 Batido verde + tostada proteica', '🍜 Sopa de pollo con verduras', '🍎 Manzana + queso cottage', '🐟 Atún + pasta integral + pesto'] },
-];
+
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
@@ -603,10 +595,6 @@ export default function HealthScreen() {
 
   const glassCount = Math.floor((todayMetrics?.water_ml || 0) / 250);
 
-  const today = new Date().getDay(); // 0=Sunday
-  const dayIndex = today === 0 ? 6 : today - 1;
-  const todayPlan = WEEKLY_PLAN[dayIndex];
-
   return (
     <ScreenContainer className="p-0">
       <ScrollView
@@ -616,24 +604,14 @@ export default function HealthScreen() {
         {/* Header */}
         <View className="px-6 pt-6 pb-4 flex-row justify-between items-center">
           <View>
-            <Text className="text-3xl font-bold text-foreground" style={{ color: '#FAFAFA' }}>Bienestar</Text>
-            <Text className="text-sm text-muted mt-1" style={{ color: '#A1A1AA' }}>Cuerpo y mente en un solo lugar</Text>
+            <Text className="text-3xl font-bold text-foreground" style={{ color: '#FAFAFA' }}>Salud</Text>
+            <Text className="text-sm text-muted mt-1" style={{ color: '#A1A1AA' }}>Sueño, agua, pasos y lo que comes</Text>
           </View>
           <Pressable
             onPress={() => setShowAddModal(true)}
             className="w-12 h-12 rounded-full bg-primary items-center justify-center shadow-lg shadow-primary/30 active:scale-95"
           >
             <Text className="text-background text-3xl font-bold" style={{ marginTop: -2 }}>+</Text>
-          </Pressable>
-        </View>
-
-        {/* Segmento Salud / Mente */}
-        <View style={{ flexDirection: 'row', gap: 6, marginHorizontal: 24, marginBottom: 12, backgroundColor: '#18181B', borderRadius: 14, padding: 4, borderWidth: 1, borderColor: '#27272A' }}>
-          <View style={{ flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center', backgroundColor: colors.primary }}>
-            <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>💪 Salud</Text>
-          </View>
-          <Pressable onPress={() => router.push('/mind')} style={{ flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center' }}>
-            <Text style={{ color: '#A1A1AA', fontSize: 13, fontWeight: '700' }}>🧠 Mente</Text>
           </Pressable>
         </View>
 
@@ -876,55 +854,6 @@ export default function HealthScreen() {
           </View>
         </View>
 
-        {/* Plan Nutricional */}
-        <View className="px-6 mb-6">
-          <View className="glass-card rounded-3xl p-6">
-            <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-base font-bold text-foreground" style={{ color: '#FAFAFA' }}>🍽️ Plan Nutricional Semanal</Text>
-              <Pressable
-                onPress={() => setShowMealPlan(!showMealPlan)}
-                className="bg-success/10 border border-success/20 rounded-full px-3 py-1.5 active:bg-success/20"
-              >
-                <Text className="text-success font-bold text-[10px] uppercase">{showMealPlan ? 'Cerrar' : 'Ver Plan'}</Text>
-              </Pressable>
-            </View>
-
-            {/* Menú de hoy siempre visible */}
-            <View style={{ backgroundColor: 'rgba(16,185,129,0.08)', borderWidth: 1, borderColor: 'rgba(16,185,129,0.2)', borderRadius: 16, padding: 16, marginBottom: 12 }}>
-              <Text style={{ color: '#34D399', fontWeight: '800', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 }}>
-                {todayPlan.day} — Hoy
-              </Text>
-              {todayPlan.meals.map((meal, i) => (
-                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <Text style={{ color: '#A1A1AA', fontWeight: '700', fontSize: 11, width: 66 }}>
-                    {i === 0 ? 'Desayuno' : i === 1 ? 'Almuerzo' : i === 2 ? 'Merienda' : 'Cena'}:
-                  </Text>
-                  <Text style={{ color: '#E4E4E7', fontSize: 12, flex: 1 }}>{meal}</Text>
-                </View>
-              ))}
-            </View>
-
-            {/* Plan completo expandible */}
-            {showMealPlan && (
-              <View className="gap-3 mt-2">
-                {WEEKLY_PLAN.filter(d => d.day !== todayPlan.day).map((day) => (
-                  <View key={day.day} style={{ backgroundColor: 'rgba(39,39,42,0.6)', borderRadius: 16, padding: 16 }}>
-                    <Text style={{ color: '#FAFAFA', fontWeight: '800', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>{day.day}</Text>
-                    {day.meals.map((meal, i) => (
-                      <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <Text style={{ color: '#A1A1AA', fontWeight: '700', fontSize: 10, width: 66 }}>
-                          {i === 0 ? 'Desayuno' : i === 1 ? 'Almuerzo' : i === 2 ? 'Merienda' : 'Cena'}:
-                        </Text>
-                        <Text style={{ color: '#D4D4D8', fontSize: 11, flex: 1 }}>{meal}</Text>
-                      </View>
-                    ))}
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
-        </View>
-
         {/* Macros */}
         <View className="px-6 mb-6">
           <View className="glass-card rounded-3xl p-6">
@@ -964,7 +893,7 @@ export default function HealthScreen() {
         {/* IA Sugiere */}
         <View className="px-6 mb-6">
           <View className="glass-card rounded-3xl p-6">
-            <Text className="font-bold text-foreground mb-4" style={{ color: '#FAFAFA' }}>IA Coach Sugiere 🧠</Text>
+            <Text className="font-bold text-foreground mb-4" style={{ color: '#FAFAFA' }}>Sugerencias de hoy</Text>
             <View className="gap-3">
               <View className="bg-background p-3 rounded-xl border border-border">
                 <Text className="text-xs font-bold text-primary mb-1">MOVIMIENTO</Text>

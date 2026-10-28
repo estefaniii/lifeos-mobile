@@ -140,11 +140,20 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="trabajo"
+          name="exercise"
           options={{
-            title: "Trabajo",
+            title: "Ejercicio",
             tabBarIcon: ({ color }) => (
-              <IconSymbol size={24} name="briefcase.fill" color={color} />
+              <IconSymbol size={24} name="figure.run" color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="food"
+          options={{
+            title: "Comida",
+            tabBarIcon: ({ color }) => (
+              <IconSymbol size={24} name="fork.knife" color={color} />
             ),
           }}
         />
@@ -158,30 +167,17 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="health"
+          name="notes"
           options={{
-            title: "Bienestar",
+            title: "Notas",
             tabBarIcon: ({ color }) => (
-              <IconSymbol size={24} name="heart.fill" color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: "Perfil",
-            tabBarIcon: ({ color }) => (
-              <IconSymbol size={24} name="person.fill" color={color} />
+              <IconSymbol size={24} name="doc.text.fill" color={color} />
             ),
           }}
         />
         {/* ===== Ocultas (accesibles desde los hubs) ===== */}
-        <Tabs.Screen name="posts" options={{ href: null }} />
-        <Tabs.Screen name="productivity" options={{ href: null }} />
-        <Tabs.Screen name="ai-coach" options={{ href: null }} />
-        <Tabs.Screen name="mind" options={{ href: null }} />
-        <Tabs.Screen name="notes" options={{ href: null }} />
-        <Tabs.Screen name="insights" options={{ href: null }} />
+        <Tabs.Screen name="health" options={{ href: null }} />
+        <Tabs.Screen name="profile" options={{ href: null }} />
       </Tabs>
     </View>
   );

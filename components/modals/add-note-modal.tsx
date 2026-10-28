@@ -114,25 +114,7 @@ export function AddNoteModal({ visible, onClose, note, clientSuggestions = [], d
                 ))}
               </View>
 
-              <Text style={styles.label}>Cliente (opcional)</Text>
-              <TextInput
-                value={client}
-                onChangeText={setClient}
-                placeholder="Vincular a un cliente"
-                placeholderTextColor={COLORS.subtle}
-                style={[{ backgroundColor: COLORS.bg, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11, color: COLORS.text, fontSize: 14, marginBottom: uniqueClients.length ? 8 : 16 }, webNoOutline]}
-              />
-              {uniqueClients.length > 0 && (
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
-                  {uniqueClients.map((c) => (
-                    <Pressable key={c} onPress={() => setClient(c === client ? '' : c)} style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 99, backgroundColor: c === client ? COLORS.primary : COLORS.bg, borderWidth: 1, borderColor: c === client ? COLORS.primary : COLORS.border }}>
-                      <Text style={{ color: c === client ? '#fff' : COLORS.muted, fontSize: 11, fontWeight: '600' }}>{c}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              )}
-
-              <Text style={styles.label}>⏰ Recordatorio (opcional)</Text>
+              <Text style={styles.label}>Recordatorio (opcional)</Text>
               <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
                 {[{ label: 'Hoy', v: todayISO() }, { label: 'Mañana', v: shiftISO(1) }, { label: '+7 días', v: shiftISO(7) }, { label: 'Quitar', v: '' }].map((q) => {
                   const active = remindAt === q.v;

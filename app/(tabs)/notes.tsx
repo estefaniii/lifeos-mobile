@@ -5,7 +5,6 @@ import { ScreenContainer } from '@/components/screen-container';
 import { AddNoteModal } from '@/components/modals/add-note-modal';
 import { FadeInView } from '@/components/fade-in-view';
 import { useNotes } from '@/hooks/use-notes';
-import { useClients } from '@/hooks/use-clients';
 import type { Note } from '@/lib/supabase';
 
 const COLORS = {
@@ -17,19 +16,13 @@ const todayISO = new Date().toISOString().split('T')[0];
 export default function NotesScreen() {
   const router = useRouter();
   const { data: notes = [], refetch, isRefetching } = useNotes();
-  const { data: clients = [] } = useClients();
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<Note | null>(null);
   const [q, setQ] = useState('');
   const [clientFilter, setClientFilter] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
 
-  const clientNames = useMemo(() => {
-    const s = new Set<string>();
-    clients.forEach((c) => c.name && s.add(c.name));
-    notes.forEach((n) => n.client && s.add(n.client));
-    return Array.from(s).sort();
-  }, [clients, notes]);
+  const clientNames: string[] = [];
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -71,10 +64,7 @@ export default function NotesScreen() {
         <View style={{ paddingLeft: 20, paddingTop: 10 }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20, gap: 8, alignItems: 'center' }}>
             <Chip label="Todas" active={!clientFilter && !showArchived} onPress={() => { setClientFilter(null); setShowArchived(false); }} />
-            {clientNames.map((c) => (
-              <Chip key={c} label={c} active={clientFilter === c && !showArchived} onPress={() => { setShowArchived(false); setClientFilter(clientFilter === c ? null : c); }} />
-            ))}
-            <Chip label="🗄️ Archivadas" active={showArchived} onPress={() => { setClientFilter(null); setShowArchived((s) => !s); }} />
+            <Chip label="Archivadas" active={showArchived} onPress={() => { setClientFilter(null); setShowArchived((s) => !s); }} />
           </ScrollView>
         </View>
 
@@ -155,7 +145,7 @@ export default function NotesScreen() {
         </Pressable>
       </View>
 
-      <AddNoteModal visible={modal} onClose={() => setModal(false)} note={editing} clientSuggestions={clientNames} defaultClient={clientFilter ?? undefined} />
+      <AddNoteModal visible={modal} onClose={() => setModal(false)} note={editing} />
     </ScreenContainer>
   );
 }

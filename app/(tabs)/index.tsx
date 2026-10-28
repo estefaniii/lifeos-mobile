@@ -6,7 +6,6 @@ import { ProgressRing } from '@/components/progress-ring';
 import { useColors } from '@/hooks/use-colors';
 import { useFinancialSummary } from '@/hooks/use-transactions';
 import { useTodayHealthSummary } from '@/hooks/use-health';
-import { useDailyAffirmation } from '@/hooks/use-mind-wellness';
 import { useHabits, useTodayHabitLogs, useHabitStreaks, useToggleHabit, useCreateHabit, useDeleteHabit } from '@/hooks/use-habits';
 import { useTransactions, useFinancialSummary as useWeekFinancialSummary } from '@/hooks/use-transactions';
 import { useHealthMetrics } from '@/hooks/use-health';
@@ -16,8 +15,6 @@ import { useRouter } from 'expo-router';
 import { AddTransactionModal } from '@/components/modals/add-transaction-modal';
 import { AddHabitModal } from '@/components/modals/add-habit-modal';
 import { useAuth } from '@/hooks/use-auth';
-import { useTasks } from '@/hooks/use-tasks';
-import { usePosts } from '@/hooks/use-posts';
 import { useNotes } from '@/hooks/use-notes';
 import { FadeInView } from '@/components/fade-in-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -289,15 +286,10 @@ export default function HomeScreen() {
   // Fetch data
   const { data: financialSummary } = useFinancialSummary('day');
   const { data: healthSummary } = useTodayHealthSummary();
-  const { data: affirmation } = useDailyAffirmation();
 
-  // Resumen del día (Trabajo + Notas)
-  const { data: allTasks = [] } = useTasks();
-  const { data: allPosts = [] } = usePosts();
+  // Resumen del día (notas personales)
   const { data: allNotes = [] } = useNotes();
   const todayStr = new Date().toISOString().split('T')[0];
-  const tasksToday = allTasks.filter((t) => !t.done && !!t.due_date && t.due_date <= todayStr);
-  const upcomingPosts = allPosts.filter((p) => p.publish_date >= todayStr).slice(0, 3);
   const reminderNotes = allNotes.filter((n) => !n.archived && !!n.remind_at && (n.remind_at as string) <= todayStr).slice(0, 3);
   const pinnedNotes = allNotes.filter((n) => n.pinned && !n.archived).slice(0, 3);
 
@@ -361,16 +353,18 @@ export default function HomeScreen() {
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Pressable
-                onPress={() => router.push('/insights')}
+                onPress={() => router.push('/health')}
+                accessibilityLabel="Salud"
                 style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', alignItems: 'center', justifyContent: 'center' }}
               >
-                <IconSymbol name="chart.bar.fill" size={20} color="#E4E4E7" />
+                <IconSymbol name="heart.fill" size={20} color="#E4E4E7" />
               </Pressable>
               <Pressable
-                onPress={() => router.push('/notes')}
+                onPress={() => router.push('/profile')}
+                accessibilityLabel="Perfil"
                 style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', alignItems: 'center', justifyContent: 'center' }}
               >
-                <IconSymbol name="doc.text.fill" size={20} color="#E4E4E7" />
+                <IconSymbol name="person.fill" size={20} color="#E4E4E7" />
               </Pressable>
             </View>
           </View>
@@ -378,28 +372,8 @@ export default function HomeScreen() {
           {/* Grid Principal */}
           <View style={{ flexDirection: 'column', gap: 16 }}>
 
-            {/* Afirmación */}
-            <View style={{
-              backgroundColor: '#18181B',
-              borderRadius: 28,
-              padding: 24,
-              borderWidth: 1,
-              borderColor: 'rgba(63,63,70,0.5)',
-              position: 'relative',
-              overflow: 'hidden',
-            }}>
-              <Text style={{ fontSize: 9, fontWeight: '900', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 4, marginBottom: 12 }}>AFIRMACIÓN MAESTRA</Text>
-              <Text style={{ fontSize: 20, fontWeight: '700', color: '#FAFAFA', lineHeight: 28, marginBottom: 16 }}>
-                "{affirmation?.text || 'Asume el sentimiento del deseo cumplido.'}"
-              </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <View style={{ height: 1, flex: 1, backgroundColor: 'rgba(255,255,255,0.15)' }} />
-                <Text style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 2 }}>Neville Goddard</Text>
-              </View>
-            </View>
-
             {/* Resumen del día */}
-            {(tasksToday.length > 0 || upcomingPosts.length > 0 || pinnedNotes.length > 0 || reminderNotes.length > 0) && (
+            {(pinnedNotes.length > 0 || reminderNotes.length > 0) && (
               <FadeInView style={{ backgroundColor: '#18181B', borderRadius: 28, padding: 20, borderWidth: 1, borderColor: 'rgba(63,63,70,0.5)' }}>
                 <Text style={{ fontSize: 9, fontWeight: '900', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 4, marginBottom: 14 }}>TU DÍA HOY</Text>
 
@@ -411,30 +385,6 @@ export default function HomeScreen() {
                     </View>
                     {reminderNotes.map((n) => (
                       <Text key={n.id} style={{ color: '#A1A1AA', fontSize: 13, marginBottom: 2 }} numberOfLines={1}>• {n.title}</Text>
-                    ))}
-                  </Pressable>
-                )}
-
-                {tasksToday.length > 0 && (
-                  <Pressable onPress={() => router.push('/trabajo')} style={{ marginBottom: (upcomingPosts.length || pinnedNotes.length) ? 14 : 0 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <Text style={{ color: '#14B8A6', fontSize: 13, fontWeight: '800' }}>✅ Tareas ({tasksToday.length})</Text>
-                      <Text style={{ color: '#52525B', fontSize: 16 }}>›</Text>
-                    </View>
-                    {tasksToday.slice(0, 3).map((t) => (
-                      <Text key={t.id} style={{ color: '#A1A1AA', fontSize: 13, marginBottom: 2 }} numberOfLines={1}>• {t.title}{t.client ? `  · ${t.client}` : ''}</Text>
-                    ))}
-                  </Pressable>
-                )}
-
-                {upcomingPosts.length > 0 && (
-                  <Pressable onPress={() => router.push('/trabajo')} style={{ marginBottom: pinnedNotes.length ? 14 : 0 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <Text style={{ color: '#60A5FA', fontSize: 13, fontWeight: '800' }}>📅 Próximas publicaciones</Text>
-                      <Text style={{ color: '#52525B', fontSize: 16 }}>›</Text>
-                    </View>
-                    {upcomingPosts.map((p) => (
-                      <Text key={p.id} style={{ color: '#A1A1AA', fontSize: 13, marginBottom: 2 }} numberOfLines={1}>• {p.title}{p.client ? `  · ${p.client}` : ''}</Text>
                     ))}
                   </Pressable>
                 )}

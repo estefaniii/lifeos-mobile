@@ -44,6 +44,13 @@ const MAPPING = {
   "xmark": "close",
   "arrow.left": "arrow-back",
   "arrow.right": "arrow-forward",
+  "figure.run": "fitness-center",
+  "fork.knife": "restaurant",
+  "cart.fill": "shopping-cart",
+  "timer": "timer",
+  "play.fill": "play-arrow",
+  "pause.fill": "pause",
+  "forward.fill": "skip-next",
 } as IconMapping;
 
 /**
