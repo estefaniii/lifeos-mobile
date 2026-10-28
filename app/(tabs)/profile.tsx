@@ -41,7 +41,6 @@ export default function ProfileScreen() {
     }
   }, [user?.name, (user as any)?.gender]);
 
-  const [healthKitEnabled, setHealthKitEnabled] = useState(false);
 
   const [reminders, setReminders] = useState<ReminderSettings>({
     water: true,
@@ -331,35 +330,13 @@ export default function ProfileScreen() {
             <View className="flex-row justify-between items-center mb-4">
               <View className="flex-1">
                 <Text className="text-base font-bold text-foreground" style={{ color: '#FAFAFA' }}>Sincronizar Apple Health</Text>
-                <Text className="text-xs text-muted mt-1" style={{ color: '#A1A1AA' }}>Conecta con tus Atajos de iOS (Webhook)</Text>
+                <Text className="text-xs text-muted mt-1" style={{ color: '#A1A1AA' }}>Próximamente en la app nativa</Text>
               </View>
-              <Switch
-                value={healthKitEnabled}
-                onValueChange={setHealthKitEnabled}
-                trackColor={{ false: colors.border, true: colors.primary }}
-              />
             </View>
 
-            {healthKitEnabled ? (
-              <View className="bg-primary/10 rounded-2xl p-4 border border-primary/20">
-                <Text className="text-xs font-bold text-primary uppercase tracking-widest mb-2">
-                  URL del Webhook (Para Atajos)
-                </Text>
-                <TextInput
-                  className="bg-background border border-primary/20 rounded-xl px-4 py-3 text-xs text-foreground font-mono"
-                  style={{ color: '#FAFAFA' }}
-                  value={`TuDominioVercel.com/api/health-sync?user=${user?.id}`}
-                  editable={false}
-                />
-                <Text className="text-[10px] text-muted mt-2 leading-relaxed" style={{ color: '#A1A1AA' }}>
-                  Copia esta URL y configúrala en un Atajo de iOS que envíe un POST diario con tus pasos, sueño y energía quemada, dado que Apple bloquea la lectura directa a Web Apps (PWA).
-                </Text>
-              </View>
-            ) : (
-              <Text className="text-xs text-muted" style={{ color: '#A1A1AA' }}>
-                Activa esta opción para obtener la URL del webhook y sincronizar tu salud automáticamente desde iOS.
-              </Text>
-            )}
+            <Text className="text-xs text-muted" style={{ color: '#A1A1AA' }}>
+              La sincronización con Apple Salud llegará con la app nativa para iPhone. Mientras tanto, registra pasos, sueño y agua desde Salud.
+            </Text>
           </View>
         </View>
         )}
