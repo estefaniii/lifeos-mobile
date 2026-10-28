@@ -99,6 +99,14 @@ export function useShoppingActions() {
     },
     onSuccess: listo,
   });
+  // Varios de una vez (los ingredientes de una receta)
+  const addMany = useMutation({
+    mutationFn: async (names: string[]) => {
+      const { error } = await supabase.from('shopping_items').insert(names.map((name) => ({ user_id: userId, name })));
+      if (error) throw error;
+    },
+    onSuccess: listo,
+  });
   const toggle = useMutation({
     mutationFn: async (item: ShoppingItem) => {
       const { error } = await supabase.from('shopping_items').update({ done: !item.done }).eq('id', item.id);
@@ -113,5 +121,5 @@ export function useShoppingActions() {
     },
     onSuccess: listo,
   });
-  return { add, toggle, clearDone };
+  return { add, addMany, toggle, clearDone };
 }
