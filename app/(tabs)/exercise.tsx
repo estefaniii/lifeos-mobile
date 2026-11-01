@@ -6,12 +6,21 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColors } from '@/hooks/use-colors';
 import { ZONAS, AVISO_EJERCICIO, type Rutina, type Zona } from '@/constants/ejercicios';
 import { useExerciseSessions, useLogExercise } from '@/hooks/use-vida';
+import { ProgramasEjercicio } from '@/components/programas-ejercicio';
 
 // Ejercicio: elige una zona, una rutina y síguela paso a paso con temporizador de descanso.
 export default function ExerciseScreen() {
   const c = useColors();
   const [zona, setZona] = useState<Zona | null>(null);
   const [rutina, setRutina] = useState<Rutina | null>(null);
+  /*
+   * Dos cosas distintas en la misma pestaña: las rutinas que trae la app
+   * y los planes que ella sigue de alguien más. Separadas porque se usan
+   * de forma distinta —una rutina se hace de principio a fin con el
+   * temporizador; un programa es un calendario de semanas— y mezcladas
+   * en una sola lista no se sabría cuál es cuál.
+   */
+  const [vista, setVista] = useState<'zonas' | 'programas'>('zonas');
   const { data: sesiones = [], error } = useExerciseSessions(30);
 
   const semana = useMemo(() => {
@@ -29,22 +38,50 @@ export default function ExerciseScreen() {
         <View style={{ paddingHorizontal: 20, paddingTop: 24, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
           <Text style={{ color: c.foreground, fontSize: 30, fontWeight: '800' }}>{zona ? zona.nombre : 'Ejercicio'}</Text>
           <Text style={{ color: c.muted, fontSize: 14, marginTop: 4, marginBottom: 18 }}>
-            {zona ? 'Elige una rutina y te guío ejercicio por ejercicio.' : 'Planes por zona, en casa y a tu ritmo.'}
+            {zona
+              ? 'Elige una rutina y te guío ejercicio por ejercicio.'
+              : vista === 'programas'
+                ? 'Los planes que sigues de alguien más, día por día.'
+                : 'Planes por zona, en casa y a tu ritmo.'}
           </Text>
 
           {!zona && (
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+              {([['zonas', 'Rutinas'], ['programas', 'Programas']] as const).map(([k, texto]) => (
+                <Pressable
+                  key={k}
+                  onPress={() => setVista(k)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: vista === k }}
+                  style={{
+                    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
+                    backgroundColor: vista === k ? c.primary : c.surface,
+                    borderWidth: 1, borderColor: vista === k ? c.primary : c.border,
+                  }}
+                >
+                  <Text style={{ color: vista === k ? c.background : c.muted, fontWeight: '700', fontSize: 13.5 }}>
+                    {texto}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+
+          {!zona && vista === 'zonas' && (
             <View style={{ flexDirection: 'row', gap: 10, marginBottom: 18 }}>
               <Dato c={c} valor={semana.veces} texto="rutinas esta semana" />
               <Dato c={c} valor={semana.minutos} texto="minutos esta semana" />
             </View>
           )}
-          {error && (
+          {error && vista === 'zonas' && (
             <Text style={{ color: c.warning, fontSize: 13, marginBottom: 12 }}>
               Aún no puedo guardar tus rutinas: falta crear la tabla de ejercicio en la base de datos.
             </Text>
           )}
 
-          {!zona ? (
+          {!zona && vista === 'programas' && <ProgramasEjercicio />}
+
+          {vista === 'programas' && !zona ? null : !zona ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
               {ZONAS.map((z) => (
                 <Pressable key={z.id} onPress={() => setZona(z)} accessibilityRole="button"
