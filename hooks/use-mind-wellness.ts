@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
+import { fechaLocal } from '@/lib/registros';
 
 export function useDailyAffirmation() {
   const { user } = useAuth({ autoFetch: false });
@@ -10,7 +11,7 @@ export function useDailyAffirmation() {
     queryKey: ['daily-affirmation', userId],
     enabled: !!userId,
     queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = fechaLocal();
 
       if (!userId) return null;
 
@@ -44,7 +45,7 @@ export function useStressTrend(days: number = 7) {
         .from('mental_logs')
         .select('date, stress_level')
         .eq('user_id', userId!)
-        .gte('date', startDate.toISOString().split('T')[0])
+        .gte('date', fechaLocal(startDate))
         .not('stress_level', 'is', null)
         .order('date', { ascending: true });
 
@@ -65,7 +66,7 @@ export function useTodayMeditation() {
     queryKey: ['today-meditation', userId],
     enabled: !!userId,
     queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = fechaLocal();
 
       let query = supabase
         .from('mental_logs')
@@ -91,7 +92,7 @@ export function useTodayMindWellness() {
     queryKey: ['today-mind-wellness', userId],
     enabled: !!userId,
     queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = fechaLocal();
 
       let query = supabase
         .from('mental_logs')
@@ -128,7 +129,7 @@ export function useAddMindWellnessEntry() {
       stressLevel?: number;
       note?: string;
     }) => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = fechaLocal();
 
       if (type === 'stress') {
         const { error } = await supabase.from('mental_logs').upsert({

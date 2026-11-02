@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { useEffect } from 'react';
+import { fechaLocal } from '@/lib/registros';
 
 export interface RecurringTransaction {
   id: string;
@@ -86,7 +87,7 @@ export function useApplyRecurring() {
     (async () => {
       try {
         const today = new Date();
-        const todayStr = today.toISOString().split('T')[0];
+        const todayStr = fechaLocal(today);
         const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 
         const { data: recurrings } = await supabase

@@ -173,7 +173,7 @@ export default function ProfileScreen() {
 
   return (
     <ScreenContainer className="p-0">
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="pb-32">
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 150 }} className="pb-32">
         {/* Header */}
         <View className="px-6 pt-6 pb-4">
           <Text className="text-3xl font-bold text-foreground" style={{ color: '#FAFAFA' }}>Perfil</Text>

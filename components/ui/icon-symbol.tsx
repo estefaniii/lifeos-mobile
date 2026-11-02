@@ -51,6 +51,14 @@ const MAPPING = {
   "play.fill": "play-arrow",
   "pause.fill": "pause",
   "forward.fill": "skip-next",
+  "paintpalette.fill": "palette",
+  "clock.arrow.circlepath": "history",
+  "drop.fill": "water-drop",
+  "camera.fill": "photo-camera",
+  "photo.fill": "photo",
+  "flame.fill": "local-fire-department",
+  "leaf.fill": "eco",
+  "checkmark": "check",
 } as IconMapping;
 
 /**

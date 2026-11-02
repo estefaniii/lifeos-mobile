@@ -275,7 +275,7 @@ export default function FinancesScreen() {
   return (
     <ScreenContainer className="p-0">
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 150 }}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
       >
         {/* Header */}

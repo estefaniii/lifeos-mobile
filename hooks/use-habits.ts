@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
+import { fechaLocal } from '@/lib/registros';
 
 export function useHabits() {
   const { user } = useAuth();
@@ -25,7 +26,7 @@ export function useHabits() {
 export function useTodayHabitLogs() {
   const { user } = useAuth();
   const userId = user?.id ?? null;
-  const today = new Date().toISOString().split('T')[0];
+  const today = fechaLocal();
 
   return useQuery({
     queryKey: ['habit-logs', userId, today],
@@ -59,7 +60,7 @@ export function useHabitStreaks() {
         .select('habit_id, date, completed')
         .eq('user_id', userId!)
         .eq('completed', true)
-        .gte('date', thirtyDaysAgo.toISOString().split('T')[0])
+        .gte('date', fechaLocal(thirtyDaysAgo))
         .order('date', { ascending: false });
 
       if (error) throw error;
@@ -81,7 +82,7 @@ export function useHabitStreaks() {
         for (let i = 0; i < uniqueDates.length; i++) {
           const expected = new Date(today);
           expected.setDate(expected.getDate() - i);
-          const expectedStr = expected.toISOString().split('T')[0];
+          const expectedStr = fechaLocal(expected);
 
           if (uniqueDates[i] === expectedStr) {
             streak++;
@@ -106,7 +107,7 @@ export function useToggleHabit() {
     mutationFn: async ({ habitId, completed }: { habitId: string; completed: boolean }) => {
       const userId = user?.id;
       if (!userId) throw new Error('No user');
-      const today = new Date().toISOString().split('T')[0];
+      const today = fechaLocal();
 
       if (completed) {
         // Check if log exists
@@ -140,7 +141,7 @@ export function useToggleHabit() {
       }
     },
     onSuccess: () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = fechaLocal();
       queryClient.invalidateQueries({ queryKey: ['habit-logs'] });
       queryClient.invalidateQueries({ queryKey: ['habit-streaks'] });
     },

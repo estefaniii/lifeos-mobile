@@ -18,6 +18,8 @@ import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
+import { escucharZonaSegura } from "@/lib/_core/web-safe-area";
+import { useFonts, BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold } from "@expo-google-fonts/bricolage-grotesque";
 import { AuthProvider } from "@/providers/auth-provider";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -85,8 +87,14 @@ export default function RootLayout() {
   useEffect(() => {
     if (Platform.OS !== "web") return;
     const unsubscribe = subscribeSafeAreaInsets(handleSafeAreaUpdate);
-    return () => unsubscribe();
+    // Fuera del iframe nadie manda la zona segura: se mide con env() del CSS
+    const dejar = escucharZonaSegura(setInsets);
+    return () => { unsubscribe(); dejar() };
   }, [handleSafeAreaUpdate]);
+
+  // Bricolage Grotesque para los títulos (componente Titulo). Si tarda, se ve
+  // con la letra del sistema y cambia al cargar: no se bloquea la app.
+  useFonts({ BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold });
 
   // Create clients once and reuse them
   const [queryClient] = useState(

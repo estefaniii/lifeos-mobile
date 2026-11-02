@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase, type HealthMetric } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
+import { fechaLocal } from '@/lib/registros';
 
 export function useHealthMetrics(
   metricType: 'sleep_minutes' | 'steps' | 'exercise_minutes',
@@ -20,7 +21,7 @@ export function useHealthMetrics(
         .from('health_metrics')
         .select(`date, ${metricType}`)
         .eq('user_id', userId!)
-        .gte('date', startDate.toISOString().split('T')[0])
+        .gte('date', fechaLocal(startDate))
         .order('date', { ascending: true });
 
       if (error) throw error;
@@ -40,7 +41,7 @@ export function useTodayHealthMetrics() {
     queryKey: ['today-health-metrics', userId],
     enabled: !!userId,
     queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = fechaLocal();
 
       let query = supabase
         .from('health_metrics')
@@ -91,7 +92,7 @@ export function useManualHealthEntries(days: number = 7) {
         .from('health_metrics')
         .select('*')
         .eq('user_id', userId!)
-        .gte('date', startDate.toISOString().split('T')[0])
+        .gte('date', fechaLocal(startDate))
         .order('date', { ascending: false });
 
       if (error) throw error;

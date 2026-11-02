@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
+import { fechaLocal } from '@/lib/registros';
 
 export interface Achievement {
   id: string;
@@ -17,7 +18,7 @@ export function useAchievements() {
     queryFn: async (): Promise<Achievement[]> => {
       if (!user?.id) return [];
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = fechaLocal();
       const now = new Date();
       const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 

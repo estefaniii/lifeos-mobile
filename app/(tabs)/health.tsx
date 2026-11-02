@@ -9,8 +9,10 @@ import { useHealthMetrics, useTodayHealthMetrics, useManualHealthEntries } from 
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
+import { WaterModal } from '@/components/water-modal';
 import { useHealthKitSync } from '@/hooks/use-healthkit-sync';
 import { useRouter } from 'expo-router';
+import { fechaLocal } from '@/lib/registros';
 
 // ─── Activity Modal ───────────────────────────────────────────────────────────
 
@@ -51,7 +53,7 @@ function ActivityLogModal({ visible, onClose, activityType, userId, onSave }: {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = fechaLocal();
       const fields: any = {};
       if (activityType === 'gym') fields.gym_session = true;
       if (activityType === 'yoga') fields.yoga_session = true;
@@ -283,84 +285,6 @@ function ActivityLogModal({ visible, onClose, activityType, userId, onSave }: {
 
 // ─── Water Modal ──────────────────────────────────────────────────────────────
 
-function WaterModal({ visible, onClose, currentWater, userId, onSave }: {
-  visible: boolean;
-  onClose: () => void;
-  currentWater: number;
-  userId: string;
-  onSave: () => void;
-}) {
-  const VASOS = [1, 2, 3, 4];
-  const ML_POR_VASO = 250;
-  const [saving, setSaving] = useState(false);
-
-  const handleAdd = async (vasos: number) => {
-    setSaving(true);
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const newTotal = currentWater + vasos * ML_POR_VASO;
-      const { data: existing } = await supabase
-        .from('health_metrics')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('date', today)
-        .maybeSingle();
-
-      if (existing) {
-        await supabase.from('health_metrics').update({ water_ml: newTotal }).eq('id', existing.id);
-      } else {
-        await supabase.from('health_metrics').insert({ user_id: userId, date: today, water_ml: newTotal });
-      }
-    } catch (err) {
-      console.error('[Water] Save error:', err);
-    }
-    setSaving(false);
-    onSave();
-    onClose();
-  };
-
-  return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-        <View style={{ backgroundColor: '#18181B', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 36 }}>
-          <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '800', marginBottom: 4 }}>💧 Registrar Agua</Text>
-          <Text style={{ color: '#71717A', fontSize: 11, marginBottom: 20, textTransform: 'uppercase', letterSpacing: 2, fontWeight: '700' }}>
-            Hoy: {Math.round(currentWater / ML_POR_VASO)} vasos — Meta: 8 vasos
-          </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
-            {VASOS.map((v) => (
-              <Pressable
-                key={v}
-                onPress={() => handleAdd(v)}
-                disabled={saving}
-                style={{
-                  flex: 1,
-                  minWidth: 90,
-                  backgroundColor: 'rgba(59,130,246,0.12)',
-                  borderWidth: 1,
-                  borderColor: 'rgba(59,130,246,0.3)',
-                  borderRadius: 16,
-                  paddingVertical: 14,
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ color: '#60A5FA', fontWeight: '800', fontSize: 15 }}>
-                  +{v} {v === 1 ? 'vaso' : 'vasos'}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-          <Pressable onPress={onClose} style={{ paddingVertical: 12, alignItems: 'center' }}>
-            <Text style={{ color: '#71717A', fontWeight: '700', fontSize: 12, textTransform: 'uppercase', letterSpacing: 2 }}>Cancelar</Text>
-          </Pressable>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-// ─── Sleep Modal ──────────────────────────────────────────────────────────────
-
 function SleepModal({ visible, onClose, userId, currentData, onSave }: {
   visible: boolean;
   onClose: () => void;
@@ -398,7 +322,7 @@ function SleepModal({ visible, onClose, userId, currentData, onSave }: {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = fechaLocal();
       const sleepMins = calcMinutes();
       const fields = {
         sleep_minutes: sleepMins,
@@ -598,7 +522,7 @@ export default function HealthScreen() {
   return (
     <ScreenContainer className="p-0">
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: 120 }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 150 }}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
       >
         {/* Header */}
@@ -1001,7 +925,6 @@ export default function HealthScreen() {
           visible={showWaterModal}
           onClose={() => setShowWaterModal(false)}
           currentWater={todayMetrics?.water_ml || 0}
-          userId={String(user.id)}
           onSave={invalidate}
         />
       )}

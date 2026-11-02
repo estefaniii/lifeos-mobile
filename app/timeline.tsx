@@ -4,12 +4,13 @@ import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import { useDailyTimeline } from '@/hooks/use-daily-timeline';
+import { fechaLocal } from '@/lib/registros';
 
 const DAYS_ES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTHS_ES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
 function formatDateStr(date: Date): string {
-  return date.toISOString().split('T')[0];
+  return fechaLocal(date);
 }
 
 function getWeekDates(centerDate: Date): Date[] {

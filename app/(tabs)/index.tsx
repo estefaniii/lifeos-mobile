@@ -17,83 +17,18 @@ import { AddHabitModal } from '@/components/modals/add-habit-modal';
 import { useAuth } from '@/hooks/use-auth';
 import { useNotes } from '@/hooks/use-notes';
 import { FadeInView } from '@/components/fade-in-view';
+import { WaterModal } from '@/components/water-modal';
+import { Titulo, TINTA } from '@/components/decor';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { fechaLocal } from '@/lib/registros';
+
+// «Domingo, 1 de noviembre»: solo la primera letra en mayúscula
+const fechaLarga = () => {
+  const t = new Date().toLocaleDateString('es-PA', { weekday: 'long', day: 'numeric', month: 'long' });
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
 
 // ─── Mini Modals ─────────────────────────────────────────────────────────────
-
-function WaterModal({ visible, onClose, currentWater, userId, onSave }: {
-  visible: boolean;
-  onClose: () => void;
-  currentWater: number;
-  userId: string;
-  onSave: () => void;
-}) {
-  const VASOS = [1, 2, 3, 4];
-  const ML_POR_VASO = 250;
-  const [saving, setSaving] = useState(false);
-
-  const handleAdd = async (vasos: number) => {
-    setSaving(true);
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const newTotal = currentWater + vasos * ML_POR_VASO;
-      const { data: existing } = await supabase
-        .from('health_metrics')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('date', today)
-        .maybeSingle();
-
-      if (existing) {
-        await supabase.from('health_metrics').update({ water_ml: newTotal }).eq('id', existing.id);
-      } else {
-        await supabase.from('health_metrics').insert({ user_id: userId, date: today, water_ml: newTotal });
-      }
-    } catch (err) {
-      console.error('[Water] Save error:', err);
-    }
-    setSaving(false);
-    onSave();
-    onClose();
-  };
-
-  return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-        <View style={{ backgroundColor: '#18181B', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24 }}>
-          <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '800', marginBottom: 4 }}>💧 Registrar Agua</Text>
-          <Text style={{ color: '#71717A', fontSize: 11, marginBottom: 20, textTransform: 'uppercase', letterSpacing: 2, fontWeight: '700' }}>
-            Hoy: {Math.round(currentWater / ML_POR_VASO)} vasos — Meta: 8 vasos
-          </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
-            {VASOS.map((v) => (
-              <Pressable
-                key={v}
-                onPress={() => handleAdd(v)}
-                disabled={saving}
-                style={{
-                  flex: 1,
-                  minWidth: 90,
-                  backgroundColor: 'rgba(59,130,246,0.12)',
-                  borderWidth: 1,
-                  borderColor: 'rgba(59,130,246,0.3)',
-                  borderRadius: 16,
-                  paddingVertical: 14,
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ color: '#60A5FA', fontWeight: '800', fontSize: 15 }}>+{v} {v === 1 ? 'vaso' : 'vasos'}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <Pressable onPress={onClose} style={{ paddingVertical: 12, alignItems: 'center' }}>
-            <Text style={{ color: '#71717A', fontWeight: '700', fontSize: 12, textTransform: 'uppercase', letterSpacing: 2 }}>Cancelar</Text>
-          </Pressable>
-        </View>
-      </View>
-    </Modal>
-  );
-}
 
 function MeditationModal({ visible, onClose, userId, onSave }: {
   visible: boolean;
@@ -106,7 +41,7 @@ function MeditationModal({ visible, onClose, userId, onSave }: {
 
   const handleLog = async (minutes: number) => {
     setSaving(true);
-    const today = new Date().toISOString().split('T')[0];
+    const today = fechaLocal();
     await supabase.from('mental_logs').insert([{
       user_id: userId,
       meditation_minutes: minutes,
@@ -170,7 +105,7 @@ function ActivityModal({ visible, onClose, type, userId, onSave }: {
   const handleLog = async () => {
     setSaving(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = fechaLocal();
       const fields: any = {};
       if (isGym) fields.gym_session = true;
       else fields.yoga_session = true;
@@ -289,7 +224,7 @@ export default function HomeScreen() {
 
   // Resumen del día (notas personales)
   const { data: allNotes = [] } = useNotes();
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = fechaLocal();
   const reminderNotes = allNotes.filter((n) => !n.archived && !!n.remind_at && (n.remind_at as string) <= todayStr).slice(0, 3);
   const pinnedNotes = allNotes.filter((n) => n.pinned && !n.archived).slice(0, 3);
 
@@ -337,35 +272,29 @@ export default function HomeScreen() {
   return (
     <ScreenContainer className="p-0">
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 150 }}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
         className="pb-4"
       >
         <View style={{ flex: 1, paddingHorizontal: 16, paddingVertical: 24, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
 
-          {/* Header */}
-          <View style={{ marginBottom: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          {/* Cabecera: saludo grande, la fecha y los accesos a Historial, Salud y Perfil */}
+          <View style={{ marginBottom: 22, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: '#14B8A6', fontSize: 11, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 3, marginBottom: 4 }}>LIFEOS</Text>
-              <Text style={{ color: '#FAFAFA', fontSize: 26, fontWeight: '700' }}>
-                Hola, {user?.name || user?.email?.split('@')[0] || 'Tú'} 👋
-              </Text>
+              <Text style={{ color: TINTA.suave, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>{fechaLarga()}</Text>
+              <Titulo size={32}>Hola, {user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'tú'}</Titulo>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Pressable
-                onPress={() => router.push('/health')}
-                accessibilityLabel="Salud"
-                style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <IconSymbol name="heart.fill" size={20} color="#E4E4E7" />
-              </Pressable>
-              <Pressable
-                onPress={() => router.push('/profile')}
-                accessibilityLabel="Perfil"
-                style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <IconSymbol name="person.fill" size={20} color="#E4E4E7" />
-              </Pressable>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {([['/history', 'clock.arrow.circlepath', 'Historial'], ['/health', 'heart.fill', 'Salud'], ['/profile', 'person.fill', 'Perfil']] as const).map(([ruta, icono, nombre]) => (
+                <Pressable
+                  key={ruta}
+                  onPress={() => router.push(ruta)}
+                  accessibilityLabel={nombre}
+                  style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: TINTA.tarjeta, borderWidth: 1, borderColor: TINTA.borde, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <IconSymbol name={icono} size={20} color={TINTA.texto} />
+                </Pressable>
+              ))}
             </View>
           </View>
 
@@ -375,7 +304,7 @@ export default function HomeScreen() {
             {/* Resumen del día */}
             {(pinnedNotes.length > 0 || reminderNotes.length > 0) && (
               <FadeInView style={{ backgroundColor: '#18181B', borderRadius: 28, padding: 20, borderWidth: 1, borderColor: 'rgba(63,63,70,0.5)' }}>
-                <Text style={{ fontSize: 9, fontWeight: '900', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: 4, marginBottom: 14 }}>TU DÍA HOY</Text>
+                <Titulo size={22} style={{ marginBottom: 14 }}>Tu día hoy</Titulo>
 
                 {reminderNotes.length > 0 && (
                   <Pressable onPress={() => router.push('/notes')} style={{ marginBottom: 14 }}>
@@ -411,7 +340,7 @@ export default function HomeScreen() {
               borderWidth: 1,
               borderColor: '#27272A',
             }}>
-              <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '700', marginBottom: 16 }}>Métricas Vitales</Text>
+              <Titulo size={22} style={{ marginBottom: 16 }}>Cómo vas hoy</Titulo>
               <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }}>
                 <ProgressRing
                   progress={financesProgress}
@@ -440,47 +369,36 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {/* Registros Rápidos */}
-            <View style={{ marginBottom: 20 }}>
-              <Text style={{ color: '#A1A1AA', fontSize: 12, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 3, marginBottom: 12 }}>REGISTROS RÁPIDOS</Text>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <Pressable
-                  onPress={() => setShowWaterModal(true)}
-                  style={{ flex: 1, backgroundColor: 'rgba(59,130,246,0.1)', borderWidth: 1, borderColor: 'rgba(59,130,246,0.2)', borderRadius: 20, paddingVertical: 14, alignItems: 'center' }}
-                >
-                  <Text style={{ fontSize: 22, marginBottom: 4 }}>💧</Text>
-                  <Text style={{ color: '#60A5FA', fontWeight: '800', fontSize: 9, textTransform: 'uppercase' }}>Agua</Text>
-                  <Text style={{ color: 'rgba(96,165,250,0.6)', fontSize: 8, marginTop: 2 }}>{Math.round((healthSummary?.water_ml || 0) / 250)} vasos</Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => setShowMeditationModal(true)}
-                  style={{ flex: 1, backgroundColor: 'rgba(168,85,247,0.1)', borderWidth: 1, borderColor: 'rgba(168,85,247,0.2)', borderRadius: 20, paddingVertical: 14, alignItems: 'center' }}
-                >
-                  <Text style={{ fontSize: 22, marginBottom: 4 }}>🧘</Text>
-                  <Text style={{ color: '#C084FC', fontWeight: '800', fontSize: 9, textTransform: 'uppercase' }}>Zen</Text>
-                  <Text style={{ color: 'rgba(192,132,252,0.6)', fontSize: 8, marginTop: 2 }}>Registrar</Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => setShowGymModal(true)}
-                  style={{ flex: 1, backgroundColor: 'rgba(249,115,22,0.1)', borderWidth: 1, borderColor: 'rgba(249,115,22,0.2)', borderRadius: 20, paddingVertical: 14, alignItems: 'center' }}
-                >
-                  <Text style={{ fontSize: 22, marginBottom: 4 }}>💪</Text>
-                  <Text style={{ color: '#FB923C', fontWeight: '800', fontSize: 9, textTransform: 'uppercase' }}>Gym</Text>
-                  <Text style={{ color: 'rgba(251,146,60,0.6)', fontSize: 8, marginTop: 2 }}>{healthSummary?.gymSessions ? '✓ Hecho' : 'Registrar'}</Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => setShowYogaModal(true)}
-                  style={{ flex: 1, backgroundColor: 'rgba(16,185,129,0.1)', borderWidth: 1, borderColor: 'rgba(16,185,129,0.2)', borderRadius: 20, paddingVertical: 14, alignItems: 'center' }}
-                >
-                  <Text style={{ fontSize: 22, marginBottom: 4 }}>🧘‍♀️</Text>
-                  <Text style={{ color: '#34D399', fontWeight: '800', fontSize: 9, textTransform: 'uppercase' }}>Yoga</Text>
-                  <Text style={{ color: 'rgba(52,211,153,0.6)', fontSize: 8, marginTop: 2 }}>{healthSummary?.yogaSessions ? '✓ Hecho' : 'Registrar'}</Text>
+            {/* Registros rápidos: cada toque queda en el historial con su hora */}
+            <View style={{ marginBottom: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
+                <Titulo size={22}>Anotar rápido</Titulo>
+                <Pressable onPress={() => router.push('/history')} style={{ minHeight: 44, justifyContent: 'center' }}>
+                  <Text style={{ color: '#FFB547', fontWeight: '800', fontSize: 14 }}>Ver historial ›</Text>
                 </Pressable>
               </View>
-              <Text style={{ color: 'rgba(161,161,170,0.5)', fontSize: 9, textAlign: 'center', marginTop: 6 }}>Toca para registrar</Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {([
+                  ['💧', 'Agua', `${Math.round((healthSummary?.water_ml || 0) / 250)} vasos`, '#7CC4FF', () => setShowWaterModal(true)],
+                  ['🧘', 'Meditar', 'minutos', '#C9A7FF', () => setShowMeditationModal(true)],
+                  ['💪', 'Gym', healthSummary?.gymSessions ? 'hecho ✓' : 'anotar', '#FF7A6B', () => setShowGymModal(true)],
+                  ['🧘‍♀️', 'Yoga', healthSummary?.yogaSessions ? 'hecho ✓' : 'anotar', '#5FD3A8', () => setShowYogaModal(true)],
+                ] as const).map(([emoji, nombre, dato, color, abrir], k) => (
+                  <Pressable
+                    key={nombre}
+                    onPress={abrir}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Anotar ${nombre}`}
+                    style={{ flex: 1, backgroundColor: TINTA.tarjeta, borderWidth: 1, borderColor: TINTA.borde, borderRadius: 22, paddingVertical: 14, alignItems: 'center', minHeight: 96 }}
+                  >
+                    <View style={{ width: 40, height: 40, borderRadius: 14, backgroundColor: color, alignItems: 'center', justifyContent: 'center', marginBottom: 6, transform: [{ rotate: k % 2 ? '5deg' : '-5deg' }] }}>
+                      <Text style={{ fontSize: 20 }}>{emoji}</Text>
+                    </View>
+                    <Text style={{ color: TINTA.texto, fontWeight: '800', fontSize: 13 }}>{nombre}</Text>
+                    <Text style={{ color: TINTA.suave, fontSize: 11.5, marginTop: 1 }}>{dato}</Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
 
             {/* Agua - indicador visual rápido */}
@@ -519,9 +437,7 @@ export default function HomeScreen() {
             {/* Mis Hábitos */}
             <View style={{ marginBottom: 20 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <Text style={{ color: '#A1A1AA', fontSize: 12, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 3 }}>
-                  MIS HÁBITOS
-                </Text>
+                <Titulo size={22}>Mis hábitos</Titulo>
                 <Pressable onPress={() => setShowHabitModal(true)} style={{
                   backgroundColor: 'rgba(20,184,166,0.15)',
                   borderWidth: 1,
@@ -534,7 +450,7 @@ export default function HomeScreen() {
                   gap: 4,
                 }}>
                   <Text style={{ color: '#14B8A6', fontSize: 14, fontWeight: '800' }}>+</Text>
-                  <Text style={{ color: '#14B8A6', fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>Nuevo</Text>
+                  <Text style={{ color: '#14B8A6', fontSize: 12, fontWeight: '800' }}>Nuevo</Text>
                 </Pressable>
               </View>
 
@@ -680,9 +596,7 @@ export default function HomeScreen() {
             {savingsGoals && savingsGoals.length > 0 && (
               <View style={{ marginBottom: 20 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <Text style={{ color: '#A1A1AA', fontSize: 12, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 3 }}>
-                    METAS DE AHORRO
-                  </Text>
+                  <Titulo size={22}>Metas de ahorro</Titulo>
                   <Pressable onPress={() => router.push('/finances')} style={{
                     backgroundColor: 'rgba(245,158,11,0.15)',
                     borderWidth: 1,
@@ -691,7 +605,7 @@ export default function HomeScreen() {
                     paddingHorizontal: 10,
                     paddingVertical: 5,
                   }}>
-                    <Text style={{ color: '#F59E0B', fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 }}>Ver todas</Text>
+                    <Text style={{ color: '#F59E0B', fontSize: 12, fontWeight: '800' }}>Ver todas</Text>
                   </Pressable>
                 </View>
                 <View style={{ gap: 10 }}>
@@ -735,22 +649,20 @@ export default function HomeScreen() {
 
             {/* D: Resumen Semanal */}
             <View style={{ marginBottom: 20 }}>
-              <Text style={{ color: '#A1A1AA', fontSize: 12, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 3, marginBottom: 12 }}>
-                RESUMEN SEMANAL
-              </Text>
+              <Titulo size={22} style={{ marginBottom: 12 }}>Resumen semanal</Titulo>
               <View style={{ backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', borderRadius: 24, padding: 16 }}>
                 {/* Financial weekly */}
                 <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
                   <View style={{ flex: 1, backgroundColor: 'rgba(16,185,129,0.08)', borderRadius: 16, padding: 12, alignItems: 'center' }}>
-                    <Text style={{ color: '#71717A', fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Ingresos 7d</Text>
+                    <Text style={{ color: '#71717A', fontSize: 12, fontWeight: '700', marginBottom: 4 }}>Ingresos 7d</Text>
                     <Text style={{ color: '#10B981', fontSize: 18, fontWeight: '800' }}>${weekSummary?.income || 0}</Text>
                   </View>
                   <View style={{ flex: 1, backgroundColor: 'rgba(239,68,68,0.08)', borderRadius: 16, padding: 12, alignItems: 'center' }}>
-                    <Text style={{ color: '#71717A', fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Gastos 7d</Text>
+                    <Text style={{ color: '#71717A', fontSize: 12, fontWeight: '700', marginBottom: 4 }}>Gastos 7d</Text>
                     <Text style={{ color: '#EF4444', fontSize: 18, fontWeight: '800' }}>${weekSummary?.expenses || 0}</Text>
                   </View>
                   <View style={{ flex: 1, backgroundColor: 'rgba(59,130,246,0.08)', borderRadius: 16, padding: 12, alignItems: 'center' }}>
-                    <Text style={{ color: '#71717A', fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Balance</Text>
+                    <Text style={{ color: '#71717A', fontSize: 12, fontWeight: '700', marginBottom: 4 }}>Balance</Text>
                     <Text style={{ color: (weekSummary?.balance || 0) >= 0 ? '#10B981' : '#EF4444', fontSize: 18, fontWeight: '800' }}>
                       ${weekSummary?.balance || 0}
                     </Text>
@@ -760,7 +672,7 @@ export default function HomeScreen() {
                 {/* Steps mini chart */}
                 {weekSteps && weekSteps.length > 0 && (
                   <View style={{ marginBottom: 14 }}>
-                    <Text style={{ color: '#71717A', fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+                    <Text style={{ color: '#71717A', fontSize: 12, fontWeight: '700', marginBottom: 8 }}>
                       Pasos (7 días)
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 40 }}>
@@ -794,7 +706,7 @@ export default function HomeScreen() {
                 {/* Sleep mini chart */}
                 {weekSleep && weekSleep.length > 0 && (
                   <View>
-                    <Text style={{ color: '#71717A', fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+                    <Text style={{ color: '#71717A', fontSize: 12, fontWeight: '700', marginBottom: 8 }}>
                       Sueño (7 días)
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 40 }}>
@@ -837,7 +749,6 @@ export default function HomeScreen() {
             visible={showWaterModal}
             onClose={() => setShowWaterModal(false)}
             currentWater={healthSummary?.water_ml || 0}
-            userId={String(user.id)}
             onSave={invalidateHealth}
           />
         )}

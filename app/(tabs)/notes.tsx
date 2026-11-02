@@ -6,12 +6,13 @@ import { AddNoteModal } from '@/components/modals/add-note-modal';
 import { FadeInView } from '@/components/fade-in-view';
 import { useNotes } from '@/hooks/use-notes';
 import type { Note } from '@/lib/supabase';
+import { fechaLocal } from '@/lib/registros';
 
 const COLORS = {
   bg: '#09090B', card: '#0F0F12', surface: '#18181B', border: '#27272A',
   text: '#FAFAFA', textDim: '#E4E4E7', muted: '#A1A1AA', subtle: '#52525B', primary: '#14B8A6',
 };
-const todayISO = new Date().toISOString().split('T')[0];
+const todayISO = fechaLocal();
 
 export default function NotesScreen() {
   const router = useRouter();
@@ -70,7 +71,7 @@ export default function NotesScreen() {
 
         <ScrollView
           style={{ flex: 1, marginTop: 14 }}
-          contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 140 }}
+          contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 150 }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={COLORS.primary} />}
         >
           {filtered.length === 0 ? (
@@ -135,7 +136,7 @@ export default function NotesScreen() {
         <Pressable
           onPress={openNew}
           style={({ pressed }) => ({
-            position: 'absolute', right: 20, bottom: 24, width: 60, height: 60, borderRadius: 30,
+            position: 'absolute', right: 20, bottom: 110, width: 60, height: 60, borderRadius: 30,
             backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center',
             shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 8,
             opacity: pressed ? 0.9 : 1,
