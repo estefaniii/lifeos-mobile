@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ScrollView, Text, View, Pressable, RefreshControl, Alert, Modal, TextInput, KeyboardAvoidingView, Platform, type StyleProp, type ViewStyle } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
-import { Titulo, Sticker, TINTA } from '@/components/decor';
+import { Titulo, Sticker, TINTA, acentoTexto, RADIO } from '@/components/decor';
 import { TransactionCard } from '@/components/transaction-card';
 import { AddTransactionModal } from '@/components/modals/add-transaction-modal';
 import { AddSavingsGoalModal } from '@/components/modals/add-savings-goal-modal';
@@ -11,16 +11,17 @@ import { useBudgetProgress, useCreateBudget, useDeleteBudget } from '@/hooks/use
 import { useRecurringTransactions, useCreateRecurring, useDeleteRecurring, useApplyRecurring } from '@/hooks/use-recurring';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
+import { ACENTOS } from '@/constants/tabs';
 
 // Finanzas: balance del período, en qué se va el dinero, metas, presupuestos,
 // movimientos fijos y el registro. Un solo acento (menta) para las acciones.
-const MENTA = '#5FD3A8';
-const CORAL = '#FF7A6B';
-const AMBAR = '#FFB547';
-const ALTO = '#2A2521'; // superficie elevada: chips, iconos y campos dentro de tarjetas
+const MENTA = ACENTOS.finanzas;
+const CORAL = ACENTOS.ejercicio;
+const AMBAR = ACENTOS.inicio;
+const ALTO = TINTA.elevada; // superficie elevada: chips, iconos y campos dentro de tarjetas
 
 // Las metas guardan una clave de color; aquí se traduce a la paleta cálida
-const COLOR_META: Record<string, string> = { primary: MENTA, success: '#A8D672', warning: AMBAR, accent: '#C9A2FF' };
+const COLOR_META: Record<string, string> = { primary: MENTA, success: ACENTOS.comida, warning: AMBAR, accent: ACENTOS.historial };
 
 const PERIODOS = [['day', 'Hoy'], ['week', 'Semana'], ['month', 'Mes'], ['year', 'Año']] as const;
 type Periodo = (typeof PERIODOS)[number][0];
@@ -28,7 +29,7 @@ type Periodo = (typeof PERIODOS)[number][0];
 const monto = (n: number | null | undefined) =>
   `$${Math.abs(Number(n) || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
 
-const tarjeta: ViewStyle = { backgroundColor: TINTA.tarjeta, borderRadius: 26, borderWidth: 1, borderColor: TINTA.borde, padding: 18 };
+const tarjeta: ViewStyle = { backgroundColor: TINTA.tarjeta, borderRadius: RADIO.tarjeta, borderWidth: 1, borderColor: TINTA.borde, padding: 18 };
 const campo: ViewStyle = { backgroundColor: ALTO, borderRadius: 16, borderWidth: 1, borderColor: TINTA.borde, paddingHorizontal: 16, minHeight: 52, justifyContent: 'center' };
 const webSinBorde = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
 
@@ -53,7 +54,7 @@ function Boton({ texto, onPress, tipo = 'principal', style, disabled }: {
         opacity: disabled ? 0.5 : pressed ? 0.85 : 1,
       }, style]}
     >
-      <Text style={{ color: principal ? TINTA.fondo : TINTA.texto, fontWeight: '800', fontSize: 15 }}>{texto}</Text>
+      <Text style={{ color: principal ? TINTA.sobreAcento : TINTA.texto, fontWeight: '800', fontSize: 15 }}>{texto}</Text>
     </Pressable>
   );
 }
@@ -62,7 +63,7 @@ function Boton({ texto, onPress, tipo = 'principal', style, disabled }: {
 function Enlace({ texto, onPress }: { texto: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" style={{ minHeight: 44, paddingHorizontal: 12, justifyContent: 'center', marginRight: -12 }}>
-      <Text style={{ color: MENTA, fontSize: 15, fontWeight: '700' }}>{texto}</Text>
+      <Text style={{ color: acentoTexto(MENTA), fontSize: 15, fontWeight: '700' }}>{texto}</Text>
     </Pressable>
   );
 }
@@ -85,7 +86,7 @@ function Vacio({ texto, accion, onPress }: { texto: string; accion: string; onPr
     <Pressable onPress={onPress} accessibilityRole="button"
       style={({ pressed }) => ({ ...tarjeta, borderStyle: 'dashed', alignItems: 'center', gap: 4, paddingVertical: 22, opacity: pressed ? 0.85 : 1 })}>
       <Text style={{ color: TINTA.suave, fontSize: 14 }}>{texto}</Text>
-      <Text style={{ color: MENTA, fontSize: 15, fontWeight: '700' }}>{accion}</Text>
+      <Text style={{ color: acentoTexto(MENTA), fontSize: 15, fontWeight: '700' }}>{accion}</Text>
     </Pressable>
   );
 }
@@ -118,7 +119,7 @@ function Interruptor({ opciones, valor, onCambio }: {
         return (
           <Pressable key={o.valor} onPress={() => onCambio(o.valor)} accessibilityRole="tab" accessibilityState={{ selected: activo }}
             style={{ flex: 1, minHeight: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: activo ? o.color : 'transparent' }}>
-            <Text style={{ color: activo ? TINTA.fondo : TINTA.texto, fontWeight: '800', fontSize: 14 }}>{o.texto}</Text>
+            <Text style={{ color: activo ? TINTA.sobreAcento : TINTA.texto, fontWeight: '800', fontSize: 14 }}>{o.texto}</Text>
           </Pressable>
         );
       })}
@@ -137,7 +138,7 @@ function Chips({ opciones, valor, onCambio }: { opciones: { name: string; icon?:
           <Pressable key={c.name} onPress={() => onCambio(c.name)} accessibilityRole="button" accessibilityState={{ selected: activo }}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 14, borderRadius: 99, backgroundColor: activo ? MENTA : ALTO, borderWidth: 1, borderColor: activo ? MENTA : TINTA.borde }}>
             {!!c.icon && <Text style={{ fontSize: 15 }}>{c.icon}</Text>}
-            <Text style={{ color: activo ? TINTA.fondo : TINTA.texto, fontSize: 14, fontWeight: '700' }}>{c.name}</Text>
+            <Text style={{ color: activo ? TINTA.sobreAcento : TINTA.texto, fontSize: 14, fontWeight: '700' }}>{c.name}</Text>
           </Pressable>
         );
       })}
@@ -162,8 +163,8 @@ function Hoja({ visible, titulo, sub, onClose, children }: { visible: boolean; t
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(8,6,5,0.72)', justifyContent: 'flex-end' }}>
-          <View style={{ maxHeight: '92%', width: '100%', maxWidth: 640, alignSelf: 'center', backgroundColor: TINTA.tarjeta, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderWidth: 1, borderBottomWidth: 0, borderColor: TINTA.borde, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28 }}>
+        <View style={{ flex: 1, backgroundColor: TINTA.overlay, justifyContent: 'flex-end' }}>
+          <View style={{ maxHeight: '92%', width: '100%', maxWidth: 640, alignSelf: 'center', backgroundColor: TINTA.tarjeta, borderTopLeftRadius: RADIO.hoja, borderTopRightRadius: RADIO.hoja, borderWidth: 1, borderBottomWidth: 0, borderColor: TINTA.borde, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28 }}>
             <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: TINTA.borde, marginBottom: 14 }} />
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
               <View style={{ flex: 1 }}>
@@ -375,7 +376,7 @@ export default function FinancesScreen() {
       : `Gastaste ${monto(expenses - income)} más de lo que entró. Mira abajo en qué se fue.`;
 
   return (
-    <ScreenContainer className="p-0" containerClassName="bg-[#110F0D]">
+    <ScreenContainer className="p-0">
       <ScrollView
         contentContainerStyle={{ paddingBottom: 150 }}
         keyboardShouldPersistTaps="handled"
@@ -415,8 +416,8 @@ export default function FinancesScreen() {
             <View style={{ flexDirection: 'row', backgroundColor: TINTA.tarjeta, borderRadius: 22, padding: 4, borderWidth: 1, borderColor: TINTA.borde }}>
               {PERIODOS.map(([p, nombre]) => (
                 <Pressable key={p} onPress={() => setPeriod(p)} accessibilityRole="tab" accessibilityState={{ selected: period === p }}
-                  style={{ flex: 1, minHeight: 44, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: period === p ? TINTA.texto : 'transparent' }}>
-                  <Text style={{ color: period === p ? TINTA.fondo : TINTA.suave, fontWeight: '800', fontSize: 14 }}>{nombre}</Text>
+                  style={{ flex: 1, minHeight: 44, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: period === p ? MENTA : 'transparent' }}>
+                  <Text style={{ color: period === p ? TINTA.sobreAcento : TINTA.suave, fontWeight: '800', fontSize: 14 }}>{nombre}</Text>
                 </Pressable>
               ))}
             </View>
@@ -437,11 +438,11 @@ export default function FinancesScreen() {
               <View style={{ flexDirection: 'row', marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderColor: TINTA.borde }}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: TINTA.suave, fontSize: 14 }}>Entró</Text>
-                  <Text style={{ color: MENTA, fontSize: 20, fontWeight: '800', marginTop: 2 }}>+{monto(income)}</Text>
+                  <Text style={{ color: acentoTexto(MENTA), fontSize: 20, fontWeight: '800', marginTop: 2 }}>+{monto(income)}</Text>
                 </View>
                 <View style={{ flex: 1, alignItems: 'flex-end' }}>
                   <Text style={{ color: TINTA.suave, fontSize: 14 }}>Salió</Text>
-                  <Text style={{ color: CORAL, fontSize: 20, fontWeight: '800', marginTop: 2 }}>−{monto(expenses)}</Text>
+                  <Text style={{ color: acentoTexto(CORAL), fontSize: 20, fontWeight: '800', marginTop: 2 }}>−{monto(expenses)}</Text>
                 </View>
               </View>
 
@@ -473,7 +474,7 @@ export default function FinancesScreen() {
                   {income > 0 ? `Gastaste el ${spentPct}% de lo que entró` : 'Sin ingresos registrados'}
                 </Text>
                 {income > 0 && (
-                  <Text style={{ color: colorGasto, fontSize: 14, fontWeight: '700' }}>
+                  <Text style={{ color: acentoTexto(colorGasto), fontSize: 14, fontWeight: '700' }}>
                     {spentPct >= 90 ? 'Gastos altos este período.' : spentPct >= 70 ? 'Moderado: cuida los gastos.' : 'Buen control.'}
                   </Text>
                 )}
@@ -560,7 +561,7 @@ export default function FinancesScreen() {
                         borderColor: isOver ? 'rgba(255,122,107,0.45)' : TINTA.borde })}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                         <Text style={{ color: TINTA.texto, fontWeight: '800', fontSize: 15, flex: 1 }} numberOfLines={1}>{b.category}</Text>
-                        <Text style={{ color: isOver ? CORAL : TINTA.suave, fontSize: 14, fontWeight: '600' }}>
+                        <Text style={{ color: isOver ? acentoTexto(CORAL) : TINTA.suave, fontSize: 14, fontWeight: '600' }}>
                           {monto(b.spent)} / {monto(b.limit_amount)}
                         </Text>
                         <Quitar etiqueta={`Eliminar presupuesto de ${b.category}`} onPress={() => deleteBudget.mutate(b.id)} />
@@ -568,10 +569,10 @@ export default function FinancesScreen() {
                       <Barra pct={b.percentage} color={barColor} />
                       <Text style={{ color: TINTA.suave, fontSize: 12.5 }}>{b.percentage} % del mes</Text>
                       {isOver && (
-                        <Text style={{ color: CORAL, fontSize: 13, fontWeight: '700' }}>Te pasaste por {monto(b.spent - b.limit_amount)}</Text>
+                        <Text style={{ color: acentoTexto(CORAL), fontSize: 13, fontWeight: '700' }}>Te pasaste por {monto(b.spent - b.limit_amount)}</Text>
                       )}
                       {isWarning && (
-                        <Text style={{ color: AMBAR, fontSize: 13, fontWeight: '700' }}>Te quedan {monto(b.limit_amount - b.spent)} este mes</Text>
+                        <Text style={{ color: acentoTexto(AMBAR), fontSize: 13, fontWeight: '700' }}>Te quedan {monto(b.limit_amount - b.spent)} este mes</Text>
                       )}
                     </Pressable>
                   );
@@ -592,7 +593,7 @@ export default function FinancesScreen() {
                       <Text style={{ color: TINTA.texto, fontWeight: '700', fontSize: 15 }} numberOfLines={1}>{r.note || r.category}</Text>
                       <Text style={{ color: TINTA.suave, fontSize: 13, marginTop: 2 }}>Día {r.day_of_month} de cada mes</Text>
                     </View>
-                    <Text style={{ color: r.type === 'income' ? MENTA : CORAL, fontWeight: '800', fontSize: 15 }}>
+                    <Text style={{ color: r.type === 'income' ? acentoTexto(MENTA) : acentoTexto(CORAL), fontWeight: '800', fontSize: 15 }}>
                       {r.type === 'income' ? '+' : '−'}{monto(r.amount)}
                     </Text>
                     <Quitar etiqueta={`Eliminar ${r.note || r.category}`} onPress={() => deleteRecurring.mutate(r.id)} />

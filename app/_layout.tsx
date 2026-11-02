@@ -8,6 +8,7 @@ import "react-native-reanimated";
 import { Platform } from "react-native";
 import "@/lib/_core/nativewind-pressable";
 import { ThemeProvider } from "@/lib/theme-provider";
+import { esClaro } from "@/lib/tema";
 import {
   SafeAreaFrameContext,
   SafeAreaInsetsContext,
@@ -141,7 +142,7 @@ export default function RootLayout() {
               <Stack.Screen name="timeline" />
               <Stack.Screen name="oauth/callback" />
             </Stack>
-            <StatusBar style="auto" />
+            <StatusBar style={esClaro() ? "dark" : "light"} />
           </AuthProvider>
         </QueryClientProvider>
       </trpc.Provider>

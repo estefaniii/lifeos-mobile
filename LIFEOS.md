@@ -74,7 +74,8 @@ Nunca `node -e "..."` en una línea: bash se come los `${...}`. **Un cambio de e
    - **Programas y retos:** 6 retos de 21 días (`constants/retos.ts`). Al elegir uno se guarda como programa y se va marcando día a día; cada día abre su rutina. También hay planes de otra persona con su video por día.
 3. 🍽️ **Comida** (`food.tsx`):
    - **Semana:** plan de 7 días × 4 momentos. Con **Armar mi semana** eliges recetas, se reparten sin repetir dos días seguidos y los ingredientes van a Compras sin duplicados (`lib/semana-comida.ts`). El plan de hoy tiene el check **«La comí»**, que queda en el Historial.
-   - **Recetas:** 31 con foto, buscador y filtros.
+   - **Recetas:** 38 con foto, buscador y filtros.
+   - **Compras:** agrupadas por pasillo del súper (`pasilloDe()` en `lib/semana-comida.ts`).
    - **Compras.**
 4. 🎨 **Hobbies** (`hobbies.tsx`): hobbies con meta semanal y sesiones; **Obras en curso**, con estado, progreso y fotos (polaroids).
 5. 💰 **Finanzas** (`finances.tsx`): transacciones, presupuestos, metas, recurrentes.
@@ -130,7 +131,8 @@ tests/      vitest
 - **meal_plan**, **shopping_items**: comida (`vida-personal.sql`)
 - **life_logs**: registros rápidos con hora (agua, comida, meditación). **hobbies**, **hobby_sessions**, **craft_works**, **craft_work_images**: hobbies y obras. Bucket privado **`obras`** con las fotos en `<user_id>/<obra>/…` (`registros-hobbies.sql`, creado el 1-nov-2026)
 - **notes**
-- Sin uso, de cuando había trabajo: `clients`, `tasks`, `posts`, `projects`, `productivity_logs`
+- **progress_photos**: fotos de *Mi progreso*, en el bucket privado `progreso`. `user_settings.day_start_hour` guarda a qué hora empieza tu día (`progreso-dia.sql`).
+- **Esquema `archivo`**: `clients`, `tasks`, `posts`, `projects`, `chat_messages` y `affirmations`, de cuando había trabajo y afirmaciones. Ya no las usa la app. Hay una copia en `respaldos/tablas-sin-uso-2026-11-01.json` (gitignored). Para borrarlas del todo: `drop schema archivo cascade;`. `productivity_logs` sigue en `public`, vacía, porque la lee `timeline`.
 
 - **user_settings**: foto (bucket privado **`perfil`**), recordatorios y zona horaria. **push_subscriptions**: los celulares suscritos. **push_sent**: lo ya enviado, que solo toca el servidor (`perfil-push.sql`). Extensiones `pg_cron` y `pg_net` activas.
 
@@ -140,6 +142,16 @@ Todas con **RLS**: cada usuario solo ve lo suyo.
 
 ## 8. Historial de cambios
 
+- **1-nov-2026 (noche)**:
+  - Los 8 hobbies de Luni pasan a LifeOS.
+  - Hora de inicio del día, rachas de agua y de ejercicio con sticker.
+  - Mi progreso, con fotos del cuerpo.
+  - Liberar espacio en el Historial.
+  - Notificaciones con el resumen del domingo y la copia del día 1.
+  - Música con iconos y 16 listas.
+  - 38 recetas, compras por pasillo y aviso de presupuesto al 80 %.
+  - Tablas sin uso archivadas y su código borrado.
+  - Modo claro.
 - **1-nov-2026 (tarde)**:
   - Notificaciones push reales y Perfil con foto, sin «Zona de peligro».
   - Menú lateral en computadora y menú hamburguesa en el celular.
@@ -167,10 +179,9 @@ Todas con **RLS**: cada usuario solo ve lo suyo.
 
 ## 9. Pendientes / ideas
 
-- Notificaciones con la app cerrada: solo en app nativa con push.
-- Modo claro de verdad: hoy es oscuro solamente.
+- Notificaciones nativas con la app cerrada en iOS/Android: en web ya funcionan (push). En nativo, `expo-notifications` las programa en el teléfono.
 - Decidir si Idiomas y Estudio pasan de Luni a LifeOS.
-- La hora de inicio del día: hoy todo corta a medianoche. Si se quiere que la 1 a. m. cuente como el día anterior (como en Luni), hay que hacerlo en `lib/registros.ts` y en los hooks a la vez.
+- Borrar del todo el esquema `archivo` cuando ya no haga falta: `drop schema archivo cascade;`.
 
 ## 10. Trampas y notas
 
@@ -178,7 +189,12 @@ Todas con **RLS**: cada usuario solo ve lo suyo.
 - **Zona segura en web:** el layout raíz forzaba 0 y solo la cambiaba si llegaba un mensaje del iframe de Manus. Ahora se mide con `env(safe-area-inset-*)` (`lib/_core/web-safe-area.ts`), y eso necesita `viewport-fit=cover` en `app/+html.tsx`.
 - **Menú flotante:** cada pantalla deja `paddingBottom: 150` y los botones flotantes van a `bottom: 110` o más.
 - **Videos y música:** son búsquedas de YouTube y Spotify, no IDs fijos. Un ID escrito a mano se rompe cuando borran el video. En la web se abren con un `<a target=_blank>` que se pulsa dentro del toque: `Linking.openURL` usa `window.open`, y el iPhone con la app instalada lo ignora.
-- **Tema:** la paleta oscura cálida está en `theme.config.js` (`useColors()`) y en `TINTA` (`components/decor.tsx`). El color principal es ámbar; cada sección usa su acento de `constants/tabs.ts`.
+- **Tema:** las dos paletas, oscura y clara cálida, están en `theme.config.js`. `lib/tema.ts` elige la que toca según Perfil → Apariencia: `localStorage` en web, `SecureStore` en el teléfono, leído al cargar.
+  - De ahí salen `TINTA` (`components/decor.tsx`) y `useColors()`. Ningún hex de la base se escribe a mano.
+  - El texto sobre un acento usa `TINTA.sobreAcento`, siempre oscuro. Un acento usado como texto sobre fondo claro pasa por `acentoTexto()`.
+  - En web, cambiar de tema recarga la página.
+- **Hora de inicio del día:** `setHoraInicioDia()` en `lib/registros.ts` desplaza `fechaLocal()`. La lee `useAjustes()` y se guarda también en `localStorage` para el primer render. Todo «hoy» tiene que pasar por `fechaLocal()`, o se contradice con el resto.
+- **Liberar espacio:** `HISTORIAL_BORRABLE` en `hooks/use-registros.ts` dice qué se puede borrar. Nunca entran ahí dinero, hábitos (su definición), hobbies, obras, recetas ni notas.
 - **`/api/*`:** la regla de `vercel.json` que manda todo a `index.html` excluye `/api/`; si no, la función de push devolvería la app.
 - **Fotos de obras:** el bucket es privado y se ven con enlaces firmados de una hora (`useFotosFirmadas`).
 - **`.env`** tiene las credenciales. No se sube ni se borra.

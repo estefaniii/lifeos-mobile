@@ -2,15 +2,16 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, Pressable, RefreshControl, TextInput, Platform } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
 import { AddNoteModal, fondoNota } from '@/components/modals/add-note-modal';
-import { Titulo, Sticker, TINTA } from '@/components/decor';
+import { Titulo, Sticker, TINTA, RADIO } from '@/components/decor';
 import { FadeInView } from '@/components/fade-in-view';
 import { useNotes } from '@/hooks/use-notes';
 import type { Note } from '@/lib/supabase';
 import { fechaLocal } from '@/lib/registros';
+import { ACENTOS } from '@/constants/tabs';
 
 // Notas: un solo acento (azul) para crear y filtrar.
-const AZUL = '#8FB8FF';
-const ALTO = '#2A2521';
+const AZUL = ACENTOS.notas;
+const ALTO = TINTA.elevada;
 const todayISO = fechaLocal();
 
 export default function NotesScreen() {
@@ -38,7 +39,7 @@ export default function NotesScreen() {
   const webNoOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
 
   return (
-    <ScreenContainer className="p-0" containerClassName="bg-[#110F0D]">
+    <ScreenContainer className="p-0">
       <View style={{ flex: 1, backgroundColor: TINTA.fondo }}>
         <ScrollView
           style={{ flex: 1 }}
@@ -70,7 +71,7 @@ export default function NotesScreen() {
             </View>
 
             {filtered.length === 0 ? (
-              <View style={{ backgroundColor: TINTA.tarjeta, borderRadius: 28, borderWidth: 1, borderColor: TINTA.borde, alignItems: 'center', paddingVertical: 36, paddingHorizontal: 24, marginTop: 8 }}>
+              <View style={{ backgroundColor: TINTA.tarjeta, borderRadius: RADIO.tarjeta, borderWidth: 1, borderColor: TINTA.borde, alignItems: 'center', paddingVertical: 36, paddingHorizontal: 24, marginTop: 8 }}>
                 <Sticker texto={notes.length ? 'nada por aquí' : 'hoja en blanco'} color={AZUL} giro={-5} style={{ position: 'absolute', top: -14, left: 20 }} />
                 <Titulo size={22} style={{ textAlign: 'center' }}>
                   {notes.length ? 'Nada con esa búsqueda' : 'Aún no hay notas'}
@@ -81,7 +82,7 @@ export default function NotesScreen() {
                 {!notes.length && (
                   <Pressable onPress={openNew} accessibilityRole="button"
                     style={({ pressed }) => ({ backgroundColor: AZUL, borderRadius: 18, minHeight: 52, paddingHorizontal: 24, justifyContent: 'center', marginTop: 20, opacity: pressed ? 0.85 : 1 })}>
-                    <Text style={{ color: TINTA.fondo, fontWeight: '800', fontSize: 15 }}>Escribir una nota</Text>
+                    <Text style={{ color: TINTA.sobreAcento, fontWeight: '800', fontSize: 15 }}>Escribir una nota</Text>
                   </Pressable>
                 )}
               </View>
@@ -117,7 +118,7 @@ export default function NotesScreen() {
                           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
                             {!!n.remind_at && (
                               <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, backgroundColor: vence ? AZUL : ALTO }}>
-                                <Text style={{ color: vence ? TINTA.fondo : TINTA.suave, fontSize: 12, fontWeight: '700' }}>⏰ {n.remind_at.slice(5)}</Text>
+                                <Text style={{ color: vence ? TINTA.sobreAcento : TINTA.suave, fontSize: 12, fontWeight: '700' }}>⏰ {n.remind_at.slice(5)}</Text>
                               </View>
                             )}
                             {!!n.client && (
@@ -147,8 +148,8 @@ export default function NotesScreen() {
             opacity: pressed ? 0.85 : 1,
           })}
         >
-          <Text style={{ color: TINTA.fondo, fontSize: 22, fontWeight: '800', marginTop: -2 }}>+</Text>
-          <Text style={{ color: TINTA.fondo, fontSize: 15, fontWeight: '800' }}>Nota</Text>
+          <Text style={{ color: TINTA.sobreAcento, fontSize: 22, fontWeight: '800', marginTop: -2 }}>+</Text>
+          <Text style={{ color: TINTA.sobreAcento, fontSize: 15, fontWeight: '800' }}>Nota</Text>
         </Pressable>
       </View>
 
@@ -165,7 +166,7 @@ function Filtro({ label, active, onPress }: { label: string; active: boolean; on
       accessibilityState={{ selected: active }}
       style={{ flex: 1, minHeight: 44, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? AZUL : 'transparent' }}
     >
-      <Text style={{ color: active ? TINTA.fondo : TINTA.texto, fontSize: 14, fontWeight: '800' }}>{label}</Text>
+      <Text style={{ color: active ? TINTA.sobreAcento : TINTA.texto, fontSize: 14, fontWeight: '800' }}>{label}</Text>
     </Pressable>
   );
 }

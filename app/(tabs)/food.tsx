@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ScrollView, Text, View, Pressable, TextInput, Modal } from 'react-native';
 import { Image } from 'expo-image';
 import { ScreenContainer } from '@/components/screen-container';
-import { Titulo, Sticker } from '@/components/decor';
+import { Titulo, Sticker, TINTA, acentoTexto, RADIO } from '@/components/decor';
 import { useColors } from '@/hooks/use-colors';
 import { DIAS, SLOTS, SLOT_LABEL, type Slot } from '@/constants/comida';
 import { RECETAS, type Receta } from '@/constants/recetas';
@@ -12,6 +12,7 @@ import { horaCorta } from '@/lib/registros';
 import {
   repartirSemana, siguienteOpcion, ingredientesDelPlan, sinLoQueYaHay, etiquetaComida, huecosLlenos, porPasillo, type FilaPlan,
 } from '@/lib/semana-comida';
+import { ACENTOS } from '@/constants/tabs';
 
 // Comida: armar la semana eligiendo recetas, el plan de cada día con su check «La comí»,
 // recetas con foto y la lista de compras.
@@ -26,9 +27,9 @@ const vacias = (): Record<Slot, string[]> => ({ desayuno: [], almuerzo: [], meri
 const sinTildes = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 const recetaDe = (meal?: string) => (meal ? RECETAS.find((r) => r.titulo === meal) : undefined);
 // El acento de Comida (lima) con texto oscuro encima; la superficie elevada para fichas dentro de tarjetas
-const ACENTO = '#B6E36B';
-const SOBRE = '#110F0D';
-const ELEVADO = '#2A2521';
+const ACENTO = ACENTOS.comida;
+const SOBRE = TINTA.sobreAcento;
+const ELEVADO = TINTA.elevada;
 
 export default function FoodScreen() {
   const c = useColors();
@@ -146,7 +147,7 @@ export default function FoodScreen() {
   const huecoBorrador = (day: number, slot: Slot) =>
     borrador.find((f) => f.day === day && f.slot === slot)?.meal ?? plan.find((f) => f.day === day && f.slot === slot)?.meal ?? '';
 
-  const tarjeta = { backgroundColor: c.surface, borderRadius: 26, padding: 18, borderWidth: 1, borderColor: c.border } as const;
+  const tarjeta = { backgroundColor: c.surface, borderRadius: RADIO.tarjeta, padding: 18, borderWidth: 1, borderColor: c.border } as const;
   const chip = (on: boolean) => ({ minHeight: 44, paddingHorizontal: 16, borderRadius: 22, justifyContent: 'center' as const,
     backgroundColor: on ? ACENTO : c.surface, borderWidth: 1, borderColor: on ? ACENTO : c.border });
   const campo = { color: c.foreground, borderWidth: 1.5, borderColor: c.border, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, flex: 1 } as const;
@@ -192,7 +193,7 @@ export default function FoodScreen() {
               <Text style={{ color: c.foreground, flex: 1, fontWeight: '600' }}>{listo}</Text>
               {listo.includes('Compras') && (
                 <Pressable onPress={() => { setVista('compras'); setListo('') }} style={{ minHeight: 44, justifyContent: 'center' }}>
-                  <Text style={{ color: ACENTO, fontWeight: '800' }}>Ver compras</Text>
+                  <Text style={{ color: acentoTexto(ACENTO), fontWeight: '800' }}>Ver compras</Text>
                 </Pressable>
               )}
             </View>
@@ -243,7 +244,7 @@ export default function FoodScreen() {
             {!!aviso && esHoy && <Text style={{ color: c.warning, fontSize: 13, marginBottom: 8 }}>{aviso}</Text>}
             {vacio && (
               <Pressable onPress={() => guardar.mutate(filasSugeridas())} accessibilityRole="button" style={{ backgroundColor: ELEVADO, borderRadius: 18, padding: 14, marginBottom: 10, minHeight: 44 }}>
-                <Text style={{ color: ACENTO, fontWeight: '800' }}>O empieza con el plan sugerido</Text>
+                <Text style={{ color: acentoTexto(ACENTO), fontWeight: '800' }}>O empieza con el plan sugerido</Text>
                 <Text style={{ color: c.muted, fontSize: 13 }}>Lo copio a tu plan y luego lo cambias a tu gusto.</Text>
               </Pressable>
             )}
@@ -284,7 +285,7 @@ export default function FoodScreen() {
                           {comida && log ? (
                             <Text style={{ color: c.muted, fontSize: 12.5 }}>La comiste a las {horaCorta(log.logged_at)}</Text>
                           ) : r ? (
-                            <Text style={{ color: ACENTO, fontSize: 12.5, fontWeight: '700' }}>Cómo se prepara · {r.minutos} min</Text>
+                            <Text style={{ color: acentoTexto(ACENTO), fontSize: 12.5, fontWeight: '700' }}>Cómo se prepara · {r.minutos} min</Text>
                           ) : null}
                         </View>
                       </Pressable>
@@ -328,7 +329,7 @@ export default function FoodScreen() {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
             {recetas.map((r) => (
               <Pressable key={r.id} onPress={() => abrir(r)} accessibilityRole="button" accessibilityLabel={`Receta: ${r.titulo}`}
-                style={{ flexBasis: '46%', flexGrow: 1, backgroundColor: c.surface, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: c.border }}>
+                style={{ flexBasis: '46%', flexGrow: 1, backgroundColor: c.surface, borderRadius: RADIO.tarjeta, overflow: 'hidden', borderWidth: 1, borderColor: c.border }}>
                 <Image source={r.foto} style={{ width: '100%', aspectRatio: 4 / 3 }} contentFit="cover" accessibilityIgnoresInvertColors />
                 <View style={{ padding: 12, gap: 4 }}>
                   <Text style={{ color: c.foreground, fontSize: 15, fontWeight: '800' }} numberOfLines={2}>{r.titulo}</Text>
@@ -346,7 +347,7 @@ export default function FoodScreen() {
               <Titulo size={22} color={c.foreground}>Lista de compras</Titulo>
               {compras.some((x) => x.done) && (
                 <Pressable onPress={() => clearDone.mutate()} style={{ minHeight: 44, justifyContent: 'center' }}>
-                  <Text style={{ color: ACENTO, fontWeight: '700', fontSize: 13 }}>Quitar comprados</Text>
+                  <Text style={{ color: acentoTexto(ACENTO), fontWeight: '700', fontSize: 13 }}>Quitar comprados</Text>
                 </Pressable>
               )}
             </View>
@@ -441,7 +442,7 @@ export default function FoodScreen() {
                 <Text style={{ color: c.muted }}>No elegiste ninguna receta: tu plan queda como estaba.</Text>
               ) : (
                 <Pressable onPress={() => setBorrador(repartirSemana(elegidas))} style={{ ...botonBorde, minHeight: 44 }}>
-                  <Text style={{ color: ACENTO, fontWeight: '800' }}>Repartir otra vez</Text>
+                  <Text style={{ color: acentoTexto(ACENTO), fontWeight: '800' }}>Repartir otra vez</Text>
                 </Pressable>
               )}
               {DIAS.map((d, day) => (
@@ -486,12 +487,12 @@ export default function FoodScreen() {
                   </Pressable>
                   {ingredientes.length > 0 && (
                     <Pressable onPress={() => setVerLista((v) => !v)} style={{ minHeight: 44, justifyContent: 'center' }}>
-                      <Text style={{ color: ACENTO, fontWeight: '700' }}>{verLista ? 'Ocultar la lista' : 'Ver la lista'}</Text>
+                      <Text style={{ color: acentoTexto(ACENTO), fontWeight: '700' }}>{verLista ? 'Ocultar la lista' : 'Ver la lista'}</Text>
                     </Pressable>
                   )}
                   {verLista && ingredientes.map((i) => (
                     <View key={i} style={{ flexDirection: 'row', gap: 10, paddingVertical: 3 }}>
-                      <Text style={{ color: ACENTO, fontSize: 15, lineHeight: 21 }}>•</Text>
+                      <Text style={{ color: acentoTexto(ACENTO), fontSize: 15, lineHeight: 21 }}>•</Text>
                       <Text style={{ color: c.foreground, fontSize: 15, lineHeight: 21, flex: 1 }}>{i}</Text>
                     </View>
                   ))}
@@ -504,7 +505,7 @@ export default function FoodScreen() {
           <View style={{ flexDirection: 'row', gap: 10, padding: 16, paddingBottom: 28, borderTopWidth: 1, borderTopColor: c.border, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
             {paso > 0 && (
               <Pressable onPress={() => setPaso((p) => p - 1)} style={{ ...botonBorde, flex: 1 }}>
-                <Text style={{ color: ACENTO, fontWeight: '800' }}>Atrás</Text>
+                <Text style={{ color: acentoTexto(ACENTO), fontWeight: '800' }}>Atrás</Text>
               </Pressable>
             )}
             {paso < SLOTS.length ? (
@@ -556,7 +557,7 @@ export default function FoodScreen() {
                     </Text>
                   </Pressable>
                   <Pressable onPress={() => aCompras(receta)} disabled={hecho === 'compras'} style={botonBorde}>
-                    <Text style={{ color: ACENTO, fontWeight: '800', textAlign: 'center' }}>
+                    <Text style={{ color: acentoTexto(ACENTO), fontWeight: '800', textAlign: 'center' }}>
                       {hecho === 'compras' ? 'Ingredientes en tu lista ✓' : 'Agregar ingredientes a compras'}
                     </Text>
                   </Pressable>
@@ -566,7 +567,7 @@ export default function FoodScreen() {
                   <Titulo size={22} color={c.foreground} style={{ marginBottom: 8 }}>Ingredientes</Titulo>
                   {receta.ingredientes.map((i) => (
                     <View key={i} style={{ flexDirection: 'row', gap: 10, paddingVertical: 5 }}>
-                      <Text style={{ color: ACENTO, fontSize: 16, lineHeight: 22 }}>•</Text>
+                      <Text style={{ color: acentoTexto(ACENTO), fontSize: 16, lineHeight: 22 }}>•</Text>
                       <Text style={{ color: c.foreground, fontSize: 16, lineHeight: 22, flex: 1 }}>{i}</Text>
                     </View>
                   ))}

@@ -3,8 +3,18 @@
 // Nada de degradados ni vidrio: color plano y un borde.
 import { Text, View, type TextStyle, type ViewStyle, type StyleProp } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
+import { PALETA, acentoTexto } from '@/lib/tema';
+import { ACENTOS } from '@/constants/tabs';
 
-export const TINTA = { fondo: '#110F0D', tarjeta: '#1A1714', borde: '#2E2924', texto: '#F5EFE8', suave: '#A39A90' };
+// La paleta del tema elegido (oscuro o claro). Los valores viven en
+// theme.config.js; lib/tema.ts decide cuál toca. Ningún hex de la base a mano.
+// - sobreAcento: el texto encima de un acento (siempre oscuro).
+// - overlay: el fondo detrás de los modales.
+export const TINTA = PALETA;
+export { acentoTexto };
+
+// Lo que comparten tarjetas, chips, botones y hojas en toda la app
+export const RADIO = { tarjeta: 28, hoja: 32, segmento: 22, chip: 22, boton: 20, campo: 16 } as const;
 
 export function Titulo({ children, size = 34, color = TINTA.texto, style }: { children: React.ReactNode; size?: number; color?: string; style?: StyleProp<TextStyle> }) {
   return (
@@ -18,7 +28,7 @@ export function Titulo({ children, size = 34, color = TINTA.texto, style }: { ch
 }
 
 // Una pastilla girada con borde claro, para pegar en la esquina de algo
-export function Sticker({ texto, color = '#FFB547', tinta = '#1A1714', giro = -6, style }: {
+export function Sticker({ texto, color = ACENTOS.inicio, tinta = TINTA.sobreAcento, giro = -6, style }: {
   texto: string; color?: string; tinta?: string; giro?: number; style?: StyleProp<ViewStyle>;
 }) {
   return (
@@ -35,7 +45,7 @@ export function Sticker({ texto, color = '#FFB547', tinta = '#1A1714', giro = -6
 }
 
 // Chispa de cuatro puntas
-export function Chispa({ size = 22, color = '#FFB547', style }: { size?: number; color?: string; style?: StyleProp<ViewStyle> }) {
+export function Chispa({ size = 22, color = ACENTOS.inicio, style }: { size?: number; color?: string; style?: StyleProp<ViewStyle> }) {
   return (
     <View pointerEvents="none" style={style}>
       <Svg width={size} height={size} viewBox="0 0 24 24">
@@ -46,7 +56,7 @@ export function Chispa({ size = 22, color = '#FFB547', style }: { size?: number;
 }
 
 // Estrella de cinco puntas, plana
-export function Estrella({ size = 28, color = '#F49AC1', style }: { size?: number; color?: string; style?: StyleProp<ViewStyle> }) {
+export function Estrella({ size = 28, color = ACENTOS.hobbies, style }: { size?: number; color?: string; style?: StyleProp<ViewStyle> }) {
   return (
     <View pointerEvents="none" style={style}>
       <Svg width={size} height={size} viewBox="0 0 24 24">
@@ -57,18 +67,18 @@ export function Estrella({ size = 28, color = '#F49AC1', style }: { size?: numbe
 }
 
 // Sello redondo con doble borde y un número o emoji en el centro
-export function Sello({ centro, pie, color = '#5FD3A8', size = 76, giro = 8, style }: {
+export function Sello({ centro, pie, color = ACENTOS.finanzas, size = 76, giro = 8, style }: {
   centro: string; pie?: string; color?: string; size?: number; giro?: number; style?: StyleProp<ViewStyle>;
 }) {
   return (
     <View pointerEvents="none" style={[{ width: size, height: size, transform: [{ rotate: `${giro}deg` }] }, style]}>
       <Svg width={size} height={size} viewBox="0 0 100 100" style={{ position: 'absolute' }}>
         <Circle cx={50} cy={50} r={48} fill={color} />
-        <Circle cx={50} cy={50} r={41} fill="none" stroke={TINTA.fondo} strokeWidth={2} strokeDasharray="4 4" />
+        <Circle cx={50} cy={50} r={41} fill="none" stroke={TINTA.sobreAcento} strokeWidth={2} strokeDasharray="4 4" />
       </Svg>
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontFamily: 'BricolageGrotesque_800ExtraBold', fontSize: size * 0.32, color: TINTA.fondo, lineHeight: size * 0.36 }}>{centro}</Text>
-        {!!pie && <Text style={{ fontSize: size * 0.12, fontWeight: '800', color: TINTA.fondo }}>{pie}</Text>}
+        <Text style={{ fontFamily: 'BricolageGrotesque_800ExtraBold', fontSize: size * 0.32, color: TINTA.sobreAcento, lineHeight: size * 0.36 }}>{centro}</Text>
+        {!!pie && <Text style={{ fontSize: size * 0.12, fontWeight: '800', color: TINTA.sobreAcento }}>{pie}</Text>}
       </View>
     </View>
   );

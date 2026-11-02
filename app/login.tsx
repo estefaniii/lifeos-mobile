@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
-import { Titulo, TINTA } from '@/components/decor';
+import { Titulo, TINTA, acentoTexto } from '@/components/decor';
+import { ACENTOS } from '@/constants/tabs';
 
 type Mode = 'login' | 'register' | 'forgot';
 
@@ -135,8 +136,8 @@ export default function LoginScreen() {
     border: TINTA.borde,
     text: TINTA.texto,
     muted: TINTA.suave,
-    accent: '#FFB547',
-    onAccent: TINTA.fondo,
+    accent: ACENTOS.inicio,
+    onAccent: TINTA.sobreAcento,
   };
 
   const inp = {
@@ -201,8 +202,8 @@ export default function LoginScreen() {
                   opacity: loading ? 0.6 : 1,
                 }}
               >
-                <Text style={{ color: C.onAccent, fontSize: 18, fontWeight: '800' }}>G</Text>
-                <Text style={{ color: C.onAccent, fontSize: 16, fontWeight: '700' }}>
+                <Text style={{ color: C.bg, fontSize: 18, fontWeight: '800' }}>G</Text>
+                <Text style={{ color: C.bg, fontSize: 16, fontWeight: '700' }}>
                   Continuar con Google
                 </Text>
               </Pressable>
@@ -266,7 +267,7 @@ export default function LoginScreen() {
             {error ? (
               <Text
                 style={{
-                  color: '#FF7A6B',
+                  color: acentoTexto(ACENTOS.ejercicio),
                   fontSize: 13,
                   textAlign: 'center',
                 }}
@@ -278,7 +279,7 @@ export default function LoginScreen() {
             {success ? (
               <Text
                 style={{
-                  color: C.accent,
+                  color: acentoTexto(C.accent),
                   fontSize: 13,
                   textAlign: 'center',
                 }}
@@ -320,7 +321,7 @@ export default function LoginScreen() {
               >
                 <Text style={{ color: C.muted, fontSize: 14 }}>
                   ¿Olvidaste tu contraseña?{' '}
-                  <Text style={{ color: C.accent, fontWeight: '600' }}>Recupérala</Text>
+                  <Text style={{ color: acentoTexto(C.accent), fontWeight: '600' }}>Recupérala</Text>
                 </Text>
               </Pressable>
             )}
@@ -340,7 +341,7 @@ export default function LoginScreen() {
                   ? '¿Ya tienes cuenta? '
                   : '¿No tienes cuenta? '}
                 {mode !== 'forgot' && (
-                  <Text style={{ color: C.accent, fontWeight: '600' }}>
+                  <Text style={{ color: acentoTexto(C.accent), fontWeight: '600' }}>
                     {mode === 'register' ? 'Inicia sesión' : 'Regístrate'}
                   </Text>
                 )}

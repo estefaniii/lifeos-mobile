@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Modal, View, Text, Pressable, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Titulo, TINTA } from '@/components/decor';
+import { Titulo, TINTA, RADIO } from '@/components/decor';
+import { ACENTOS } from '@/constants/tabs';
 
 const EMOJI_OPTIONS = ['📖', '💊', '🧴', '🏃', '💤', '🥗', '🧘', '✍️', '🎯', '💡', '🎶', '🧹', '📵', '🌅', '🥤', '🍎'];
 // Los acentos de la app: ámbar, lima, coral, cielo, lila, menta, rosa y amarillo
-const COLOR_OPTIONS = ['#FFB547', '#B6E36B', '#FF7A6B', '#7CC4FF', '#C9A7FF', '#5FD3A8', '#F49AC1', '#FFD966'];
-const ACENTO = '#FFB547';
-const ELEVADO = '#2A2521';
+const COLOR_OPTIONS = [ACENTOS.inicio, ACENTOS.comida, ACENTOS.ejercicio, ACENTOS.agua, ACENTOS.historial, ACENTOS.finanzas, ACENTOS.hobbies, '#FFD966'];
+const ACENTO = ACENTOS.inicio;
+const ELEVADO = TINTA.elevada;
 
 export function AddHabitModal({ visible, onClose, onSave }: {
   visible: boolean;
@@ -35,8 +36,8 @@ export function AddHabitModal({ visible, onClose, onSave }: {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: TINTA.tarjeta, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderWidth: 1, borderBottomWidth: 0, borderColor: TINTA.borde, padding: 24, paddingBottom: 32 }}>
+        <View style={{ flex: 1, backgroundColor: TINTA.overlay, justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: TINTA.tarjeta, borderTopLeftRadius: RADIO.hoja, borderTopRightRadius: RADIO.hoja, borderWidth: 1, borderBottomWidth: 0, borderColor: TINTA.borde, padding: 24, paddingBottom: 32 }}>
             <View style={{ maxWidth: 640, width: '100%', alignSelf: 'center' }}>
               <Titulo size={24}>Nuevo hábito</Titulo>
               <Text style={{ color: TINTA.suave, fontSize: 14, marginTop: 4, marginBottom: 20 }}>
@@ -134,7 +135,7 @@ export function AddHabitModal({ visible, onClose, onSave }: {
                     justifyContent: 'center',
                   }}
                 >
-                  <Text style={{ color: TINTA.fondo, fontWeight: '800', fontSize: 15 }}>Crear hábito</Text>
+                  <Text style={{ color: TINTA.sobreAcento, fontWeight: '800', fontSize: 15 }}>Crear hábito</Text>
                 </Pressable>
               </View>
             </View>

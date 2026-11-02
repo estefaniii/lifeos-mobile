@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import { useMonthlyComparison, type MonthlyReport } from '@/hooks/use-monthly-report';
+import { RADIO } from '@/components/decor';
 
 const MONTHS = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -24,7 +25,7 @@ function StatCard({ label, value, prev, unit, colors, inverse }: {
   const diffColor = diff === 0 ? colors.muted : isPositive ? colors.success : colors.error;
 
   return (
-    <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 14, flex: 1, minWidth: '45%' }}>
+    <View style={{ backgroundColor: colors.surface, borderRadius: RADIO.tarjeta, borderWidth: 1, borderColor: colors.border, padding: 16, flex: 1, minWidth: '45%' }}>
       <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 4 }}>{label}</Text>
       <Text style={{ color: colors.text, fontSize: 20, fontWeight: '700' }}>
         {typeof value === 'number' ? value.toLocaleString() : value}{unit ? ` ${unit}` : ''}
@@ -154,7 +155,7 @@ export default function ReportsScreen() {
         </View>
 
         {c.finances.topCategories.length > 0 && (
-          <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 14, marginTop: 12 }}>
+          <View style={{ backgroundColor: colors.surface, borderRadius: RADIO.tarjeta, borderWidth: 1, borderColor: colors.border, padding: 16, marginTop: 12 }}>
             <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600', marginBottom: 10 }}>
               Top Categorías de Gasto
             </Text>

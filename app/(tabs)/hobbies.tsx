@@ -3,13 +3,18 @@ import { ScrollView, Text, View, Pressable, TextInput, Modal, Alert, Platform } 
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { ScreenContainer } from '@/components/screen-container';
-import { Titulo, Sticker, Chispa, Estrella, Sello, TINTA } from '@/components/decor';
+import { Titulo, Sticker, Chispa, Estrella, Sello, TINTA, acentoTexto, RADIO } from '@/components/decor';
 import { TIPOS_HOBBY, ESTADOS_OBRA, estadoObra, MINUTOS_RAPIDOS } from '@/constants/hobbies';
 import { useHobbies, useHobbySessions, useObras, useFotosFirmadas, useHobbyActions, type Hobby, type Obra } from '@/hooks/use-hobbies';
 import { minutosSemana, duracion, horaCorta, tituloDia, fechaLocal } from '@/lib/registros';
+import { ACENTOS } from '@/constants/tabs';
+import { esClaro } from '@/lib/tema';
 
 // Hobbies: lo que haces por gusto, con sus sesiones, y las obras en curso con fotos.
-const ROSA = '#F49AC1';
+const ROSA = ACENTOS.hobbies;
+// Las obras son polaroids: papel claro y tinta oscura en los dos temas
+const PAPEL = esClaro() ? TINTA.tarjeta : TINTA.texto;
+const PISTA_PAPEL = '#E2D9CF';
 const VISTAS = [['hobbies', 'Hobbies'], ['obras', 'Obras en curso']] as const;
 type Vista = (typeof VISTAS)[number][0];
 
@@ -37,7 +42,7 @@ export default function HobbiesScreen() {
   const obra = obras.find((o) => o.id === obraAbierta) ?? null;
 
   return (
-    <ScreenContainer className="p-0" containerClassName="bg-[#110F0D]">
+    <ScreenContainer className="p-0">
       <ScrollView contentContainerStyle={{ paddingBottom: 150 }} keyboardShouldPersistTaps="handled">
         <View style={{ paddingHorizontal: 20, paddingTop: 24, maxWidth: 640, width: '100%', alignSelf: 'center', gap: 18 }}>
           {/* Cabecera: el dato de la semana gana la mirada */}
@@ -53,7 +58,7 @@ export default function HobbiesScreen() {
             {VISTAS.map(([v, nombre]) => (
               <Pressable key={v} onPress={() => setVista(v)} accessibilityRole="tab" accessibilityState={{ selected: vista === v }}
                 style={{ flex: 1, minHeight: 44, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: vista === v ? ROSA : 'transparent' }}>
-                <Text style={{ color: vista === v ? TINTA.fondo : TINTA.texto, fontWeight: '800' }}>
+                <Text style={{ color: vista === v ? TINTA.sobreAcento : TINTA.texto, fontWeight: '800' }}>
                   {nombre}{v === 'obras' && enCurso ? ` · ${enCurso}` : ''}
                 </Text>
               </Pressable>
@@ -61,7 +66,7 @@ export default function HobbiesScreen() {
           </View>
 
           {errHobbies && (
-            <View style={{ backgroundColor: TINTA.tarjeta, borderRadius: 24, padding: 18, borderWidth: 1, borderColor: '#FFB547' }}>
+            <View style={{ backgroundColor: TINTA.tarjeta, borderRadius: RADIO.tarjeta, padding: 18, borderWidth: 1, borderColor: ACENTOS.inicio }}>
               <Text style={{ color: TINTA.texto, fontWeight: '800', fontSize: 16 }}>Falta un paso en la base de datos</Text>
               <Text style={{ color: TINTA.suave, marginTop: 4, lineHeight: 20 }}>
                 Las tablas de hobbies y obras todavía no existen en Supabase. Están en supabase/registros-hobbies.sql.
@@ -79,7 +84,7 @@ export default function HobbiesScreen() {
               const pct = Math.min(100, Math.round((min / Math.max(h.weekly_goal_min, 1)) * 100));
               const ultima = sesiones.find((s) => s.hobby_id === h.id);
               return (
-                <View key={h.id} style={{ backgroundColor: TINTA.tarjeta, borderRadius: 28, padding: 18, borderWidth: 1, borderColor: TINTA.borde }}>
+                <View key={h.id} style={{ backgroundColor: TINTA.tarjeta, borderRadius: RADIO.tarjeta, padding: 18, borderWidth: 1, borderColor: TINTA.borde }}>
                   {pct >= 100 && <Sticker texto="¡meta!" color={h.color} giro={k % 2 ? 7 : -7} style={{ position: 'absolute', top: -12, right: 18 }} />}
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                     <View style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: h.color, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: k % 2 ? '4deg' : '-4deg' }] }}>
@@ -102,14 +107,14 @@ export default function HobbiesScreen() {
                       <Text style={{ color: TINTA.texto, fontWeight: '800' }}>{duracion(min)}</Text>
                       <Text style={{ color: TINTA.suave }}>meta {duracion(h.weekly_goal_min)}</Text>
                     </View>
-                    <View style={{ height: 12, borderRadius: 6, backgroundColor: '#2A2521', overflow: 'hidden' }}>
+                    <View style={{ height: 12, borderRadius: 6, backgroundColor: TINTA.elevada, overflow: 'hidden' }}>
                       <View style={{ width: `${pct}%`, height: '100%', backgroundColor: h.color, borderRadius: 6 }} />
                     </View>
                   </View>
 
                   <Pressable onPress={() => setSesionDe(h)} accessibilityRole="button"
                     style={{ marginTop: 14, minHeight: 48, borderRadius: 18, borderWidth: 1.5, borderColor: h.color, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: h.color, fontWeight: '800', fontSize: 15 }}>Anotar un rato</Text>
+                    <Text style={{ color: acentoTexto(h.color), fontWeight: '800', fontSize: 15 }}>Anotar un rato</Text>
                   </Pressable>
                 </View>
               );
@@ -117,7 +122,7 @@ export default function HobbiesScreen() {
 
             <Pressable onPress={() => setNuevoHobby(true)} accessibilityRole="button"
               style={{ minHeight: 52, borderRadius: 20, backgroundColor: ROSA, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: TINTA.fondo, fontWeight: '900', fontSize: 16 }}>+ Nuevo hobby</Text>
+              <Text style={{ color: TINTA.sobreAcento, fontWeight: '900', fontSize: 16 }}>+ Nuevo hobby</Text>
             </Pressable>
 
             {sesiones.length > 0 && (
@@ -150,7 +155,7 @@ export default function HobbiesScreen() {
             </View>
             <Pressable onPress={() => setNuevaObra(true)} accessibilityRole="button"
               style={{ minHeight: 52, borderRadius: 20, backgroundColor: ROSA, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: TINTA.fondo, fontWeight: '900', fontSize: 16 }}>+ Nueva obra</Text>
+              <Text style={{ color: TINTA.sobreAcento, fontWeight: '900', fontSize: 16 }}>+ Nueva obra</Text>
             </Pressable>
           </>}
         </View>
@@ -168,8 +173,8 @@ export default function HobbiesScreen() {
 
 function Vacio({ emoji, titulo, texto }: { emoji: string; titulo: string; texto: string }) {
   return (
-    <View style={{ backgroundColor: TINTA.tarjeta, borderRadius: 28, padding: 22, borderWidth: 1, borderColor: TINTA.borde, overflow: 'visible' }}>
-      <Chispa size={26} color="#FFB547" style={{ position: 'absolute', top: -10, right: 26 }} />
+    <View style={{ backgroundColor: TINTA.tarjeta, borderRadius: RADIO.tarjeta, padding: 22, borderWidth: 1, borderColor: TINTA.borde, overflow: 'visible' }}>
+      <Chispa size={26} color={ACENTOS.inicio} style={{ position: 'absolute', top: -10, right: 26 }} />
       <Estrella size={22} style={{ position: 'absolute', bottom: -9, right: 60 }} />
       <Text style={{ fontSize: 40 }}>{emoji}</Text>
       <Titulo size={24} style={{ marginTop: 8 }}>{titulo}</Titulo>
@@ -184,7 +189,7 @@ function TarjetaObra({ obra, hobby, giro, onPress }: { obra: Obra; hobby?: Hobby
   const est = estadoObra(obra.status);
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Obra: ${obra.name}`}
-      style={{ flexBasis: '46%', flexGrow: 1, backgroundColor: TINTA.texto, borderRadius: 6, padding: 8, paddingBottom: 12, transform: [{ rotate: `${giro}deg` }] }}>
+      style={{ flexBasis: '46%', flexGrow: 1, backgroundColor: PAPEL, borderRadius: 6, borderWidth: 1, borderColor: TINTA.borde, padding: 8, paddingBottom: 12, transform: [{ rotate: `${giro}deg` }] }}>
       {/* Polaroid: foto arriba, nombre abajo */}
       <View style={{ aspectRatio: 1, borderRadius: 3, overflow: 'hidden', backgroundColor: hobby?.color ?? ROSA, alignItems: 'center', justifyContent: 'center' }}>
         {portada && urls?.[portada]
@@ -192,9 +197,9 @@ function TarjetaObra({ obra, hobby, giro, onPress }: { obra: Obra; hobby?: Hobby
           : <Text style={{ fontSize: 44 }}>{hobby?.emoji ?? '🖼️'}</Text>}
       </View>
       <Sticker texto={est.nombre} color={est.color} giro={-giro * 3 || -5} style={{ position: 'absolute', top: -10, left: -6 }} />
-      <Text style={{ color: TINTA.fondo, fontWeight: '800', fontSize: 15, marginTop: 8 }} numberOfLines={1}>{obra.name}</Text>
-      <View style={{ height: 6, borderRadius: 3, backgroundColor: '#E2D9CF', marginTop: 6, overflow: 'hidden' }}>
-        <View style={{ width: `${obra.progress_pct}%`, height: '100%', backgroundColor: TINTA.fondo }} />
+      <Text style={{ color: TINTA.sobreAcento, fontWeight: '800', fontSize: 15, marginTop: 8 }} numberOfLines={1}>{obra.name}</Text>
+      <View style={{ height: 6, borderRadius: 3, backgroundColor: PISTA_PAPEL, marginTop: 6, overflow: 'hidden' }}>
+        <View style={{ width: `${obra.progress_pct}%`, height: '100%', backgroundColor: TINTA.sobreAcento }} />
       </View>
     </Pressable>
   );
@@ -205,8 +210,8 @@ function TarjetaObra({ obra, hobby, giro, onPress }: { obra: Obra; hobby?: Hobby
 function Hoja({ visible, onClose, titulo, children }: { visible: boolean; onClose: () => void; titulo: string; children: React.ReactNode }) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' }} accessibilityLabel="Cerrar" />
-      <View style={{ backgroundColor: TINTA.tarjeta, borderTopLeftRadius: 32, borderTopRightRadius: 32, borderWidth: 1, borderColor: TINTA.borde, maxHeight: '88%' }}>
+      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: TINTA.overlay }} accessibilityLabel="Cerrar" />
+      <View style={{ backgroundColor: TINTA.tarjeta, borderTopLeftRadius: RADIO.hoja, borderTopRightRadius: RADIO.hoja, borderWidth: 1, borderColor: TINTA.borde, maxHeight: '88%' }}>
         <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 40, gap: 14 }} keyboardShouldPersistTaps="handled">
           <Titulo size={24}>{titulo}</Titulo>
           {children}
@@ -225,7 +230,7 @@ const chip = (on: boolean, color = ROSA) => ({
 const Boton = ({ texto, onPress, color = ROSA, disabled }: { texto: string; onPress: () => void; color?: string; disabled?: boolean }) => (
   <Pressable onPress={onPress} disabled={disabled} accessibilityRole="button"
     style={{ minHeight: 52, borderRadius: 20, backgroundColor: color, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.5 : 1 }}>
-    <Text style={{ color: TINTA.fondo, fontWeight: '900', fontSize: 16 }}>{texto}</Text>
+    <Text style={{ color: TINTA.sobreAcento, fontWeight: '900', fontSize: 16 }}>{texto}</Text>
   </Pressable>
 );
 
@@ -242,7 +247,7 @@ function NuevoHobby({ visible, onClose, onCrear }: { visible: boolean; onClose: 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {TIPOS_HOBBY.map((t) => (
           <Pressable key={t.kind} onPress={() => setTipo(t)} accessibilityRole="button" accessibilityState={{ selected: tipo.kind === t.kind }} style={chip(tipo.kind === t.kind, t.color)}>
-            <Text style={{ color: tipo.kind === t.kind ? TINTA.fondo : TINTA.texto, fontWeight: '700' }}>{t.emoji} {t.nombre}</Text>
+            <Text style={{ color: tipo.kind === t.kind ? TINTA.sobreAcento : TINTA.texto, fontWeight: '700' }}>{t.emoji} {t.nombre}</Text>
           </Pressable>
         ))}
       </View>
@@ -252,7 +257,7 @@ function NuevoHobby({ visible, onClose, onCrear }: { visible: boolean; onClose: 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {[60, 120, 180, 300].map((m) => (
           <Pressable key={m} onPress={() => setMeta(m)} style={chip(meta === m)}>
-            <Text style={{ color: meta === m ? TINTA.fondo : TINTA.texto, fontWeight: '700' }}>{duracion(m)}</Text>
+            <Text style={{ color: meta === m ? TINTA.sobreAcento : TINTA.texto, fontWeight: '700' }}>{duracion(m)}</Text>
           </Pressable>
         ))}
       </View>
@@ -276,7 +281,7 @@ function AnotarSesion({ hobby, obras, onClose, onGuardar }: {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {MINUTOS_RAPIDOS.map((m) => (
           <Pressable key={m} onPress={() => setMin(m)} style={chip(min === m, hobby.color)}>
-            <Text style={{ color: min === m ? TINTA.fondo : TINTA.texto, fontWeight: '700' }}>{duracion(m)}</Text>
+            <Text style={{ color: min === m ? TINTA.sobreAcento : TINTA.texto, fontWeight: '700' }}>{duracion(m)}</Text>
           </Pressable>
         ))}
       </View>
@@ -285,7 +290,7 @@ function AnotarSesion({ hobby, obras, onClose, onGuardar }: {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {obras.map((o) => (
             <Pressable key={o.id} onPress={() => setObra(obra === o.id ? null : o.id)} style={chip(obra === o.id, hobby.color)}>
-              <Text style={{ color: obra === o.id ? TINTA.fondo : TINTA.texto, fontWeight: '700' }}>{o.name}</Text>
+              <Text style={{ color: obra === o.id ? TINTA.sobreAcento : TINTA.texto, fontWeight: '700' }}>{o.name}</Text>
             </Pressable>
           ))}
         </View>
@@ -314,7 +319,7 @@ function NuevaObra({ visible, hobbies, onClose, onCrear }: {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {hobbies.map((h) => (
             <Pressable key={h.id} onPress={() => setHobby(hobby === h.id ? null : h.id)} style={chip(hobby === h.id, h.color)}>
-              <Text style={{ color: hobby === h.id ? TINTA.fondo : TINTA.texto, fontWeight: '700' }}>{h.emoji} {h.name}</Text>
+              <Text style={{ color: hobby === h.id ? TINTA.sobreAcento : TINTA.texto, fontWeight: '700' }}>{h.emoji} {h.name}</Text>
             </Pressable>
           ))}
         </View>
@@ -354,10 +359,10 @@ function DetalleObra({ obra, hobbies, onClose, acciones }: {
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 6 }}>
         {obra.craft_work_images.map((img, k) => (
-          <View key={img.id} style={{ width: 150, backgroundColor: TINTA.texto, padding: 6, paddingBottom: 18, borderRadius: 4, transform: [{ rotate: `${k % 2 ? 2 : -2}deg` }] }}>
+          <View key={img.id} style={{ width: 150, backgroundColor: PAPEL, borderWidth: 1, borderColor: TINTA.borde, padding: 6, paddingBottom: 18, borderRadius: 4, transform: [{ rotate: `${k % 2 ? 2 : -2}deg` }] }}>
             {urls[img.path]
               ? <Image source={{ uri: urls[img.path] }} style={{ width: '100%', aspectRatio: 1 }} contentFit="cover" />
-              : <View style={{ width: '100%', aspectRatio: 1, backgroundColor: '#E2D9CF' }} />}
+              : <View style={{ width: '100%', aspectRatio: 1, backgroundColor: PISTA_PAPEL }} />}
             <Pressable onPress={() => confirmar('¿Quitar esta foto?', () => acciones.borrarFoto.mutate(img))} accessibilityLabel="Quitar foto"
               style={{ position: 'absolute', top: 8, right: 8, width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(0,0,0,.6)', alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: '#fff', fontSize: 18, lineHeight: 20 }}>×</Text>
@@ -367,16 +372,16 @@ function DetalleObra({ obra, hobbies, onClose, acciones }: {
         <Pressable onPress={agregarFoto} accessibilityRole="button" accessibilityLabel="Añadir fotos"
           style={{ width: 150, aspectRatio: 0.88, borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', borderColor: ROSA, alignItems: 'center', justifyContent: 'center', gap: 4 }}>
           <Text style={{ fontSize: 28 }}>📷</Text>
-          <Text style={{ color: ROSA, fontWeight: '800' }}>{acciones.subirFoto.isPending ? 'Subiendo…' : 'Añadir fotos'}</Text>
+          <Text style={{ color: acentoTexto(ROSA), fontWeight: '800' }}>{acciones.subirFoto.isPending ? 'Subiendo…' : 'Añadir fotos'}</Text>
         </Pressable>
       </ScrollView>
-      {!!aviso && <Text style={{ color: '#FFB547' }}>{aviso}</Text>}
+      {!!aviso && <Text style={{ color: acentoTexto(ACENTOS.inicio) }}>{aviso}</Text>}
 
       <Text style={etiqueta}>Cómo va · {obra.progress_pct}%</Text>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         {[0, 25, 50, 75, 100].map((p) => (
           <Pressable key={p} onPress={() => acciones.cambiarObra.mutate({ id: obra.id, progress_pct: p })} style={[chip(obra.progress_pct === p), { flex: 1, paddingHorizontal: 0 }]}>
-            <Text style={{ color: obra.progress_pct === p ? TINTA.fondo : TINTA.texto, fontWeight: '700' }}>{p}</Text>
+            <Text style={{ color: obra.progress_pct === p ? TINTA.sobreAcento : TINTA.texto, fontWeight: '700' }}>{p}</Text>
           </Pressable>
         ))}
       </View>
@@ -385,14 +390,14 @@ function DetalleObra({ obra, hobbies, onClose, acciones }: {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {ESTADOS_OBRA.map((e) => (
           <Pressable key={e.estado} onPress={() => acciones.cambiarObra.mutate({ id: obra.id, status: e.estado })} style={chip(obra.status === e.estado, e.color)}>
-            <Text style={{ color: obra.status === e.estado ? TINTA.fondo : TINTA.texto, fontWeight: '700' }}>{e.nombre}</Text>
+            <Text style={{ color: obra.status === e.estado ? TINTA.sobreAcento : TINTA.texto, fontWeight: '700' }}>{e.nombre}</Text>
           </Pressable>
         ))}
       </View>
 
       <Pressable onPress={() => confirmar(`¿Borrar «${obra.name}» y sus fotos?`, () => { acciones.borrarObra.mutate(obra); onClose() })}
         style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 8 }}>
-        <Text style={{ color: '#FF7A6B', fontWeight: '700' }}>Borrar obra</Text>
+        <Text style={{ color: acentoTexto(ACENTOS.ejercicio), fontWeight: '700' }}>Borrar obra</Text>
       </Pressable>
     </Hoja>
   );

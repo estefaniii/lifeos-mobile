@@ -2,6 +2,7 @@ import { View, type ViewProps } from "react-native";
 import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 
 import { cn } from "@/lib/utils";
+import { TINTA } from "@/components/decor";
 
 export interface ScreenContainerProps extends ViewProps {
   /**
@@ -55,6 +56,7 @@ export function ScreenContainer({
         containerClassName
       )}
       {...props}
+      style={{ backgroundColor: TINTA.fondo }}
     >
       <SafeAreaView
         edges={edges}

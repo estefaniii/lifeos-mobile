@@ -14,8 +14,9 @@ import { useAuth } from '@/hooks/use-auth';
 import { useNotes } from '@/hooks/use-notes';
 import { FadeInView } from '@/components/fade-in-view';
 import { WaterModal } from '@/components/water-modal';
-import { Titulo, Sticker, TINTA } from '@/components/decor';
+import { Titulo, Sticker, TINTA, acentoTexto, RADIO } from '@/components/decor';
 import { fechaLocal, racha, hitoRacha } from '@/lib/registros';
+import { ACENTOS } from '@/constants/tabs';
 
 // «Domingo, 1 de noviembre»: solo la primera letra en mayúscula
 const fechaLarga = () => {
@@ -24,13 +25,13 @@ const fechaLarga = () => {
 };
 
 // Paleta de Inicio: ámbar como acento y los colores de cada cosa
-const AMBAR = '#FFB547';
-const AGUA = '#7CC4FF';
-const CORAL = '#FF7A6B';
-const MENTA = '#5FD3A8';
-const LILA = '#C9A7FF';
-const ELEVADO = '#2A2521';
-const TARJETA = { backgroundColor: TINTA.tarjeta, borderRadius: 26, borderWidth: 1, borderColor: TINTA.borde } as const;
+const AMBAR = ACENTOS.inicio;
+const AGUA = ACENTOS.agua;
+const CORAL = ACENTOS.ejercicio;
+const MENTA = ACENTOS.finanzas;
+const LILA = ACENTOS.historial;
+const ELEVADO = TINTA.elevada;
+const TARJETA = { backgroundColor: TINTA.tarjeta, borderRadius: RADIO.tarjeta, borderWidth: 1, borderColor: TINTA.borde } as const;
 
 // «L», «M»… de una fecha guardada como AAAA-MM-DD. A mediodía para que el
 // desfase de Panamá no la pase al día anterior.
@@ -38,7 +39,7 @@ const diaCorto = (fecha: string) =>
   new Date(`${fecha}T12:00:00`).toLocaleDateString('es-PA', { weekday: 'narrow' });
 
 // Hoja inferior de los registros rápidos
-const HOJA = { backgroundColor: TINTA.tarjeta, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderWidth: 1, borderBottomWidth: 0, borderColor: TINTA.borde, padding: 24, paddingBottom: 32 } as const;
+const HOJA = { backgroundColor: TINTA.tarjeta, borderTopLeftRadius: RADIO.hoja, borderTopRightRadius: RADIO.hoja, borderWidth: 1, borderBottomWidth: 0, borderColor: TINTA.borde, padding: 24, paddingBottom: 32 } as const;
 
 // ─── Mini Modals ─────────────────────────────────────────────────────────────
 
@@ -66,7 +67,7 @@ function MeditationModal({ visible, onClose, userId, onSave }: {
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
+      <View style={{ flex: 1, backgroundColor: TINTA.overlay, justifyContent: 'flex-end' }}>
         <View style={HOJA}>
           <Titulo size={24}>Anotar meditación</Titulo>
           <Text style={{ color: TINTA.suave, fontSize: 14, marginTop: 4, marginBottom: 20 }}>
@@ -89,7 +90,7 @@ function MeditationModal({ visible, onClose, userId, onSave }: {
                   opacity: saving ? 0.5 : 1,
                 }}
               >
-                <Text style={{ color: LILA, fontWeight: '800', fontSize: 16 }}>{min} min</Text>
+                <Text style={{ color: acentoTexto(LILA), fontWeight: '800', fontSize: 16 }}>{min} min</Text>
               </Pressable>
             ))}
           </View>
@@ -146,7 +147,7 @@ function ActivityModal({ visible, onClose, type, userId, onSave }: {
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
+      <View style={{ flex: 1, backgroundColor: TINTA.overlay, justifyContent: 'flex-end' }}>
         <View style={HOJA}>
           <Titulo size={24}>{isGym ? 'Anotar gym' : 'Anotar yoga'}</Titulo>
           <Text style={{ color: TINTA.suave, fontSize: 14, marginTop: 4, marginBottom: 20 }}>
@@ -193,7 +194,7 @@ function ActivityModal({ visible, onClose, type, userId, onSave }: {
                 opacity: saving ? 0.6 : 1,
               }}
             >
-              <Text style={{ color: TINTA.fondo, fontWeight: '800', fontSize: 15 }}>
+              <Text style={{ color: TINTA.sobreAcento, fontWeight: '800', fontSize: 15 }}>
                 {saving ? 'Guardando…' : 'Anotar'}
               </Text>
             </Pressable>
@@ -301,7 +302,7 @@ export default function HomeScreen() {
                 {reminderNotes.length > 0 && (
                   <Pressable onPress={() => router.push('/notes')} accessibilityRole="link" style={{ marginBottom: 14, minHeight: 44 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <Text style={{ color: AMBAR, fontSize: 14, fontWeight: '800' }}>⏰ Recordatorios</Text>
+                      <Text style={{ color: acentoTexto(AMBAR), fontSize: 14, fontWeight: '800' }}>⏰ Recordatorios</Text>
                       <Text style={{ color: TINTA.suave, fontSize: 18 }}>›</Text>
                     </View>
                     {reminderNotes.map((n) => (
@@ -313,7 +314,7 @@ export default function HomeScreen() {
                 {pinnedNotes.length > 0 && (
                   <Pressable onPress={() => router.push('/notes')} accessibilityRole="link" style={{ minHeight: 44 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <Text style={{ color: LILA, fontSize: 14, fontWeight: '800' }}>📌 Notas fijadas</Text>
+                      <Text style={{ color: acentoTexto(LILA), fontSize: 14, fontWeight: '800' }}>📌 Notas fijadas</Text>
                       <Text style={{ color: TINTA.suave, fontSize: 18 }}>›</Text>
                     </View>
                     {pinnedNotes.map((n) => (
@@ -329,7 +330,7 @@ export default function HomeScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Titulo size={22}>Anotar rápido</Titulo>
                 <Pressable onPress={() => router.push('/history')} style={{ minHeight: 44, justifyContent: 'center' }}>
-                  <Text style={{ color: AMBAR, fontWeight: '800', fontSize: 14 }}>Ver historial ›</Text>
+                  <Text style={{ color: acentoTexto(AMBAR), fontWeight: '800', fontSize: 14 }}>Ver historial ›</Text>
                 </Pressable>
               </View>
               <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -344,7 +345,7 @@ export default function HomeScreen() {
                     onPress={abrir}
                     accessibilityRole="button"
                     accessibilityLabel={`Anotar ${nombre}`}
-                    style={{ flex: 1, backgroundColor: TINTA.tarjeta, borderWidth: 1, borderColor: TINTA.borde, borderRadius: 24, paddingVertical: 14, paddingHorizontal: 4, alignItems: 'center', minHeight: 96 }}
+                    style={{ flex: 1, backgroundColor: TINTA.tarjeta, borderWidth: 1, borderColor: TINTA.borde, borderRadius: RADIO.tarjeta, paddingVertical: 14, paddingHorizontal: 4, alignItems: 'center', minHeight: 96 }}
                   >
                     <View style={{ width: 40, height: 40, borderRadius: 14, backgroundColor: color, alignItems: 'center', justifyContent: 'center', marginBottom: 6, transform: [{ rotate: k % 2 ? '5deg' : '-5deg' }] }}>
                       <Text style={{ fontSize: 20 }}>{emoji}</Text>
@@ -371,7 +372,7 @@ export default function HomeScreen() {
                     {rachaAgua >= 2 ? `🔥 ${rachaAgua} días seguidos con 8 vasos` : 'Toca para anotar un vaso'}
                   </Text>
                 </View>
-                <Text style={{ color: AGUA, fontSize: 15, fontWeight: '800' }}>{vasos} de 8</Text>
+                <Text style={{ color: acentoTexto(AGUA), fontSize: 15, fontWeight: '800' }}>{vasos} de 8</Text>
               </View>
               <View style={{ flexDirection: 'row', gap: 6 }}>
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -390,7 +391,7 @@ export default function HomeScreen() {
                   accessibilityLabel="Nuevo hábito"
                   style={{ minHeight: 44, paddingHorizontal: 16, borderRadius: 22, backgroundColor: AMBAR, justifyContent: 'center' }}
                 >
-                  <Text style={{ color: TINTA.fondo, fontSize: 14, fontWeight: '800' }}>+ Nuevo</Text>
+                  <Text style={{ color: TINTA.sobreAcento, fontSize: 14, fontWeight: '800' }}>+ Nuevo</Text>
                 </Pressable>
               </View>
 
@@ -433,7 +434,7 @@ export default function HomeScreen() {
                             alignItems: 'center',
                             justifyContent: 'center',
                           }}>
-                            {isCompleted && <Text style={{ color: TINTA.fondo, fontSize: 16, fontWeight: '900' }}>✓</Text>}
+                            {isCompleted && <Text style={{ color: TINTA.sobreAcento, fontSize: 16, fontWeight: '900' }}>✓</Text>}
                           </View>
                           <Text style={{ fontSize: 20 }}>{habit.emoji}</Text>
                           <Text
@@ -509,7 +510,7 @@ export default function HomeScreen() {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <Titulo size={22}>Metas de ahorro</Titulo>
                   <Pressable onPress={() => router.push('/finances')} accessibilityRole="link" style={{ minHeight: 44, justifyContent: 'center' }}>
-                    <Text style={{ color: AMBAR, fontSize: 14, fontWeight: '800' }}>Ver todas ›</Text>
+                    <Text style={{ color: acentoTexto(AMBAR), fontSize: 14, fontWeight: '800' }}>Ver todas ›</Text>
                   </Pressable>
                 </View>
                 <Pressable onPress={() => router.push('/finances')} accessibilityRole="button" style={{ ...TARJETA, paddingVertical: 6, paddingHorizontal: 18 }}>
@@ -520,7 +521,7 @@ export default function HomeScreen() {
                       <View key={goal.id} style={{ paddingVertical: 14, borderTopWidth: k ? 1 : 0, borderTopColor: TINTA.borde }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                           <Text style={{ color: TINTA.texto, fontSize: 15, fontWeight: '700', flex: 1 }} numberOfLines={1}>{goal.name}</Text>
-                          <Text style={{ color: goalColor, fontSize: 14, fontWeight: '800' }}>{pct >= 100 ? '¡Lograda!' : `${pct}%`}</Text>
+                          <Text style={{ color: acentoTexto(goalColor), fontSize: 14, fontWeight: '800' }}>{pct >= 100 ? '¡Lograda!' : `${pct}%`}</Text>
                         </View>
                         <View style={{ height: 8, backgroundColor: ELEVADO, borderRadius: 4, overflow: 'hidden', marginBottom: 6 }}>
                           <View style={{ height: '100%', width: `${pct}%`, backgroundColor: goalColor, borderRadius: 4 }} />

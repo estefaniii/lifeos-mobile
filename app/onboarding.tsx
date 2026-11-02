@@ -5,12 +5,13 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
 import { Titulo, TINTA } from '@/components/decor';
+import { ACENTOS } from '@/constants/tabs';
 
 type Gender = 'femenino' | 'masculino' | 'otro';
 
 // Ámbar de Inicio, con texto oscuro encima
-const ACENTO = '#FFB547';
-const ELEVADO = '#2A2521';
+const ACENTO = ACENTOS.inicio;
+const ELEVADO = TINTA.elevada;
 
 // Dos pasos: el nombre y cómo dirigirse a ella. Las notificaciones ya no se
 // piden aquí: se activan desde Perfil.
@@ -115,7 +116,7 @@ export default function OnboardingScreen() {
             />
 
             <Pressable onPress={() => setStep(1)} accessibilityRole="button" style={boton}>
-              <Text style={{ color: TINTA.fondo, fontSize: 16, fontWeight: '800' }}>Continuar</Text>
+              <Text style={{ color: TINTA.sobreAcento, fontSize: 16, fontWeight: '800' }}>Continuar</Text>
             </Pressable>
           </View>
         )}
@@ -171,7 +172,7 @@ export default function OnboardingScreen() {
               accessibilityRole="button"
               style={{ ...boton, opacity: saving ? 0.6 : 1 }}
             >
-              <Text style={{ color: TINTA.fondo, fontSize: 16, fontWeight: '800' }}>
+              <Text style={{ color: TINTA.sobreAcento, fontSize: 16, fontWeight: '800' }}>
                 {saving ? 'Guardando…' : 'Empezar'}
               </Text>
             </Pressable>

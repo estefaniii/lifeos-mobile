@@ -1,8 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Appearance, Platform, View } from "react-native";
+import { Appearance, View } from "react-native";
 import { colorScheme as nativewindColorScheme, vars } from "nativewind";
 
 import { SchemeColors, type ColorScheme } from "@/constants/theme";
+import { guardarPreferenciaTema, modoTema } from "@/lib/tema";
 
 type ThemeContextValue = {
   colorScheme: ColorScheme;
@@ -12,14 +13,10 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+// El tema lo decide lib/tema.ts al cargar (oscuro, claro o como el teléfono).
+// Aquí solo se traduce a lo que esperan NativeWind y useColors().
 function getStoredScheme(): ColorScheme {
-  if (Platform.OS === "web") {
-    try {
-      const stored = localStorage.getItem("lifeos_theme");
-      if (stored === "light" || stored === "dark") return stored;
-    } catch {}
-  }
-  return "dark";
+  return modoTema() === "claro" ? "light" : "dark";
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -42,9 +39,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setColorScheme = useCallback((scheme: ColorScheme) => {
     setColorSchemeState(scheme);
     applyScheme(scheme);
-    if (Platform.OS === "web") {
-      try { localStorage.setItem("lifeos_theme", scheme); } catch {}
-    }
+    // En la web esto recarga la página con la paleta nueva
+    void guardarPreferenciaTema(scheme === "light" ? "claro" : "oscuro");
   }, [applyScheme]);
 
   const toggleColorScheme = useCallback(() => {

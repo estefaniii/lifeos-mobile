@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
+import { TINTA, acentoTexto } from '@/components/decor';
+import { ACENTOS } from '@/constants/tabs';
 
 export default function OAuthCallback() {
   const router = useRouter();
@@ -112,13 +114,13 @@ export default function OAuthCallback() {
       <SafeAreaView
         style={{
           flex: 1,
-          backgroundColor: "#09090B",
+          backgroundColor: TINTA.fondo,
           justifyContent: "center",
           alignItems: "center",
         }}
       >
-        <ActivityIndicator size="large" color="#14B8A6" />
-        <Text style={{ color: "#71717A", fontSize: 14, marginTop: 16 }}>
+        <ActivityIndicator size="large" color={acentoTexto(ACENTOS.inicio)} />
+        <Text style={{ color: TINTA.suave, fontSize: 14, marginTop: 16 }}>
           Verificando sesión...
         </Text>
       </SafeAreaView>
@@ -129,14 +131,14 @@ export default function OAuthCallback() {
     <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: "#09090B",
+        backgroundColor: TINTA.fondo,
         justifyContent: "center",
         alignItems: "center",
       }}
     >
       <Text
         style={{
-          color: "#ef4444",
+          color: acentoTexto(ACENTOS.ejercicio),
           fontSize: 18,
           fontWeight: "600",
           textAlign: "center",
@@ -147,7 +149,7 @@ export default function OAuthCallback() {
       </Text>
       <Text
         style={{
-          color: "#71717A",
+          color: TINTA.suave,
           fontSize: 14,
           textAlign: "center",
           marginTop: 12,
@@ -156,7 +158,7 @@ export default function OAuthCallback() {
       >
         {errorMsg}
       </Text>
-      <Text style={{ color: "#52525B", fontSize: 12, marginTop: 24 }}>
+      <Text style={{ color: TINTA.tenue, fontSize: 12, marginTop: 24 }}>
         Redirigiendo al inicio...
       </Text>
     </SafeAreaView>

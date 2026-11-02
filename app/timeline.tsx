@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { ScrollView, Text, View, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
-import { Titulo, TINTA } from '@/components/decor';
+import { Titulo, TINTA, RADIO } from '@/components/decor';
 import { useDailyTimeline } from '@/hooks/use-daily-timeline';
 import { fechaLocal } from '@/lib/registros';
+import { ACENTOS } from '@/constants/tabs';
 
 // Historial del día: una línea de tiempo con lo que registraste.
-const MENTA = '#5FD3A8';
-const CORAL = '#FF7A6B';
-const ALTO = '#2A2521';
+const MENTA = ACENTOS.finanzas;
+const CORAL = ACENTOS.ejercicio;
+const ALTO = TINTA.elevada;
 
 const DAYS_ES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTHS_ES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -46,7 +47,7 @@ export default function TimelineScreen() {
   };
 
   return (
-    <ScreenContainer className="p-0" containerClassName="bg-[#110F0D]">
+    <ScreenContainer className="p-0">
       <ScrollView contentContainerStyle={{ paddingBottom: 150 }} showsVerticalScrollIndicator={false}>
         <View style={{ paddingHorizontal: 20, paddingTop: 24, maxWidth: 640, width: '100%', alignSelf: 'center', gap: 20 }}>
           {/* Cabecera: deja libre la esquina del botón de menú */}
@@ -60,7 +61,7 @@ export default function TimelineScreen() {
           </View>
 
           {/* Semana */}
-          <View style={{ backgroundColor: TINTA.tarjeta, borderRadius: 26, borderWidth: 1, borderColor: TINTA.borde, padding: 8, gap: 4 }}>
+          <View style={{ backgroundColor: TINTA.tarjeta, borderRadius: RADIO.tarjeta, borderWidth: 1, borderColor: TINTA.borde, padding: 8, gap: 4 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Pressable onPress={() => goDay(-7)} accessibilityRole="button" accessibilityLabel="Semana anterior"
                 style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
@@ -88,14 +89,14 @@ export default function TimelineScreen() {
                     accessibilityState={{ selected: isSelected }}
                     style={{
                       flex: 1, minHeight: 56, alignItems: 'center', justifyContent: 'center', borderRadius: 16,
-                      backgroundColor: isSelected ? TINTA.texto : 'transparent',
+                      backgroundColor: isSelected ? ACENTOS.inicio : 'transparent',
                       borderWidth: isToday && !isSelected ? 1 : 0, borderColor: TINTA.borde,
                     }}
                   >
-                    <Text style={{ color: isSelected ? TINTA.fondo : TINTA.suave, fontSize: 12, fontWeight: '700' }}>
+                    <Text style={{ color: isSelected ? TINTA.sobreAcento : TINTA.suave, fontSize: 12, fontWeight: '700' }}>
                       {DAYS_ES[d.getDay()]}
                     </Text>
-                    <Text style={{ color: isSelected ? TINTA.fondo : TINTA.texto, fontSize: 17, fontWeight: '800', marginTop: 2 }}>
+                    <Text style={{ color: isSelected ? TINTA.sobreAcento : TINTA.texto, fontSize: 17, fontWeight: '800', marginTop: 2 }}>
                       {d.getDate()}
                     </Text>
                   </Pressable>
@@ -124,7 +125,7 @@ export default function TimelineScreen() {
 
                   <View style={{
                     flex: 1, marginLeft: 8, marginBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 12,
-                    backgroundColor: TINTA.tarjeta, borderRadius: 24, borderWidth: 1, borderColor: TINTA.borde, padding: 14,
+                    backgroundColor: TINTA.tarjeta, borderRadius: RADIO.tarjeta, borderWidth: 1, borderColor: TINTA.borde, padding: 14,
                   }}>
                     <View style={{ width: 44, height: 44, borderRadius: 16, backgroundColor: ALTO, alignItems: 'center', justifyContent: 'center' }}>
                       <Text style={{ fontSize: 20 }}>{event.icon}</Text>
@@ -138,7 +139,7 @@ export default function TimelineScreen() {
               ))}
             </View>
           ) : (
-            <View style={{ paddingVertical: 36, paddingHorizontal: 24, alignItems: 'center', backgroundColor: TINTA.tarjeta, borderRadius: 26, borderWidth: 1, borderColor: TINTA.borde }}>
+            <View style={{ paddingVertical: 36, paddingHorizontal: 24, alignItems: 'center', backgroundColor: TINTA.tarjeta, borderRadius: RADIO.tarjeta, borderWidth: 1, borderColor: TINTA.borde }}>
               <Titulo size={22} style={{ textAlign: 'center' }}>Sin actividad este día</Titulo>
               <Text style={{ color: TINTA.suave, fontSize: 15, marginTop: 8, textAlign: 'center', lineHeight: 21 }}>
                 Registra movimientos, hábitos o salud y aparecerán aquí.
@@ -148,7 +149,7 @@ export default function TimelineScreen() {
 
           {/* Resumen del día */}
           {events && events.length > 0 && (
-            <View style={{ backgroundColor: TINTA.tarjeta, borderRadius: 26, borderWidth: 1, borderColor: TINTA.borde, paddingVertical: 16, flexDirection: 'row' }}>
+            <View style={{ backgroundColor: TINTA.tarjeta, borderRadius: RADIO.tarjeta, borderWidth: 1, borderColor: TINTA.borde, paddingVertical: 16, flexDirection: 'row' }}>
               {[
                 { n: events.length, t: 'Eventos', c: TINTA.texto },
                 { n: events.filter(e => e.type === 'income').length, t: 'Ingresos', c: MENTA },

@@ -6,7 +6,7 @@ import { Animated, Modal, Pressable, ScrollView, Text, View, useWindowDimensions
 import { useRouter, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { TINTA } from '@/components/decor';
+import { TINTA, acentoTexto } from '@/components/decor';
 import { Avatar } from '@/components/floating-tab-bar';
 import { SECCIONES, RUTA_URL, ANCHO_ESCRITORIO } from '@/constants/tabs';
 import { useAuth } from '@/hooks/use-auth';
@@ -61,11 +61,11 @@ function PanelMenu({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => vo
 
   return (
     <Modal visible={abierto} transparent animationType="fade" onRequestClose={onCerrar}>
-      <Pressable onPress={onCerrar} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' }} accessibilityLabel="Cerrar el menú" />
+      <Pressable onPress={onCerrar} style={{ flex: 1, backgroundColor: TINTA.overlay }} accessibilityLabel="Cerrar el menú" />
       <Animated.View
         style={{
           position: 'absolute', top: 0, bottom: 0, right: 0, width: ancho, transform: [{ translateX: x }],
-          backgroundColor: '#14110F', borderLeftWidth: 1, borderLeftColor: TINTA.borde,
+          backgroundColor: TINTA.menuFondo, borderLeftWidth: 1, borderLeftColor: TINTA.borde,
           paddingTop: Math.max(insets.top, 12) + 14, paddingBottom: Math.max(insets.bottom, 12) + 8,
         }}
       >
@@ -83,9 +83,9 @@ function PanelMenu({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => vo
 
           {otras.map((s) => (
             <Pressable key={s.ruta} onPress={() => ir(s.ruta)} accessibilityRole="link"
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 60, paddingHorizontal: 12, borderRadius: 18, backgroundColor: actual(s.ruta) ? '#2A2521' : 'transparent' }}>
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 60, paddingHorizontal: 12, borderRadius: 18, backgroundColor: actual(s.ruta) ? TINTA.elevada : 'transparent' }}>
               <View style={{ width: 40, height: 40, borderRadius: 14, backgroundColor: s.color + '26', alignItems: 'center', justifyContent: 'center' }}>
-                <IconSymbol name={s.icon} size={20} color={s.color} />
+                <IconSymbol name={s.icon} size={20} color={acentoTexto(s.color)} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: TINTA.texto, fontSize: 16, fontWeight: '800' }}>{s.nombre}</Text>
@@ -97,8 +97,8 @@ function PanelMenu({ abierto, onCerrar }: { abierto: boolean; onCerrar: () => vo
           <View style={{ height: 1, backgroundColor: TINTA.borde, marginVertical: 10 }} />
           {principales.map((s) => (
             <Pressable key={s.ruta} onPress={() => ir(s.ruta)} accessibilityRole="link"
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 46, paddingHorizontal: 12, borderRadius: 16, backgroundColor: actual(s.ruta) ? '#2A2521' : 'transparent' }}>
-              <IconSymbol name={s.icon} size={19} color={actual(s.ruta) ? s.color : '#8C847B'} />
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 46, paddingHorizontal: 12, borderRadius: 16, backgroundColor: actual(s.ruta) ? TINTA.elevada : 'transparent' }}>
+              <IconSymbol name={s.icon} size={19} color={actual(s.ruta) ? acentoTexto(s.color) : TINTA.tenue} />
               <Text style={{ color: actual(s.ruta) ? TINTA.texto : TINTA.suave, fontSize: 15, fontWeight: '700' }}>{s.nombre}</Text>
             </Pressable>
           ))}

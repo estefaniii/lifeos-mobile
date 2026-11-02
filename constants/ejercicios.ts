@@ -19,7 +19,7 @@ export type Zona = { id: string; nombre: string; icono: string; color: string; f
 
 export const ZONAS: Zona[] = [
   {
-    id: 'piernas', nombre: 'Piernas', icono: 'figure.run', color: '#14B8A6',
+    id: 'piernas', nombre: 'Piernas', icono: 'figure.run', color: '#B6E36B',
     foto: require('../assets/images/ejercicio/piernas.jpg'), // Pexels 4662333
     rutinas: [
       { id: 'piernas-express', nombre: 'Piernas en 10', nivel: 'Express', minutos: 10, ejercicios: [
@@ -44,7 +44,7 @@ export const ZONAS: Zona[] = [
     ],
   },
   {
-    id: 'gluteos', nombre: 'Glúteos', icono: 'figure.run', color: '#F472B6',
+    id: 'gluteos', nombre: 'Glúteos', icono: 'figure.run', color: '#F49AC1',
     foto: require('../assets/images/ejercicio/gluteos.jpg'), // Pexels 4807549
     rutinas: [
       { id: 'gluteos-express', nombre: 'Glúteos en 10', nivel: 'Express', minutos: 10, ejercicios: [
@@ -76,7 +76,7 @@ export const ZONAS: Zona[] = [
     ],
   },
   {
-    id: 'abdomen', nombre: 'Abdomen', icono: 'figure.run', color: '#FBBF24',
+    id: 'abdomen', nombre: 'Abdomen', icono: 'figure.run', color: '#FFB547',
     foto: require('../assets/images/ejercicio/abdomen.jpg'), // Pexels 5149167
     rutinas: [
       { id: 'abdomen-express', nombre: 'Abdomen en 10', nivel: 'Express', minutos: 10, ejercicios: [
@@ -101,7 +101,7 @@ export const ZONAS: Zona[] = [
     ],
   },
   {
-    id: 'brazos', nombre: 'Brazos', icono: 'figure.run', color: '#60A5FA',
+    id: 'brazos', nombre: 'Brazos', icono: 'figure.run', color: '#8FB8FF',
     foto: require('../assets/images/ejercicio/brazos.jpg'), // Pexels 3757943
     rutinas: [
       { id: 'brazos-express', nombre: 'Brazos sin pesas', nivel: 'Express', minutos: 10, ejercicios: [
@@ -126,7 +126,7 @@ export const ZONAS: Zona[] = [
     ],
   },
   {
-    id: 'espalda', nombre: 'Espalda', icono: 'figure.run', color: '#A78BFA',
+    id: 'espalda', nombre: 'Espalda', icono: 'figure.run', color: '#C9A7FF',
     foto: require('../assets/images/ejercicio/espalda.jpg'), // Pexels 2247179
     rutinas: [
       { id: 'espalda-express', nombre: 'Espalda derecha', nivel: 'Express', minutos: 10, ejercicios: [
@@ -150,7 +150,7 @@ export const ZONAS: Zona[] = [
     ],
   },
   {
-    id: 'pecho', nombre: 'Pecho', icono: 'figure.run', color: '#F87171',
+    id: 'pecho', nombre: 'Pecho', icono: 'figure.run', color: '#FF7A6B',
     foto: require('../assets/images/ejercicio/pecho.jpg'), // Pexels 2780762
     rutinas: [
       { id: 'pecho-express', nombre: 'Pecho en 10', nivel: 'Express', minutos: 10, ejercicios: [
@@ -173,7 +173,7 @@ export const ZONAS: Zona[] = [
     ],
   },
   {
-    id: 'cardio', nombre: 'Cardio', icono: 'figure.run', color: '#FB923C',
+    id: 'cardio', nombre: 'Cardio', icono: 'figure.run', color: '#FF9F5A',
     foto: require('../assets/images/ejercicio/cardio.jpg'), // Pexels 8033075
     rutinas: [
       { id: 'cardio-express', nombre: 'Cardio en 10', nivel: 'Express', minutos: 10, ejercicios: [
@@ -197,7 +197,7 @@ export const ZONAS: Zona[] = [
     ],
   },
   {
-    id: 'movilidad', nombre: 'Movilidad', icono: 'figure.run', color: '#34D399',
+    id: 'movilidad', nombre: 'Movilidad', icono: 'figure.run', color: '#5FD3A8',
     foto: require('../assets/images/ejercicio/movilidad.jpg'), // Pexels 1953894
     rutinas: [
       { id: 'movilidad-espalda', nombre: 'Espalda suelta', nivel: 'Suave', minutos: 12, ejercicios: [

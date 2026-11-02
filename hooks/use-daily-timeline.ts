@@ -89,7 +89,7 @@ export function useDailyTimeline(date: string) {
           time: log.created_at ? new Date(log.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) : '',
           type: 'habit', icon: habit?.emoji || '✅',
           title: habit?.name || 'Hábito',
-          detail: 'Completado', color: '#14b8a6',
+          detail: 'Completado', color: '#FFB547',
         });
       });
 

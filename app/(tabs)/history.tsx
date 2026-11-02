@@ -2,19 +2,20 @@ import React, { useMemo, useState } from 'react';
 import { ScrollView, Text, View, Pressable, RefreshControl, Modal, Platform, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
-import { Titulo, Chispa, TINTA } from '@/components/decor';
+import { Titulo, Chispa, TINTA, acentoTexto, RADIO } from '@/components/decor';
 import { useHistorial, useBorrarRegistro, useEspacio, useLiberarEspacio } from '@/hooks/use-registros';
 import { agruparPorDia, horaCorta, duracion, type TipoRegistro } from '@/lib/registros';
+import { ACENTOS } from '@/constants/tabs';
 
 // Historial: todo lo que hiciste, por día y con su hora.
 const TIPO: Record<TipoRegistro, { emoji: string; color: string; nombre: string }> = {
-  agua: { emoji: '💧', color: '#7CC4FF', nombre: 'Agua' },
-  comida: { emoji: '🍽️', color: '#B6E36B', nombre: 'Comidas' },
-  ejercicio: { emoji: '🏃‍♀️', color: '#FF7A6B', nombre: 'Ejercicio' },
-  habito: { emoji: '✅', color: '#FFB547', nombre: 'Hábitos' },
-  hobby: { emoji: '🎨', color: '#F49AC1', nombre: 'Hobbies' },
-  meditacion: { emoji: '🧘‍♀️', color: '#C9A7FF', nombre: 'Meditación' },
-  animo: { emoji: '🌤️', color: '#A39A90', nombre: 'Ánimo' },
+  agua: { emoji: '💧', color: ACENTOS.agua, nombre: 'Agua' },
+  comida: { emoji: '🍽️', color: ACENTOS.comida, nombre: 'Comidas' },
+  ejercicio: { emoji: '🏃‍♀️', color: ACENTOS.ejercicio, nombre: 'Ejercicio' },
+  habito: { emoji: '✅', color: ACENTOS.inicio, nombre: 'Hábitos' },
+  hobby: { emoji: '🎨', color: ACENTOS.hobbies, nombre: 'Hobbies' },
+  meditacion: { emoji: '🧘‍♀️', color: ACENTOS.historial, nombre: 'Meditación' },
+  animo: { emoji: '🌤️', color: TINTA.suave, nombre: 'Ánimo' },
 };
 const FILTROS: (TipoRegistro | null)[] = [null, 'agua', 'comida', 'ejercicio', 'habito', 'hobby', 'meditacion'];
 const RANGOS = [7, 14, 30];
@@ -33,7 +34,7 @@ export default function HistoryScreen() {
   }, [data, filtro]);
 
   return (
-    <ScreenContainer className="p-0" containerClassName="bg-[#110F0D]">
+    <ScreenContainer className="p-0">
       <ScrollView contentContainerStyle={{ paddingBottom: 150 }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={TINTA.suave} />}>
         <View style={{ paddingHorizontal: 20, paddingTop: 24, maxWidth: 640, width: '100%', alignSelf: 'center', gap: 16 }}>
@@ -51,21 +52,21 @@ export default function HistoryScreen() {
               return (
                 <Pressable key={f ?? 'todo'} onPress={() => setFiltro(f)} accessibilityRole="button" accessibilityState={{ selected: on }}
                   style={{ minHeight: 44, paddingHorizontal: 14, borderRadius: 22, justifyContent: 'center', borderWidth: 1.5,
-                    borderColor: on ? (t?.color ?? TINTA.texto) : TINTA.borde, backgroundColor: on ? (t?.color ?? TINTA.texto) : 'transparent' }}>
-                  <Text style={{ color: on ? TINTA.fondo : TINTA.texto, fontWeight: '700' }}>{t ? `${t.emoji} ${t.nombre}` : 'Todo'}</Text>
+                    borderColor: on ? (t?.color ?? ACENTOS.historial) : TINTA.borde, backgroundColor: on ? (t?.color ?? ACENTOS.historial) : 'transparent' }}>
+                  <Text style={{ color: on ? TINTA.sobreAcento : TINTA.texto, fontWeight: '700' }}>{t ? `${t.emoji} ${t.nombre}` : 'Todo'}</Text>
                 </Pressable>
               );
             })}
           </ScrollView>
 
           {data?.faltaTabla && (
-            <Text style={{ color: '#FFB547', fontSize: 13.5, lineHeight: 19 }}>
+            <Text style={{ color: acentoTexto(ACENTOS.inicio), fontSize: 13.5, lineHeight: 19 }}>
               Faltan las tablas de registros y hobbies en Supabase: por ahora solo salen ejercicio, hábitos y meditación.
             </Text>
           )}
 
           {!isLoading && porDia.length === 0 && (
-            <View style={{ backgroundColor: TINTA.tarjeta, borderRadius: 28, padding: 22, borderWidth: 1, borderColor: TINTA.borde }}>
+            <View style={{ backgroundColor: TINTA.tarjeta, borderRadius: RADIO.tarjeta, padding: 22, borderWidth: 1, borderColor: TINTA.borde }}>
               <Chispa size={24} style={{ position: 'absolute', top: -10, right: 30 }} />
               <Text style={{ color: TINTA.texto, fontSize: 18, fontWeight: '800' }}>Aún no hay nada en estos días</Text>
               <Text style={{ color: TINTA.suave, marginTop: 6, lineHeight: 20 }}>Cada vaso de agua, comida, rutina, hábito o rato de hobby que anotes aparece aquí.</Text>
@@ -87,7 +88,7 @@ export default function HistoryScreen() {
                 {d.resumen.minutosHobby > 0 && <Resumen color={TIPO.hobby.color} texto={`🎨 ${duracion(d.resumen.minutosHobby)}`} />}
               </View>
 
-              <View style={{ backgroundColor: TINTA.tarjeta, borderRadius: 24, borderWidth: 1, borderColor: TINTA.borde, paddingHorizontal: 14 }}>
+              <View style={{ backgroundColor: TINTA.tarjeta, borderRadius: RADIO.tarjeta, borderWidth: 1, borderColor: TINTA.borde, paddingHorizontal: 14 }}>
                 {d.registros.map((r, k) => {
                   const t = TIPO[r.tipo];
                   return (
@@ -153,16 +154,16 @@ function LiberarEspacio({ visible, onClose }: { visible: boolean; onClose: () =>
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' }} accessibilityLabel="Cerrar" />
-      <View style={{ backgroundColor: TINTA.tarjeta, borderTopLeftRadius: 32, borderTopRightRadius: 32, borderWidth: 1, borderColor: TINTA.borde, padding: 24, paddingBottom: 40, gap: 14 }}>
+      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: TINTA.overlay }} accessibilityLabel="Cerrar" />
+      <View style={{ backgroundColor: TINTA.tarjeta, borderTopLeftRadius: RADIO.hoja, borderTopRightRadius: RADIO.hoja, borderWidth: 1, borderColor: TINTA.borde, padding: 24, paddingBottom: 40, gap: 14 }}>
         <Titulo size={24}>Liberar espacio</Titulo>
         <Text style={{ color: TINTA.suave, fontSize: 14.5, lineHeight: 20 }}>Borra los registros antiguos del día a día. Lo que creaste (hábitos, hobbies, obras, recetas, notas y dinero) se queda.</Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {[3, 6, 12].map((m) => (
             <Pressable key={m} onPress={() => { setMeses(m); setHecho('') }} accessibilityState={{ selected: meses === m }}
               style={{ flex: 1, minHeight: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5,
-                borderColor: meses === m ? TINTA.texto : TINTA.borde, backgroundColor: meses === m ? TINTA.texto : 'transparent' }}>
-              <Text style={{ color: meses === m ? TINTA.fondo : TINTA.texto, fontWeight: '800' }}>+ de {m} meses</Text>
+                borderColor: meses === m ? ACENTOS.historial : TINTA.borde, backgroundColor: meses === m ? ACENTOS.historial : 'transparent' }}>
+              <Text style={{ color: meses === m ? TINTA.sobreAcento : TINTA.texto, fontWeight: '800' }}>+ de {m} meses</Text>
             </Pressable>
           ))}
         </View>
@@ -172,11 +173,11 @@ function LiberarEspacio({ visible, onClose }: { visible: boolean; onClose: () =>
             <Text style={{ color: f.cuantas ? TINTA.texto : TINTA.suave, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{f.cuantas}</Text>
           </View>
         ))}
-        {!!hecho && <Text style={{ color: '#5FD3A8', fontWeight: '700' }}>{hecho}</Text>}
+        {!!hecho && <Text style={{ color: acentoTexto(ACENTOS.finanzas), fontWeight: '700' }}>{hecho}</Text>}
         <Pressable onPress={confirmar} disabled={!total || liberar.isPending} accessibilityRole="button"
-          style={{ minHeight: 52, borderRadius: 20, backgroundColor: total ? '#FF7A6B' : '#2A2521', alignItems: 'center', justifyContent: 'center' }}>
-          {liberar.isPending ? <ActivityIndicator color={TINTA.fondo} /> :
-            <Text style={{ color: total ? TINTA.fondo : TINTA.suave, fontWeight: '900', fontSize: 16 }}>{total ? `Borrar ${total} registros` : 'No hay nada tan antiguo'}</Text>}
+          style={{ minHeight: 52, borderRadius: 20, backgroundColor: total ? ACENTOS.ejercicio : TINTA.elevada, alignItems: 'center', justifyContent: 'center' }}>
+          {liberar.isPending ? <ActivityIndicator color={TINTA.sobreAcento} /> :
+            <Text style={{ color: total ? TINTA.sobreAcento : TINTA.suave, fontWeight: '900', fontSize: 16 }}>{total ? `Borrar ${total} registros` : 'No hay nada tan antiguo'}</Text>}
         </Pressable>
       </View>
     </Modal>

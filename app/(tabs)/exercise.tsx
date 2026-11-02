@@ -10,15 +10,16 @@ import {
 import { useExerciseSessions, useLogExercise } from '@/hooks/use-vida';
 import { useMarcarDia } from '@/hooks/use-programas';
 import { ProgramasEjercicio, type MarcaDia } from '@/components/programas-ejercicio';
-import { Sticker, Titulo } from '@/components/decor';
+import { Sticker, Titulo, TINTA, acentoTexto, RADIO } from '@/components/decor';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { fechaLocal } from '@/lib/registros';
+import { ACENTOS } from '@/constants/tabs';
 
 type C = ReturnType<typeof useColors>;
 
 // El acento de Ejercicio (coral) con texto oscuro encima
-const ACENTO = '#FF7A6B';
-const SOBRE = '#110F0D';
+const ACENTO = ACENTOS.ejercicio;
+const SOBRE = TINTA.sobreAcento;
 
 /** La rutina en curso. Con `marca` viene de un día de un programa o reto. */
 type EnCurso = { rutina: Rutina; zona: Zona; marca?: MarcaDia };
@@ -129,7 +130,7 @@ export default function ExerciseScreen() {
                   : 'Rutinas por zona, en casa y a tu ritmo.'}
               </Text>
 
-              <View style={{ backgroundColor: c.surface, borderRadius: 24, borderWidth: 1, borderColor: racha ? ACENTO : c.border,
+              <View style={{ backgroundColor: c.surface, borderRadius: RADIO.tarjeta, borderWidth: 1, borderColor: racha ? ACENTO : c.border,
                 padding: 16, marginBottom: hito ? 26 : 18, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <Titulo size={34} color={racha ? ACENTO : c.muted}>{racha}</Titulo>
                 <Text style={{ flex: 1, color: c.foreground, fontSize: 15, fontWeight: '700' }}>
@@ -205,18 +206,18 @@ export default function ExerciseScreen() {
             <View style={{ gap: 12 }}>
               {zona.rutinas.map((r) => (
                 <Pressable key={r.id} onPress={() => setEnCurso({ rutina: r, zona })} accessibilityRole="button"
-                  style={({ pressed }) => ({ backgroundColor: c.surface, borderRadius: 24, padding: 18, borderWidth: 1, borderColor: c.border, opacity: pressed ? 0.85 : 1 })}>
+                  style={({ pressed }) => ({ backgroundColor: c.surface, borderRadius: RADIO.tarjeta, padding: 18, borderWidth: 1, borderColor: c.border, opacity: pressed ? 0.85 : 1 })}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
                     <Titulo size={20} color={c.foreground} style={{ flex: 1, minWidth: 140 }}>{r.nombre}</Titulo>
                     <View style={{ borderRadius: 999, borderWidth: 1, borderColor: zona.color, paddingHorizontal: 10, paddingVertical: 4 }}>
-                      <Text style={{ color: zona.color, fontSize: 12, fontWeight: '800' }}>{r.nivel} · {r.minutos} min</Text>
+                      <Text style={{ color: acentoTexto(zona.color), fontSize: 12, fontWeight: '800' }}>{r.nivel} · {r.minutos} min</Text>
                     </View>
                   </View>
                   <Text style={{ color: c.muted, fontSize: 13.5, marginTop: 8, lineHeight: 19 }}>{r.ejercicios.map((e) => e.nombre).join(' · ')}</Text>
                 </Pressable>
               ))}
               <Pressable onPress={() => setZona(null)} accessibilityRole="button" style={{ minHeight: 48, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: ACENTO, fontWeight: '700' }}>← Todas las zonas</Text>
+                <Text style={{ color: acentoTexto(ACENTO), fontWeight: '700' }}>← Todas las zonas</Text>
               </Pressable>
             </View>
           )}
@@ -231,7 +232,7 @@ function CabeceraZona({ c, zona, alVolver }: { c: C; zona: Zona; alVolver: () =>
   return (
     <View style={{ marginBottom: 18 }}>
       <Pressable onPress={alVolver} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
-        <Text style={{ color: ACENTO, fontWeight: '700' }}>← Todas las zonas</Text>
+        <Text style={{ color: acentoTexto(ACENTO), fontWeight: '700' }}>← Todas las zonas</Text>
       </Pressable>
       <View style={{ marginTop: 4 }}>
         <Image source={zona.foto} resizeMode="cover" style={{ width: '100%', height: 170, borderRadius: 26 }} />
@@ -245,7 +246,7 @@ function CabeceraZona({ c, zona, alVolver }: { c: C; zona: Zona; alVolver: () =>
 
 function Dato({ c, valor, texto }: { c: C; valor: number; texto: string }) {
   return (
-    <View style={{ flex: 1, backgroundColor: c.surface, borderRadius: 24, padding: 16, borderWidth: 1, borderColor: c.border }}>
+    <View style={{ flex: 1, backgroundColor: c.surface, borderRadius: RADIO.tarjeta, padding: 16, borderWidth: 1, borderColor: c.border }}>
       <Titulo size={30} color={c.foreground}>{valor}</Titulo>
       <Text style={{ color: c.muted, fontSize: 13, marginTop: 2 }}>{texto}</Text>
     </View>
@@ -259,7 +260,7 @@ function Musica({ c, titulo, zonaId }: { c: C; titulo: string; zonaId?: string }
       <Titulo size={22} color={c.foreground} style={{ marginBottom: 12 }}>{titulo}</Titulo>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 20 }}>
         {listasPara(zonaId).map((l) => (
-          <View key={l.busqueda} style={{ width: 210, backgroundColor: c.surface, borderRadius: 24, borderWidth: 1, borderColor: c.border, paddingVertical: 8, paddingLeft: 14, paddingRight: 4 }}>
+          <View key={l.busqueda} style={{ width: 210, backgroundColor: c.surface, borderRadius: RADIO.tarjeta, borderWidth: 1, borderColor: c.border, paddingVertical: 8, paddingLeft: 14, paddingRight: 4 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Text style={{ flex: 1, color: c.foreground, fontWeight: '800', fontSize: 15 }} numberOfLines={2}>{l.nombre}</Text>
               <IconosMusica
@@ -354,7 +355,7 @@ function Reproductor({ rutina, zona, volverA, alSalir, alTerminar }: {
       <ScrollView contentContainerStyle={{ paddingBottom: 150 }}>
         <View style={{ paddingHorizontal: 20, paddingTop: 24, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
           <Pressable onPress={alSalir} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
-            <Text style={{ color: ACENTO, fontWeight: '700' }}>← {volverA}</Text>
+            <Text style={{ color: acentoTexto(ACENTO), fontWeight: '700' }}>← {volverA}</Text>
           </Pressable>
           <View style={{ marginTop: 4 }}>
             <Image source={zona.foto} resizeMode="cover" style={{ width: '100%', height: 160, borderRadius: 26 }} />
@@ -366,7 +367,7 @@ function Reproductor({ rutina, zona, volverA, alSalir, alTerminar }: {
           </View>
 
           {modo === 'fin' ? (
-            <View style={{ backgroundColor: c.surface, borderRadius: 26, padding: 24, borderWidth: 1, borderColor: c.border, alignItems: 'center' }}>
+            <View style={{ backgroundColor: c.surface, borderRadius: RADIO.tarjeta, padding: 24, borderWidth: 1, borderColor: c.border, alignItems: 'center' }}>
               <Titulo size={28} color={c.foreground} style={{ marginBottom: 8, textAlign: 'center' }}>¡Rutina completa!</Titulo>
               <Text style={{ color: c.muted, textAlign: 'center', marginBottom: 18 }}>
                 {guardar.isSuccess
@@ -376,10 +377,10 @@ function Reproductor({ rutina, zona, volverA, alSalir, alTerminar }: {
               <Boton c={c} texto="Volver" onPress={alSalir} />
             </View>
           ) : (
-            <View style={{ backgroundColor: c.surface, borderRadius: 26, padding: 22, borderWidth: 1, borderColor: c.border }}>
+            <View style={{ backgroundColor: c.surface, borderRadius: RADIO.tarjeta, padding: 22, borderWidth: 1, borderColor: c.border }}>
               <Text style={{ color: c.muted, fontSize: 13, fontWeight: '700' }}>Ejercicio {i + 1} de {rutina.ejercicios.length} · Serie {serie} de {e.series}</Text>
               <Titulo size={28} color={c.foreground} style={{ marginTop: 8 }}>{e.nombre}</Titulo>
-              <Text style={{ color: zona.color, fontSize: 44, fontFamily: 'BricolageGrotesque_800ExtraBold', marginVertical: 10 }}>
+              <Text style={{ color: acentoTexto(zona.color), fontSize: 44, fontFamily: 'BricolageGrotesque_800ExtraBold', marginVertical: 10 }}>
                 {modo === 'descanso' || modo === 'trabajo' ? `${cuenta}s` : e.reps ? `${e.reps} reps` : `${e.segundos}s`}
               </Text>
               <Text style={{ color: c.muted, fontSize: 15, marginBottom: 18 }}>

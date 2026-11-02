@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable, Alert, Platform } from 'react-native';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { TINTA } from '@/components/decor';
+import { TINTA, acentoTexto } from '@/components/decor';
+import { ACENTOS } from '@/constants/tabs';
 
 interface TransactionCardProps {
   amount: number;
@@ -14,9 +15,9 @@ interface TransactionCardProps {
   onEdit?: () => void;
 }
 
-const MENTA = '#5FD3A8';
-const CORAL = '#FF7A6B';
-const ALTO = '#2A2521';
+const MENTA = ACENTOS.finanzas;
+const CORAL = ACENTOS.ejercicio;
+const ALTO = TINTA.elevada;
 
 const CATEGORY_ICONS: Record<string, string> = {
   'Sueldo': '💼', 'Emprendimientos': '🚀', 'Dropshipping': '📦', 'Servicios Creativos': '🎨',
@@ -84,7 +85,7 @@ export function TransactionCard({
         </View>
 
         <View style={{ alignItems: 'flex-end', gap: 6 }}>
-          <Text style={{ fontSize: 16, fontWeight: '800', color: amountColor }}>{formattedAmount}</Text>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: acentoTexto(amountColor) }}>{formattedAmount}</Text>
           {(onEdit || onDelete) && (
             <View style={{ flexDirection: 'row', gap: 10 }}>
               {onEdit && (
@@ -106,7 +107,7 @@ export function TransactionCard({
                   accessibilityLabel="Eliminar movimiento"
                   style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: ALTO, alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <IconSymbol name="trash.fill" size={15} color={CORAL} />
+                  <IconSymbol name="trash.fill" size={15} color={acentoTexto(CORAL)} />
                 </Pressable>
               )}
             </View>

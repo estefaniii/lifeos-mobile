@@ -125,7 +125,7 @@ export function LineChart({ data, title, yLabel, color }: LineChartProps) {
           data={data}
           style={{
             data: { stroke: chartColor, strokeWidth: 2 },
-            parent: { border: '1px solid #ccc' },
+            parent: { border: `1px solid ${colors.border}` },
           }}
         />
       </VictoryChart>

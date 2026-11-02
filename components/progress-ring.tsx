@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useColors } from '@/hooks/use-colors';
+import { TINTA } from '@/components/decor';
 
 interface ProgressRingProps {
   progress: number;
@@ -64,8 +65,8 @@ export function ProgressRing({
         />
       </Svg>
       <View style={{ alignItems: 'center', gap: 2 }}>
-        <Text style={{ fontSize: 12, fontWeight: '600', color: '#FAFAFA' }}>{label}</Text>
-        {value && <Text style={{ fontSize: 11, color: '#A1A1AA' }}>{value}</Text>}
+        <Text style={{ fontSize: 12, fontWeight: '600', color: TINTA.texto }}>{label}</Text>
+        {value && <Text style={{ fontSize: 11, color: TINTA.suave }}>{value}</Text>}
       </View>
     </>
   );

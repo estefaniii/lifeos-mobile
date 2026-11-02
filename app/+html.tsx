@@ -10,7 +10,8 @@ export default function Root({ children }: { children: React.ReactNode }) {
           name="viewport"
           content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover"
         />
-        <meta name="theme-color" content="#0D9488" />
+        {/* El fondo oscuro; lib/tema.ts lo cambia al cargar si el tema es claro */}
+        <meta name="theme-color" content="#110F0D" />
 
         {/* PWA manifest */}
         <link rel="manifest" href="/manifest.json" />

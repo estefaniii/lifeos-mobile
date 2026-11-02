@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, TextInput, Pressable, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
-import { Titulo, TINTA } from '@/components/decor';
+import { Titulo, TINTA, RADIO } from '@/components/decor';
 import { useCreateSavingsGoal } from '@/hooks/use-savings-goals';
+import { ACENTOS } from '@/constants/tabs';
 
 // La meta guarda la clave; Finanzas la traduce a estos mismos colores
 const GOAL_COLORS = [
-  { label: 'Menta', value: 'primary', hex: '#5FD3A8' },
-  { label: 'Verde', value: 'success', hex: '#A8D672' },
-  { label: 'Ámbar', value: 'warning', hex: '#FFB547' },
-  { label: 'Lila', value: 'accent', hex: '#C9A2FF' },
+  { label: 'Menta', value: 'primary', hex: ACENTOS.finanzas },
+  { label: 'Verde', value: 'success', hex: ACENTOS.comida },
+  { label: 'Ámbar', value: 'warning', hex: ACENTOS.inicio },
+  { label: 'Lila', value: 'accent', hex: ACENTOS.historial },
 ];
 
-const MENTA = '#5FD3A8';
-const ALTO = '#2A2521';
+const MENTA = ACENTOS.finanzas;
+const ALTO = TINTA.elevada;
 const webSinBorde = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
 const campo = { backgroundColor: ALTO, borderWidth: 1, borderColor: TINTA.borde, borderRadius: 16, paddingHorizontal: 16, minHeight: 52 };
 const etiqueta = { color: TINTA.suave, fontSize: 14, marginBottom: 8, marginLeft: 2 };
@@ -66,8 +67,8 @@ export function AddSavingsGoalModal({ visible, onClose, userId }: AddSavingsGoal
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(8,6,5,0.72)', justifyContent: 'flex-end' }}>
-          <View style={{ maxHeight: '92%', width: '100%', maxWidth: 640, alignSelf: 'center', backgroundColor: TINTA.tarjeta, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderWidth: 1, borderBottomWidth: 0, borderColor: TINTA.borde, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28 }}>
+        <View style={{ flex: 1, backgroundColor: TINTA.overlay, justifyContent: 'flex-end' }}>
+          <View style={{ maxHeight: '92%', width: '100%', maxWidth: 640, alignSelf: 'center', backgroundColor: TINTA.tarjeta, borderTopLeftRadius: RADIO.hoja, borderTopRightRadius: RADIO.hoja, borderWidth: 1, borderBottomWidth: 0, borderColor: TINTA.borde, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28 }}>
             <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: TINTA.borde, marginBottom: 14 }} />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 16 }}>
               <Titulo size={24} style={{ flex: 1 }}>Nueva meta de ahorro</Titulo>
@@ -143,7 +144,7 @@ export function AddSavingsGoalModal({ visible, onClose, userId }: AddSavingsGoal
                   accessibilityRole="button"
                   style={({ pressed }) => ({ flex: 2, minHeight: 52, borderRadius: 18, backgroundColor: MENTA, alignItems: 'center', justifyContent: 'center', opacity: createGoal.isPending ? 0.5 : pressed ? 0.85 : 1 })}
                 >
-                  <Text style={{ color: TINTA.fondo, fontWeight: '800', fontSize: 15 }}>
+                  <Text style={{ color: TINTA.sobreAcento, fontWeight: '800', fontSize: 15 }}>
                     {createGoal.isPending ? 'Guardando…' : 'Guardar meta'}
                   </Text>
                 </Pressable>

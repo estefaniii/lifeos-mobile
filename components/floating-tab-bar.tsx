@@ -9,10 +9,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Titulo, TINTA } from '@/components/decor';
-import { SECCIONES, seccion, ANCHO_ESCRITORIO } from '@/constants/tabs';
+import { Titulo, TINTA, acentoTexto } from '@/components/decor';
+import { SECCIONES, seccion, ANCHO_ESCRITORIO, ACENTOS } from '@/constants/tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { useAjustes } from '@/hooks/use-ajustes';
+import { esClaro } from '@/lib/tema';
 
 export const TAB_BAR_HEIGHT = 62;
 
@@ -50,8 +51,10 @@ function BarraAbajo(props: BottomTabBarProps) {
           paddingHorizontal: 6, alignItems: 'center',
           // Sombra en capas, la luz viene de arriba
           ...(Platform.OS === 'web'
-            ? ({ boxShadow: '0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.45)' } as object)
-            : { shadowColor: '#000', shadowOpacity: 0.45, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 12 }),
+            ? ({ boxShadow: esClaro()
+                ? '0 1px 2px rgba(60,40,20,.08), 0 8px 24px rgba(60,40,20,.12)'
+                : '0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.45)' } as object)
+            : { shadowColor: '#000', shadowOpacity: esClaro() ? 0.12 : 0.45, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 12 }),
         }}
       >
         {visibles.map((s) => {
@@ -60,9 +63,9 @@ function BarraAbajo(props: BottomTabBarProps) {
             <Pressable key={s.ruta} accessibilityRole="tab" accessibilityState={{ selected: activa }} accessibilityLabel={s.nombre}
               onPress={() => ir(s.ruta)} style={{ flex: 1, height: '100%', alignItems: 'center', justifyContent: 'center' }}>
               <View style={{ alignItems: 'center', justifyContent: 'center', width: 48, height: 30, borderRadius: 15, backgroundColor: activa ? s.color + '2E' : 'transparent' }}>
-                <IconSymbol name={s.icon} size={21} color={activa ? s.color : '#8C847B'} />
+                <IconSymbol name={s.icon} size={21} color={activa ? acentoTexto(s.color) : TINTA.tenue} />
               </View>
-              <Text numberOfLines={1} style={{ marginTop: 2, fontSize: 10.5, fontWeight: activa ? '800' : '600', color: activa ? TINTA.texto : '#8C847B' }}>
+              <Text numberOfLines={1} style={{ marginTop: 2, fontSize: 10.5, fontWeight: activa ? '800' : '600', color: activa ? TINTA.texto : TINTA.tenue }}>
                 {s.nombre}
               </Text>
             </Pressable>
@@ -87,15 +90,15 @@ function MenuIzquierdo(props: BottomTabBarProps) {
     const activa = actual === ruta;
     return (
       <Pressable key={ruta} onPress={() => ir(ruta)} accessibilityRole="link" accessibilityState={{ selected: activa }}
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingHorizontal: 12, borderRadius: 14, backgroundColor: activa ? '#2A2521' : 'transparent' }}>
-        <IconSymbol name={s.icon} size={19} color={activa ? s.color : '#8C847B'} />
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingHorizontal: 12, borderRadius: 14, backgroundColor: activa ? TINTA.elevada : 'transparent' }}>
+        <IconSymbol name={s.icon} size={19} color={activa ? acentoTexto(s.color) : TINTA.tenue} />
         <Text style={{ color: activa ? TINTA.texto : TINTA.suave, fontSize: 15, fontWeight: activa ? '800' : '600' }}>{s.nombre}</Text>
       </Pressable>
     );
   };
 
   return (
-    <View style={{ width: 248, height: '100%', backgroundColor: '#0B0A09', borderRightWidth: 1, borderRightColor: TINTA.borde, paddingHorizontal: 14, paddingTop: 26, paddingBottom: 18 }}>
+    <View style={{ width: 248, height: '100%', backgroundColor: TINTA.menuFondo, borderRightWidth: 1, borderRightColor: TINTA.borde, paddingHorizontal: 14, paddingTop: 26, paddingBottom: 18 }}>
       <Titulo size={26} style={{ paddingHorizontal: 12, marginBottom: 22 }}>LifeOS</Titulo>
       <View style={{ gap: 2 }}>{principales.map((s) => fila(s.ruta))}</View>
       <View style={{ height: 1, backgroundColor: TINTA.borde, marginVertical: 14, marginHorizontal: 12 }} />
@@ -103,7 +106,7 @@ function MenuIzquierdo(props: BottomTabBarProps) {
 
       {/* Tú, abajo: lleva al Perfil */}
       <Pressable onPress={() => ir('profile')} accessibilityRole="link" accessibilityLabel="Perfil"
-        style={{ marginTop: 'auto', flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 16, backgroundColor: actual === 'profile' ? '#2A2521' : 'transparent' }}>
+        style={{ marginTop: 'auto', flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 16, backgroundColor: actual === 'profile' ? TINTA.elevada : 'transparent' }}>
         <Avatar url={ajustes?.avatarUrl} nombre={user?.name || user?.email || '?'} size={38} />
         <View style={{ flex: 1 }}>
           <Text style={{ color: TINTA.texto, fontWeight: '800' }} numberOfLines={1}>{user?.name || 'Tu perfil'}</Text>
@@ -116,10 +119,10 @@ function MenuIzquierdo(props: BottomTabBarProps) {
 
 export function Avatar({ url, nombre, size = 40 }: { url?: string | null; nombre: string; size?: number }) {
   return (
-    <View style={{ width: size, height: size, borderRadius: size / 2, overflow: 'hidden', backgroundColor: '#2A2521', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#FFB547' }}>
+    <View style={{ width: size, height: size, borderRadius: size / 2, overflow: 'hidden', backgroundColor: TINTA.elevada, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: ACENTOS.inicio }}>
       {url
         ? <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-        : <Text style={{ color: '#FFB547', fontWeight: '900', fontSize: size * 0.42 }}>{nombre.trim().charAt(0).toUpperCase()}</Text>}
+        : <Text style={{ color: acentoTexto(ACENTOS.inicio), fontWeight: '900', fontSize: size * 0.42 }}>{nombre.trim().charAt(0).toUpperCase()}</Text>}
     </View>
   );
 }

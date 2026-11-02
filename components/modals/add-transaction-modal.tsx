@@ -12,8 +12,9 @@ import {
 } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { fechaLocal } from '@/lib/registros';
-import { Titulo, TINTA } from '@/components/decor';
+import { Titulo, TINTA, acentoTexto, RADIO } from '@/components/decor';
 import { useQueryClient } from '@tanstack/react-query';
+import { ACENTOS } from '@/constants/tabs';
 
 interface AddTransactionModalProps {
   visible: boolean;
@@ -24,14 +25,15 @@ interface AddTransactionModalProps {
 
 const COLORS = {
   bg: TINTA.fondo,
+  onAccent: TINTA.sobreAcento,
   card: TINTA.tarjeta,
-  alto: '#2A2521',
+  alto: TINTA.elevada,
   border: TINTA.borde,
   text: TINTA.texto,
   muted: TINTA.suave,
-  primary: '#5FD3A8',
-  income: '#5FD3A8',
-  expense: '#FF7A6B',
+  primary: ACENTOS.finanzas,
+  income: ACENTOS.finanzas,
+  expense: ACENTOS.ejercicio,
 };
 
 const webSinBorde = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
@@ -136,7 +138,7 @@ export function AddTransactionModal({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(8,6,5,0.72)', justifyContent: 'flex-end' }}>
+        <View style={{ flex: 1, backgroundColor: TINTA.overlay, justifyContent: 'flex-end' }}>
           <View style={styles.hoja}>
             <View style={styles.asa} />
 
@@ -161,7 +163,7 @@ export function AddTransactionModal({
                       accessibilityState={{ selected: active }}
                       style={{ flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: active ? tint : 'transparent' }}
                     >
-                      <Text style={{ color: active ? COLORS.bg : COLORS.text, fontWeight: '800', fontSize: 14 }}>
+                      <Text style={{ color: active ? COLORS.onAccent : COLORS.text, fontWeight: '800', fontSize: 14 }}>
                         {t === 'income' ? 'Ingreso' : 'Gasto'}
                       </Text>
                     </Pressable>
@@ -200,7 +202,7 @@ export function AddTransactionModal({
                       }}
                     >
                       <Text style={{ fontSize: 15 }}>{cat.icon}</Text>
-                      <Text style={{ color: active ? COLORS.bg : COLORS.text, fontSize: 14, fontWeight: '700' }}>{cat.name}</Text>
+                      <Text style={{ color: active ? COLORS.onAccent : COLORS.text, fontSize: 14, fontWeight: '700' }}>{cat.name}</Text>
                     </Pressable>
                   );
                 })}
@@ -219,12 +221,12 @@ export function AddTransactionModal({
 
               {error && (
                 <View style={[styles.alert, { backgroundColor: 'rgba(255,122,107,0.10)', borderColor: 'rgba(255,122,107,0.40)' }]}>
-                  <Text style={{ color: COLORS.expense, fontSize: 14, textAlign: 'center' }}>{error}</Text>
+                  <Text style={{ color: acentoTexto(COLORS.expense), fontSize: 14, textAlign: 'center' }}>{error}</Text>
                 </View>
               )}
               {success && (
                 <View style={[styles.alert, { backgroundColor: 'rgba(95,211,168,0.10)', borderColor: 'rgba(95,211,168,0.40)' }]}>
-                  <Text style={{ color: COLORS.income, fontSize: 14, textAlign: 'center' }}>¡Guardado!</Text>
+                  <Text style={{ color: acentoTexto(COLORS.income), fontSize: 14, textAlign: 'center' }}>¡Guardado!</Text>
                 </View>
               )}
 
@@ -244,9 +246,9 @@ export function AddTransactionModal({
                   style={({ pressed }) => [styles.boton, { flex: 2, backgroundColor: COLORS.primary, opacity: saving ? 0.6 : pressed ? 0.85 : 1 }]}
                 >
                   {saving ? (
-                    <ActivityIndicator color={COLORS.bg} />
+                    <ActivityIndicator color={COLORS.onAccent} />
                   ) : (
-                    <Text style={{ color: COLORS.bg, fontWeight: '800', fontSize: 15 }}>Guardar</Text>
+                    <Text style={{ color: COLORS.onAccent, fontWeight: '800', fontSize: 15 }}>Guardar</Text>
                   )}
                 </Pressable>
               </View>
@@ -261,7 +263,7 @@ export function AddTransactionModal({
 const styles = {
   hoja: {
     maxHeight: '92%' as const, width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const,
-    backgroundColor: COLORS.card, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    backgroundColor: COLORS.card, borderTopLeftRadius: RADIO.hoja, borderTopRightRadius: RADIO.hoja,
     borderWidth: 1, borderBottomWidth: 0, borderColor: COLORS.border,
     paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28,
   },

@@ -11,11 +11,11 @@ export const TIPOS_HOBBY = [
   { kind: 'composicion', nombre: 'Composición', emoji: '🎼', color: '#C9A7FF' },
   { kind: 'escritura', nombre: 'Escritura', emoji: '📝', color: '#FFD86B' },
   { kind: 'lectura', nombre: 'Lectura', emoji: '📚', color: '#7CC4FF' },
-  { kind: 'otro', nombre: 'Otro', emoji: '✨', color: '#F5EFE8' },
+  { kind: 'otro', nombre: 'Otro', emoji: '✨', color: '#EADBC8' },
 ] as const;
 
 export const ESTADOS_OBRA: { estado: EstadoObra; nombre: string; color: string }[] = [
-  { estado: 'idea', nombre: 'Idea', color: '#A39A90' },
+  { estado: 'idea', nombre: 'Idea', color: '#C4B8AB' },
   { estado: 'en_proceso', nombre: 'En proceso', color: '#FFB547' },
   { estado: 'pausada', nombre: 'Pausada', color: '#8FB8FF' },
   { estado: 'terminada', nombre: 'Terminada', color: '#5FD3A8' },

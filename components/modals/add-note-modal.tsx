@@ -6,7 +6,9 @@ import {
 import { useCreateNote, useUpdateNote, useDeleteNote } from '@/hooks/use-notes';
 import type { Note } from '@/lib/supabase';
 import { fechaLocal } from '@/lib/registros';
-import { Titulo, TINTA } from '@/components/decor';
+import { Titulo, TINTA, acentoTexto, RADIO } from '@/components/decor';
+import { ACENTOS } from '@/constants/tabs';
+import { esClaro } from '@/lib/tema';
 
 interface AddNoteModalProps {
   visible: boolean;
@@ -17,14 +19,25 @@ interface AddNoteModalProps {
 }
 
 const COLORS = {
-  bg: TINTA.fondo, card: TINTA.tarjeta, alto: '#2A2521', border: TINTA.borde,
-  text: TINTA.texto, muted: TINTA.suave, primary: '#8FB8FF', danger: '#FF7A6B',
+  bg: TINTA.fondo, card: TINTA.tarjeta, alto: TINTA.elevada, border: TINTA.borde, onAccent: TINTA.sobreAcento,
+  text: TINTA.texto, muted: TINTA.suave, primary: ACENTOS.notas, danger: ACENTOS.ejercicio,
 };
 
-// Fondos de nota: tonos oscuros cálidos para que el texto claro siempre se lea.
+// Fondos de nota. Estos hex son lo que se GUARDA en la base (notes.color), no
+// colores de pantalla: por eso no son TINTA. Son tonos oscuros cálidos; en el
+// tema claro cada uno se pinta con su pareja pastel de SWATCHES_CLARO.
 // El primero es el de la tarjeta; '#18181B' era el gris de antes y se trata igual.
 export const SWATCHES = ['#1A1714', '#1F3330', '#3A2E1C', '#2D2440', '#3A1F2A', '#1E2A3D', '#2A3320'];
-export const fondoNota = (c?: string | null) => (!c || c === '#18181B' ? SWATCHES[0] : c);
+const SWATCHES_CLARO = ['#FFFFFF', '#E3F2EC', '#FBEBD3', '#ECE4FA', '#FBE3EA', '#E2ECFA', '#E9F2DA'];
+/** El color que se guarda */
+export const claveNota = (c?: string | null) => (!c || c === '#18181B' ? SWATCHES[0] : c);
+/** El color que se pinta, según el tema */
+export const fondoNota = (c?: string | null) => {
+  const k = claveNota(c);
+  if (!esClaro()) return k;
+  const i = SWATCHES.indexOf(k);
+  return i >= 0 ? SWATCHES_CLARO[i] : k;
+};
 const todayISO = () => fechaLocal();
 const shiftISO = (d: number) => { const x = new Date(); x.setDate(x.getDate() + d); return fechaLocal(x); };
 
@@ -48,7 +61,7 @@ export function AddNoteModal({ visible, onClose, note, clientSuggestions = [], d
     if (!visible) return;
     setTitle(note?.title ?? '');
     setContent(note?.content ?? '');
-    setColor(fondoNota(note?.color));
+    setColor(claveNota(note?.color));
     setPinned(note?.pinned ?? false);
     setClient(note?.client ?? defaultClient ?? '');
     setArchived(note?.archived ?? false);
@@ -85,8 +98,8 @@ export function AddNoteModal({ visible, onClose, note, clientSuggestions = [], d
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(8,6,5,0.72)', justifyContent: 'flex-end' }}>
-          <View style={{ maxHeight: '92%', width: '100%', maxWidth: 640, alignSelf: 'center', backgroundColor: COLORS.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28, borderWidth: 1, borderBottomWidth: 0, borderColor: COLORS.border }}>
+        <View style={{ flex: 1, backgroundColor: TINTA.overlay, justifyContent: 'flex-end' }}>
+          <View style={{ maxHeight: '92%', width: '100%', maxWidth: 640, alignSelf: 'center', backgroundColor: COLORS.card, borderTopLeftRadius: RADIO.hoja, borderTopRightRadius: RADIO.hoja, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28, borderWidth: 1, borderBottomWidth: 0, borderColor: COLORS.border }}>
             <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: COLORS.border, marginBottom: 14 }} />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 16 }}>
               <Titulo size={24} style={{ flex: 1 }}>{isEdit ? 'Editar nota' : 'Nueva nota'}</Titulo>
@@ -96,7 +109,7 @@ export function AddNoteModal({ visible, onClose, note, clientSuggestions = [], d
                 accessibilityState={{ checked: pinned }}
                 style={{ minHeight: 44, paddingHorizontal: 14, borderRadius: 99, justifyContent: 'center', backgroundColor: pinned ? COLORS.primary : COLORS.alto, borderWidth: 1, borderColor: pinned ? COLORS.primary : COLORS.border }}
               >
-                <Text style={{ color: pinned ? COLORS.bg : COLORS.text, fontSize: 14, fontWeight: '700' }}>📌 {pinned ? 'Fijada' : 'Fijar'}</Text>
+                <Text style={{ color: pinned ? COLORS.onAccent : COLORS.text, fontSize: 14, fontWeight: '700' }}>📌 {pinned ? 'Fijada' : 'Fijar'}</Text>
               </Pressable>
               <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar"
                 style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.alto, alignItems: 'center', justifyContent: 'center' }}>
@@ -118,7 +131,7 @@ export function AddNoteModal({ visible, onClose, note, clientSuggestions = [], d
                 placeholder="Escribe tu nota…"
                 placeholderTextColor={COLORS.muted}
                 multiline
-                style={[styles.campo, { backgroundColor: color, paddingVertical: 14, fontSize: 15, minHeight: 160, textAlignVertical: 'top', marginBottom: 16, lineHeight: 22 }, webNoOutline]}
+                style={[styles.campo, { backgroundColor: fondoNota(color), paddingVertical: 14, fontSize: 15, minHeight: 160, textAlignVertical: 'top', marginBottom: 16, lineHeight: 22 }, webNoOutline]}
               />
 
               <Text style={styles.label}>Color</Text>
@@ -130,7 +143,7 @@ export function AddNoteModal({ visible, onClose, note, clientSuggestions = [], d
                     accessibilityRole="button"
                     accessibilityLabel="Color de la nota"
                     accessibilityState={{ selected: color === c }}
-                    style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: c, borderWidth: color === c ? 2 : 1, borderColor: color === c ? COLORS.text : COLORS.border }}
+                    style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: fondoNota(c), borderWidth: color === c ? 2 : 1, borderColor: color === c ? COLORS.text : COLORS.border }}
                   />
                 ))}
               </View>
@@ -147,7 +160,7 @@ export function AddNoteModal({ visible, onClose, note, clientSuggestions = [], d
                       accessibilityState={{ selected: active }}
                       style={{ minHeight: 44, paddingHorizontal: 14, borderRadius: 99, justifyContent: 'center', backgroundColor: active ? COLORS.primary : COLORS.alto, borderWidth: 1, borderColor: active ? COLORS.primary : COLORS.border }}
                     >
-                      <Text style={{ color: active ? COLORS.bg : COLORS.text, fontSize: 14, fontWeight: '700' }}>{q.label}</Text>
+                      <Text style={{ color: active ? COLORS.onAccent : COLORS.text, fontSize: 14, fontWeight: '700' }}>{q.label}</Text>
                     </Pressable>
                   );
                 })}
@@ -168,7 +181,7 @@ export function AddNoteModal({ visible, onClose, note, clientSuggestions = [], d
                 </Pressable>
               )}
 
-              {error && <View style={styles.alert}><Text style={{ color: COLORS.danger, fontSize: 14, textAlign: 'center' }}>{error}</Text></View>}
+              {error && <View style={styles.alert}><Text style={{ color: acentoTexto(COLORS.danger), fontSize: 14, textAlign: 'center' }}>{error}</Text></View>}
 
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
                 {isEdit ? (
@@ -187,7 +200,7 @@ export function AddNoteModal({ visible, onClose, note, clientSuggestions = [], d
                   </Pressable>
                 )}
                 <Pressable onPress={submit} disabled={saving} accessibilityRole="button" style={({ pressed }) => ({ flex: 2, minHeight: 52, backgroundColor: COLORS.primary, borderRadius: 18, alignItems: 'center', justifyContent: 'center', opacity: saving ? 0.6 : pressed ? 0.85 : 1 })}>
-                  {saving ? <ActivityIndicator color={COLORS.bg} /> : <Text style={{ color: COLORS.bg, fontWeight: '800', fontSize: 15 }}>{isEdit ? 'Guardar' : 'Crear nota'}</Text>}
+                  {saving ? <ActivityIndicator color={COLORS.onAccent} /> : <Text style={{ color: COLORS.onAccent, fontWeight: '800', fontSize: 15 }}>{isEdit ? 'Guardar' : 'Crear nota'}</Text>}
                 </Pressable>
               </View>
             </ScrollView>

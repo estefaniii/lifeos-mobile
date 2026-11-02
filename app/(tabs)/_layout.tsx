@@ -3,11 +3,12 @@ import { Tabs, useRouter } from "expo-router";
 import { View, Text, Pressable, Platform, useWindowDimensions } from "react-native";
 import { FloatingTabBar } from "@/components/floating-tab-bar";
 import { BotonMenu } from "@/components/menu-lateral";
-import { ANCHO_ESCRITORIO } from "@/constants/tabs";
+import { ANCHO_ESCRITORIO, ACENTOS } from "@/constants/tabs";
 import { useColors } from "@/hooks/use-colors";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import { useOnlineStatus } from "@/hooks/use-offline";
+import { TINTA } from '@/components/decor';
 
 export default function TabLayout() {
   const colors = useColors();
@@ -79,7 +80,7 @@ export default function TabLayout() {
       {!online && (
         <View
           style={{
-            backgroundColor: "#f59e0b",
+            backgroundColor: ACENTOS.inicio,
             paddingVertical: 6,
             paddingHorizontal: 16,
             flexDirection: "row",
@@ -88,11 +89,11 @@ export default function TabLayout() {
             gap: 8,
           }}
         >
-          <Text style={{ color: "#1c1917", fontSize: 13, fontWeight: "600" }}>
+          <Text style={{ color: TINTA.sobreAcento, fontSize: 13, fontWeight: "600" }}>
             Sin conexión
           </Text>
           {queueSize > 0 && (
-            <Text style={{ color: "#1c1917", fontSize: 13 }}>
+            <Text style={{ color: TINTA.sobreAcento, fontSize: 13 }}>
               · {queueSize} cambio{queueSize !== 1 ? "s" : ""} pendiente
               {queueSize !== 1 ? "s" : ""}
             </Text>
@@ -100,7 +101,7 @@ export default function TabLayout() {
           <Pressable onPress={syncNow} style={{ marginLeft: 8 }}>
             <Text
               style={{
-                color: "#1c1917",
+                color: TINTA.sobreAcento,
                 fontSize: 13,
                 textDecorationLine: "underline",
               }}

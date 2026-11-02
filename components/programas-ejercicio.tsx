@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { useColors } from '@/hooks/use-colors';
-import { Sticker, Titulo } from '@/components/decor';
+import { Sticker, Titulo, TINTA, acentoTexto, RADIO } from '@/components/decor';
 import { ZONAS, buscarRutina } from '@/constants/ejercicios';
 import { RETOS, type Reto } from '@/constants/retos';
 import {
@@ -14,6 +14,7 @@ import {
   type DiaPrograma,
   type Programa,
 } from '@/hooks/use-programas';
+import { ACENTOS } from '@/constants/tabs';
 
 /**
  * Programas guiados: un plan de varios días con el video de cada día.
@@ -33,8 +34,8 @@ import {
 export type MarcaDia = { programId: string; dia: number; yaHecho: boolean };
 
 // El acento de Ejercicio (coral) con texto oscuro encima
-const ACENTO = '#FF7A6B';
-const SOBRE = '#110F0D';
+const ACENTO = ACENTOS.ejercicio;
+const SOBRE = TINTA.sobreAcento;
 
 const zonaDe = (id: string) => ZONAS.find((z) => z.id === id) ?? ZONAS[0];
 /** El programa guardado de un reto, si ya lo empezó. Se reconoce por autor y nombre. */
@@ -136,7 +137,7 @@ export function ProgramasEjercicio({
                 <Titulo size={20} color={c.foreground}>{r.nombre}</Titulo>
                 <Text style={{ color: c.muted, fontSize: 13, lineHeight: 18 }} numberOfLines={3}>{r.para}</Text>
                 {guardado && (
-                  <Text style={{ color: z.color, fontSize: 12.5, fontWeight: '700', marginTop: 4 }}>
+                  <Text style={{ color: acentoTexto(z.color), fontSize: 12.5, fontWeight: '700', marginTop: 4 }}>
                     En tu plan · {hechosDe(guardado.id)} de 21 días
                   </Text>
                 )}
@@ -157,7 +158,7 @@ export function ProgramasEjercicio({
           minHeight: 52, justifyContent: 'center', alignItems: 'center', opacity: pressed ? 0.7 : 1,
         })}
       >
-        <Text style={{ color: ACENTO, fontWeight: '700' }}>+ Nuevo programa</Text>
+        <Text style={{ color: acentoTexto(ACENTO), fontWeight: '700' }}>+ Nuevo programa</Text>
       </Pressable>
 
       {isLoading && <Text style={{ color: c.muted, fontSize: 13 }}>Cargando…</Text>}
@@ -244,7 +245,7 @@ function VistaReto({
       </Text>
 
       {[0, 1, 2].map((s) => (
-        <View key={s} style={{ backgroundColor: c.surface, borderRadius: 24, padding: 16, borderWidth: 1, borderColor: c.border, gap: 4 }}>
+        <View key={s} style={{ backgroundColor: c.surface, borderRadius: RADIO.tarjeta, padding: 16, borderWidth: 1, borderColor: c.border, gap: 4 }}>
           <Titulo size={20} color={c.foreground} style={{ marginBottom: 4 }}>Semana {s + 1}</Titulo>
           {reto.dias.slice(s * 7, s * 7 + 7).map((d) => (
             <Text key={d.dia} style={{ color: d.descanso ? c.muted : c.foreground, fontSize: 13.5 }}>
@@ -311,7 +312,7 @@ function Dias({
       <Titulo size={28} color={c.foreground}>{programa.name}</Titulo>
 
       {total > 0 && (
-        <View style={{ backgroundColor: c.surface, borderRadius: 26, padding: 18, borderWidth: 1, borderColor: c.border, gap: 12 }}>
+        <View style={{ backgroundColor: c.surface, borderRadius: RADIO.tarjeta, padding: 18, borderWidth: 1, borderColor: c.border, gap: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
             <Titulo size={22} color={c.foreground}>
               {siguiente ? `Día ${siguiente.dia} de ${total}` : '¡Terminado!'}
@@ -347,7 +348,7 @@ function Dias({
       )}
       {!!programa.source_url && (
         <Pressable onPress={() => abrirVideo(programa.source_url!)} accessibilityRole="link" style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
-          <Text style={{ color: ACENTO, fontSize: 14, fontWeight: '700' }}>Ver el programa completo</Text>
+          <Text style={{ color: acentoTexto(ACENTO), fontSize: 14, fontWeight: '700' }}>Ver el programa completo</Text>
         </Pressable>
       )}
 
@@ -497,7 +498,7 @@ function Editor({ programa, alSalir }: { programa: Programa | null; alSalir: () 
       {dias.map((d, i) => (
         <View
           key={i}
-          style={{ backgroundColor: c.surface, borderRadius: 24, padding: 16, borderWidth: 1, borderColor: c.border, gap: 8 }}
+          style={{ backgroundColor: c.surface, borderRadius: RADIO.tarjeta, padding: 16, borderWidth: 1, borderColor: c.border, gap: 8 }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text style={{ color: c.muted, fontSize: 12.5, fontWeight: '700' }}>
@@ -534,7 +535,7 @@ function Editor({ programa, alSalir }: { programa: Programa | null; alSalir: () 
           minHeight: 52, justifyContent: 'center', alignItems: 'center', opacity: pressed ? 0.7 : 1,
         })}
       >
-        <Text style={{ color: ACENTO, fontWeight: '700' }}>+ Añadir día</Text>
+        <Text style={{ color: acentoTexto(ACENTO), fontWeight: '700' }}>+ Añadir día</Text>
       </Pressable>
 
       <Pressable
@@ -617,7 +618,7 @@ function Campo({
 function Atras({ c, texto, onPress }: { c: ReturnType<typeof useColors>; texto: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
-      <Text style={{ color: ACENTO, fontWeight: '700' }}>{texto}</Text>
+      <Text style={{ color: acentoTexto(ACENTO), fontWeight: '700' }}>{texto}</Text>
     </Pressable>
   );
 }
