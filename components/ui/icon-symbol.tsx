@@ -59,6 +59,8 @@ const MAPPING = {
   "flame.fill": "local-fire-department",
   "leaf.fill": "eco",
   "checkmark": "check",
+  "moon.fill": "bedtime",
+  "line.3.horizontal": "menu",
 } as IconMapping;
 
 /**

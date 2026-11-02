@@ -46,7 +46,7 @@ export default function HobbiesScreen() {
               <Titulo>Hobbies</Titulo>
               <Text style={{ color: TINTA.suave, fontSize: 15, marginTop: 6 }}>Lo que haces porque te gusta.</Text>
             </View>
-            <Sello centro={totalSemana < 60 ? `${totalSemana}′` : `${+(totalSemana / 60).toFixed(1)}h`} pie="semana" color={ROSA} size={84} />
+            <Sello centro={totalSemana < 60 ? `${totalSemana}′` : `${+(totalSemana / 60).toFixed(1)}h`} pie="semana" color={ROSA} size={78} style={{ marginTop: 52 }} />
           </View>
 
           <View style={{ flexDirection: 'row', backgroundColor: TINTA.tarjeta, borderRadius: 22, padding: 4, borderWidth: 1, borderColor: TINTA.borde }}>

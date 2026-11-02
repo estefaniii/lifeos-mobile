@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
 import { Tabs, useRouter } from "expo-router";
-import { View, Text, Pressable, Platform } from "react-native";
+import { View, Text, Pressable, Platform, useWindowDimensions } from "react-native";
 import { FloatingTabBar } from "@/components/floating-tab-bar";
+import { BotonMenu } from "@/components/menu-lateral";
+import { ANCHO_ESCRITORIO } from "@/constants/tabs";
 import { useColors } from "@/hooks/use-colors";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
@@ -9,6 +11,7 @@ import { useOnlineStatus } from "@/hooks/use-offline";
 
 export default function TabLayout() {
   const colors = useColors();
+  const escritorio = useWindowDimensions().width >= ANCHO_ESCRITORIO;
   const { user, loading } = useAuth();
   const router = useRouter();
   const { online, queueSize, syncNow } = useOnlineStatus();
@@ -112,12 +115,14 @@ export default function TabLayout() {
         tabBar={(props) => <FloatingTabBar {...props} />}
         screenOptions={{
           headerShown: false,
-          // El menú flota encima del contenido; cada pantalla deja su hueco abajo
-          tabBarStyle: { position: "absolute" },
+          // En la computadora el menú va a la izquierda; en el celular flota abajo
+          // encima del contenido y cada pantalla deja su hueco
+          tabBarPosition: escritorio ? "left" : "bottom",
+          tabBarStyle: escritorio ? undefined : { position: "absolute" },
           sceneStyle: { backgroundColor: colors.background },
         }}
       >
-        {/* ===== Menú inferior (el color y el icono están en constants/tabs.ts) ===== */}
+        {/* ===== Secciones (nombre, color e icono en constants/tabs.ts) ===== */}
         <Tabs.Screen name="index" options={{ title: "Inicio" }} />
         <Tabs.Screen name="exercise" options={{ title: "Ejercicio" }} />
         <Tabs.Screen name="food" options={{ title: "Comida" }} />
@@ -129,6 +134,7 @@ export default function TabLayout() {
         <Tabs.Screen name="health" options={{ href: null }} />
         <Tabs.Screen name="profile" options={{ href: null }} />
       </Tabs>
+      <BotonMenu />
     </View>
   );
 }
