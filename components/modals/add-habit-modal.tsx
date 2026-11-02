@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { Modal, View, Text, Pressable, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { Titulo, TINTA } from '@/components/decor';
 
 const EMOJI_OPTIONS = ['📖', '💊', '🧴', '🏃', '💤', '🥗', '🧘', '✍️', '🎯', '💡', '🎶', '🧹', '📵', '🌅', '🥤', '🍎'];
-const COLOR_OPTIONS = ['#14B8A6', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899', '#10B981', '#F97316'];
+// Los acentos de la app: ámbar, lima, coral, cielo, lila, menta, rosa y amarillo
+const COLOR_OPTIONS = ['#FFB547', '#B6E36B', '#FF7A6B', '#7CC4FF', '#C9A7FF', '#5FD3A8', '#F49AC1', '#FFD966'];
+const ACENTO = '#FFB547';
+const ELEVADO = '#2A2521';
 
 export function AddHabitModal({ visible, onClose, onSave }: {
   visible: boolean;
@@ -11,16 +15,19 @@ export function AddHabitModal({ visible, onClose, onSave }: {
 }) {
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('📖');
-  const [color, setColor] = useState('#14B8A6');
+  const [color, setColor] = useState(COLOR_OPTIONS[0]);
+  const listo = !!name.trim();
 
   const handleSave = () => {
     if (!name.trim()) return;
     onSave({ name: name.trim(), emoji, color });
     setName('');
     setEmoji('📖');
-    setColor('#14B8A6');
+    setColor(COLOR_OPTIONS[0]);
     onClose();
   };
+
+  const etiqueta = { color: TINTA.suave, fontSize: 14, fontWeight: '700' as const, marginBottom: 10 };
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -29,105 +36,110 @@ export function AddHabitModal({ visible, onClose, onSave }: {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-          <View style={{ backgroundColor: '#18181B', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24 }}>
-          <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '800', marginBottom: 4 }}>
-            Nuevo Hábito
-          </Text>
-          <Text style={{ color: '#71717A', fontSize: 11, marginBottom: 20, textTransform: 'uppercase', letterSpacing: 2, fontWeight: '700' }}>
-            Crea un hábito diario
-          </Text>
+          <View style={{ backgroundColor: TINTA.tarjeta, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderWidth: 1, borderBottomWidth: 0, borderColor: TINTA.borde, padding: 24, paddingBottom: 32 }}>
+            <View style={{ maxWidth: 640, width: '100%', alignSelf: 'center' }}>
+              <Titulo size={24}>Nuevo hábito</Titulo>
+              <Text style={{ color: TINTA.suave, fontSize: 14, marginTop: 4, marginBottom: 20 }}>
+                Algo que quieras hacer cada día.
+              </Text>
 
-          {/* Name input */}
-          <View style={{
-            backgroundColor: '#27272A',
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: '#3F3F46',
-            paddingHorizontal: 16,
-            marginBottom: 16,
-          }}>
-            <TextInput
-              style={{ color: '#FAFAFA', fontSize: 16, paddingVertical: 14 }}
-              placeholder="Ej: Leer 20 min, Skincare, Vitaminas..."
-              placeholderTextColor="#52525B"
-              value={name}
-              onChangeText={setName}
-            />
-          </View>
+              <TextInput
+                style={{
+                  backgroundColor: ELEVADO,
+                  borderRadius: 18,
+                  borderWidth: 1,
+                  borderColor: TINTA.borde,
+                  paddingHorizontal: 16,
+                  minHeight: 52,
+                  color: TINTA.texto,
+                  fontSize: 16,
+                  marginBottom: 20,
+                }}
+                placeholder="Ej.: leer 20 min, skincare, vitaminas…"
+                placeholderTextColor={TINTA.suave}
+                value={name}
+                onChangeText={setName}
+                onSubmitEditing={handleSave}
+                accessibilityLabel="Nombre del hábito"
+              />
 
-          {/* Emoji picker */}
-          <Text style={{ color: '#A1A1AA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
-            Ícono
-          </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              {EMOJI_OPTIONS.map((e) => (
+              <Text style={etiqueta}>Ícono</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {EMOJI_OPTIONS.map((e) => (
+                    <Pressable
+                      key={e}
+                      onPress={() => setEmoji(e)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: emoji === e }}
+                      style={{
+                        width: 46,
+                        height: 46,
+                        borderRadius: 16,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: ELEVADO,
+                        borderWidth: 2,
+                        borderColor: emoji === e ? color : 'transparent',
+                      }}
+                    >
+                      <Text style={{ fontSize: 22 }}>{e}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </ScrollView>
+
+              <Text style={etiqueta}>Color</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 24 }}>
+                {COLOR_OPTIONS.map((c) => (
+                  <Pressable
+                    key={c}
+                    onPress={() => setColor(c)}
+                    accessibilityRole="radio"
+                    accessibilityLabel={`Color ${c}`}
+                    accessibilityState={{ selected: color === c }}
+                    style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <View style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: 17,
+                      backgroundColor: c,
+                      borderWidth: 3,
+                      borderColor: color === c ? TINTA.texto : 'transparent',
+                    }} />
+                  </Pressable>
+                ))}
+              </View>
+
+              <View style={{ flexDirection: 'row', gap: 10 }}>
                 <Pressable
-                  key={e}
-                  onPress={() => setEmoji(e)}
+                  onPress={onClose}
+                  accessibilityRole="button"
+                  style={{ flex: 1, minHeight: 52, borderRadius: 26, borderWidth: 1, borderColor: TINTA.borde, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Text style={{ color: TINTA.texto, fontWeight: '700', fontSize: 15 }}>Cancelar</Text>
+                </Pressable>
+                <Pressable
+                  onPress={handleSave}
+                  disabled={!listo}
+                  accessibilityRole="button"
                   style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 12,
+                    flex: 2,
+                    minHeight: 52,
+                    borderRadius: 26,
+                    backgroundColor: ACENTO,
+                    opacity: listo ? 1 : 0.45,
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backgroundColor: emoji === e ? 'rgba(20,184,166,0.2)' : '#27272A',
-                    borderWidth: 2,
-                    borderColor: emoji === e ? '#14B8A6' : 'transparent',
                   }}
                 >
-                  <Text style={{ fontSize: 22 }}>{e}</Text>
+                  <Text style={{ color: TINTA.fondo, fontWeight: '800', fontSize: 15 }}>Crear hábito</Text>
                 </Pressable>
-              ))}
+              </View>
             </View>
-          </ScrollView>
-
-          {/* Color picker */}
-          <Text style={{ color: '#A1A1AA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
-            Color
-          </Text>
-          <View style={{ flexDirection: 'row', gap: 10, marginBottom: 24 }}>
-            {COLOR_OPTIONS.map((c) => (
-              <Pressable
-                key={c}
-                onPress={() => setColor(c)}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  backgroundColor: c,
-                  borderWidth: 3,
-                  borderColor: color === c ? '#FAFAFA' : 'transparent',
-                }}
-              />
-            ))}
-          </View>
-
-          {/* Buttons */}
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <Pressable
-              onPress={onClose}
-              style={{ flex: 1, backgroundColor: '#27272A', borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#A1A1AA', fontWeight: '700', fontSize: 13 }}>Cancelar</Text>
-            </Pressable>
-            <Pressable
-              onPress={handleSave}
-              style={{
-                flex: 2,
-                backgroundColor: name.trim() ? '#14B8A6' : 'rgba(20,184,166,0.3)',
-                borderRadius: 16,
-                paddingVertical: 14,
-                alignItems: 'center',
-              }}
-            >
-              <Text style={{ color: '#FAFAFA', fontWeight: '800', fontSize: 13 }}>
-                Crear Hábito
-              </Text>
-            </Pressable>
           </View>
         </View>
-      </View>
       </KeyboardAvoidingView>
     </Modal>
   );

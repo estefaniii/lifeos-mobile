@@ -2,9 +2,14 @@ import React, { useState } from 'react';
 import { ScrollView, Text, View, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
-import { useColors } from '@/hooks/use-colors';
+import { Titulo, TINTA } from '@/components/decor';
 import { useDailyTimeline } from '@/hooks/use-daily-timeline';
 import { fechaLocal } from '@/lib/registros';
+
+// Historial del día: una línea de tiempo con lo que registraste.
+const MENTA = '#5FD3A8';
+const CORAL = '#FF7A6B';
+const ALTO = '#2A2521';
 
 const DAYS_ES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTHS_ES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -26,7 +31,6 @@ function getWeekDates(centerDate: Date): Date[] {
 }
 
 export default function TimelineScreen() {
-  const colors = useColors();
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const dateStr = formatDateStr(selectedDate);
@@ -42,173 +46,123 @@ export default function TimelineScreen() {
   };
 
   return (
-    <ScreenContainer>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-          <Pressable onPress={() => router.back()} style={{ marginRight: 12, padding: 4 }}>
-            <Text style={{ color: colors.primary, fontSize: 24 }}>←</Text>
-          </Pressable>
-          <View>
-            <Text style={{ color: '#FAFAFA', fontSize: 22, fontWeight: '800' }}>Timeline</Text>
-            <Text style={{ color: '#A1A1AA', fontSize: 13 }}>Tu actividad día a día</Text>
+    <ScreenContainer className="p-0" containerClassName="bg-[#110F0D]">
+      <ScrollView contentContainerStyle={{ paddingBottom: 150 }} showsVerticalScrollIndicator={false}>
+        <View style={{ paddingHorizontal: 20, paddingTop: 24, maxWidth: 640, width: '100%', alignSelf: 'center', gap: 20 }}>
+          {/* Cabecera: deja libre la esquina del botón de menú */}
+          <View style={{ paddingRight: 110 }}>
+            <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Volver"
+              style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start', marginBottom: 4 }}>
+              <Text style={{ color: TINTA.suave, fontSize: 15, fontWeight: '700' }}>‹ Volver</Text>
+            </Pressable>
+            <Titulo>Tu día</Titulo>
+            <Text style={{ color: TINTA.suave, fontSize: 15, marginTop: 6 }}>Lo que registraste, en orden.</Text>
           </View>
-        </View>
 
-        {/* Week Navigation */}
-        <View style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 20,
-        }}>
-          <Pressable onPress={() => goDay(-7)} style={{ padding: 8 }}>
-            <Text style={{ color: '#14B8A6', fontSize: 20 }}>‹</Text>
-          </Pressable>
-          <View style={{ flexDirection: 'row', gap: 6, flex: 1, justifyContent: 'center' }}>
-            {weekDates.map((d) => {
-              const ds = formatDateStr(d);
-              const isSelected = ds === dateStr;
-              const isToday = ds === today;
-              return (
-                <Pressable
-                  key={ds}
-                  onPress={() => setSelectedDate(d)}
-                  style={{
-                    alignItems: 'center',
-                    paddingVertical: 8,
-                    paddingHorizontal: 10,
-                    borderRadius: 14,
-                    backgroundColor: isSelected ? '#14B8A6' : 'transparent',
-                  }}
-                >
-                  <Text style={{
-                    color: isSelected ? '#020617' : '#71717A',
-                    fontSize: 10,
-                    fontWeight: '600',
-                  }}>
-                    {DAYS_ES[d.getDay()]}
-                  </Text>
-                  <Text style={{
-                    color: isSelected ? '#020617' : isToday ? '#14B8A6' : '#FAFAFA',
-                    fontSize: 16,
-                    fontWeight: '700',
-                    marginTop: 2,
-                  }}>
-                    {d.getDate()}
-                  </Text>
-                </Pressable>
-              );
-            })}
+          {/* Semana */}
+          <View style={{ backgroundColor: TINTA.tarjeta, borderRadius: 26, borderWidth: 1, borderColor: TINTA.borde, padding: 8, gap: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Pressable onPress={() => goDay(-7)} accessibilityRole="button" accessibilityLabel="Semana anterior"
+                style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: TINTA.texto, fontSize: 22 }}>‹</Text>
+              </Pressable>
+              <Text style={{ color: TINTA.texto, fontSize: 15, fontWeight: '800' }}>
+                {MONTHS_ES[selectedDate.getMonth()]} {selectedDate.getFullYear()}
+                {dateStr === today ? <Text style={{ color: TINTA.suave, fontWeight: '600' }}>  ·  Hoy</Text> : null}
+              </Text>
+              <Pressable onPress={() => goDay(7)} accessibilityRole="button" accessibilityLabel="Semana siguiente"
+                style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: TINTA.texto, fontSize: 22 }}>›</Text>
+              </Pressable>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 4 }}>
+              {weekDates.map((d) => {
+                const ds = formatDateStr(d);
+                const isSelected = ds === dateStr;
+                const isToday = ds === today;
+                return (
+                  <Pressable
+                    key={ds}
+                    onPress={() => setSelectedDate(d)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                    style={{
+                      flex: 1, minHeight: 56, alignItems: 'center', justifyContent: 'center', borderRadius: 16,
+                      backgroundColor: isSelected ? TINTA.texto : 'transparent',
+                      borderWidth: isToday && !isSelected ? 1 : 0, borderColor: TINTA.borde,
+                    }}
+                  >
+                    <Text style={{ color: isSelected ? TINTA.fondo : TINTA.suave, fontSize: 12, fontWeight: '700' }}>
+                      {DAYS_ES[d.getDay()]}
+                    </Text>
+                    <Text style={{ color: isSelected ? TINTA.fondo : TINTA.texto, fontSize: 17, fontWeight: '800', marginTop: 2 }}>
+                      {d.getDate()}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
-          <Pressable onPress={() => goDay(7)} style={{ padding: 8 }}>
-            <Text style={{ color: '#14B8A6', fontSize: 20 }}>›</Text>
-          </Pressable>
-        </View>
 
-        {/* Month label */}
-        <Text style={{ color: '#71717A', fontSize: 12, fontWeight: '600', textAlign: 'center', marginBottom: 16 }}>
-          {MONTHS_ES[selectedDate.getMonth()]} {selectedDate.getFullYear()}
-          {dateStr === today ? '  ·  Hoy' : ''}
-        </Text>
-
-        {/* Timeline Events */}
-        {isLoading ? (
-          <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        ) : events && events.length > 0 ? (
-          <View>
-            {events.map((event, index) => (
-              <View key={event.id} style={{ flexDirection: 'row', marginBottom: 4 }}>
-                {/* Timeline line */}
-                <View style={{ width: 40, alignItems: 'center' }}>
-                  <Text style={{ color: '#71717A', fontSize: 9, marginBottom: 4 }}>{event.time}</Text>
-                  <View style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: 5,
-                    backgroundColor: event.color,
-                  }} />
-                  {index < events.length - 1 && (
-                    <View style={{
-                      width: 2,
-                      flex: 1,
-                      minHeight: 30,
-                      backgroundColor: '#1e293b',
-                    }} />
-                  )}
-                </View>
-
-                {/* Event card */}
-                <View style={{
-                  flex: 1,
-                  marginLeft: 10,
-                  marginBottom: 12,
-                  backgroundColor: '#0f172a',
-                  borderRadius: 14,
-                  padding: 14,
-                  borderLeftWidth: 3,
-                  borderLeftColor: event.color,
-                }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <Text style={{ fontSize: 18 }}>{event.icon}</Text>
-                    <Text style={{ color: '#FAFAFA', fontSize: 14, fontWeight: '700' }}>{event.title}</Text>
+          {/* Eventos */}
+          {isLoading ? (
+            <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+              <ActivityIndicator size="large" color={TINTA.suave} />
+            </View>
+          ) : events && events.length > 0 ? (
+            <View>
+              {events.map((event, index) => (
+                <View key={event.id} style={{ flexDirection: 'row' }}>
+                  {/* Hora y línea */}
+                  <View style={{ width: 48, alignItems: 'center' }}>
+                    <Text style={{ color: TINTA.suave, fontSize: 12, fontWeight: '600', marginTop: 16 }}>{event.time}</Text>
+                    <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: event.color, marginTop: 6 }} />
+                    {index < events.length - 1 && (
+                      <View style={{ width: 2, flex: 1, minHeight: 24, backgroundColor: TINTA.borde, marginTop: 4 }} />
+                    )}
                   </View>
-                  <Text style={{ color: '#94a3b8', fontSize: 12 }}>{event.detail}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        ) : (
-          <View style={{
-            paddingVertical: 40,
-            alignItems: 'center',
-            backgroundColor: '#0f172a',
-            borderRadius: 16,
-          }}>
-            <Text style={{ fontSize: 40, marginBottom: 12 }}>📭</Text>
-            <Text style={{ color: '#71717A', fontSize: 14, fontWeight: '600' }}>Sin actividad este día</Text>
-            <Text style={{ color: '#52525b', fontSize: 12, marginTop: 4 }}>Registra transacciones, hábitos o salud para verlos aquí</Text>
-          </View>
-        )}
 
-        {/* Quick stats footer */}
-        {events && events.length > 0 && (
-          <View style={{
-            marginTop: 16,
-            backgroundColor: '#0f172a',
-            borderRadius: 14,
-            padding: 16,
-            flexDirection: 'row',
-            justifyContent: 'space-around',
-          }}>
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ color: '#FAFAFA', fontSize: 20, fontWeight: '700' }}>
-                {events.length}
-              </Text>
-              <Text style={{ color: '#71717A', fontSize: 10 }}>Eventos</Text>
+                  <View style={{
+                    flex: 1, marginLeft: 8, marginBottom: 10, flexDirection: 'row', alignItems: 'center', gap: 12,
+                    backgroundColor: TINTA.tarjeta, borderRadius: 24, borderWidth: 1, borderColor: TINTA.borde, padding: 14,
+                  }}>
+                    <View style={{ width: 44, height: 44, borderRadius: 16, backgroundColor: ALTO, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ fontSize: 20 }}>{event.icon}</Text>
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={{ color: TINTA.texto, fontSize: 15, fontWeight: '800' }} numberOfLines={2}>{event.title}</Text>
+                      {!!event.detail && <Text style={{ color: TINTA.suave, fontSize: 14, marginTop: 2 }}>{event.detail}</Text>}
+                    </View>
+                  </View>
+                </View>
+              ))}
             </View>
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ color: '#34d399', fontSize: 20, fontWeight: '700' }}>
-                {events.filter(e => e.type === 'income').length}
+          ) : (
+            <View style={{ paddingVertical: 36, paddingHorizontal: 24, alignItems: 'center', backgroundColor: TINTA.tarjeta, borderRadius: 26, borderWidth: 1, borderColor: TINTA.borde }}>
+              <Titulo size={22} style={{ textAlign: 'center' }}>Sin actividad este día</Titulo>
+              <Text style={{ color: TINTA.suave, fontSize: 15, marginTop: 8, textAlign: 'center', lineHeight: 21 }}>
+                Registra movimientos, hábitos o salud y aparecerán aquí.
               </Text>
-              <Text style={{ color: '#71717A', fontSize: 10 }}>Ingresos</Text>
             </View>
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ color: '#f87171', fontSize: 20, fontWeight: '700' }}>
-                {events.filter(e => e.type === 'expense').length}
-              </Text>
-              <Text style={{ color: '#71717A', fontSize: 10 }}>Gastos</Text>
+          )}
+
+          {/* Resumen del día */}
+          {events && events.length > 0 && (
+            <View style={{ backgroundColor: TINTA.tarjeta, borderRadius: 26, borderWidth: 1, borderColor: TINTA.borde, paddingVertical: 16, flexDirection: 'row' }}>
+              {[
+                { n: events.length, t: 'Eventos', c: TINTA.texto },
+                { n: events.filter(e => e.type === 'income').length, t: 'Ingresos', c: MENTA },
+                { n: events.filter(e => e.type === 'expense').length, t: 'Gastos', c: CORAL },
+                { n: events.filter(e => e.type === 'habit').length, t: 'Hábitos', c: TINTA.texto },
+              ].map((x, i) => (
+                <View key={x.t} style={{ flex: 1, alignItems: 'center', borderLeftWidth: i ? 1 : 0, borderColor: TINTA.borde }}>
+                  <Titulo size={24} color={x.c}>{x.n}</Titulo>
+                  <Text style={{ color: TINTA.suave, fontSize: 13, marginTop: 2 }}>{x.t}</Text>
+                </View>
+              ))}
             </View>
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ color: '#14b8a6', fontSize: 20, fontWeight: '700' }}>
-                {events.filter(e => e.type === 'habit').length}
-              </Text>
-              <Text style={{ color: '#71717A', fontSize: 10 }}>Hábitos</Text>
-            </View>
-          </View>
-        )}
+          )}
+        </View>
       </ScrollView>
     </ScreenContainer>
   );

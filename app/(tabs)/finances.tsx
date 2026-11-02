@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { ScrollView, Text, View, Pressable, RefreshControl, Alert, Modal, TextInput } from 'react-native';
+import { ScrollView, Text, View, Pressable, RefreshControl, Alert, Modal, TextInput, KeyboardAvoidingView, Platform, type StyleProp, type ViewStyle } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
-import { BarChart, PieChart } from '@/components/charts';
+import { Titulo, Sticker, TINTA } from '@/components/decor';
 import { TransactionCard } from '@/components/transaction-card';
 import { AddTransactionModal } from '@/components/modals/add-transaction-modal';
 import { AddSavingsGoalModal } from '@/components/modals/add-savings-goal-modal';
-import { useColors } from '@/hooks/use-colors';
 import { useFinancialSummary, useTransactions, useExpensesByCategory, useDeleteTransaction, useUpdateTransaction } from '@/hooks/use-transactions';
 import { useSavingsGoals, useDeleteSavingsGoal, useUpdateSavingsGoal } from '@/hooks/use-savings-goals';
 import { useBudgetProgress, useCreateBudget, useDeleteBudget } from '@/hooks/use-budgets';
@@ -13,15 +12,188 @@ import { useRecurringTransactions, useCreateRecurring, useDeleteRecurring, useAp
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 
-/**
- * Finances Screen
- * 
- * Displays financial data with:
- * - Bar chart: Income vs Expenses (weekly)
- * - Pie chart: Expense breakdown by category
- * - Balance summary
- * - Recent transactions
- */
+// Finanzas: balance del período, en qué se va el dinero, metas, presupuestos,
+// movimientos fijos y el registro. Un solo acento (menta) para las acciones.
+const MENTA = '#5FD3A8';
+const CORAL = '#FF7A6B';
+const AMBAR = '#FFB547';
+const ALTO = '#2A2521'; // superficie elevada: chips, iconos y campos dentro de tarjetas
+
+// Las metas guardan una clave de color; aquí se traduce a la paleta cálida
+const COLOR_META: Record<string, string> = { primary: MENTA, success: '#A8D672', warning: AMBAR, accent: '#C9A2FF' };
+
+const PERIODOS = [['day', 'Hoy'], ['week', 'Semana'], ['month', 'Mes'], ['year', 'Año']] as const;
+type Periodo = (typeof PERIODOS)[number][0];
+
+const monto = (n: number | null | undefined) =>
+  `$${Math.abs(Number(n) || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+
+const tarjeta: ViewStyle = { backgroundColor: TINTA.tarjeta, borderRadius: 26, borderWidth: 1, borderColor: TINTA.borde, padding: 18 };
+const campo: ViewStyle = { backgroundColor: ALTO, borderRadius: 16, borderWidth: 1, borderColor: TINTA.borde, paddingHorizontal: 16, minHeight: 52, justifyContent: 'center' };
+const webSinBorde = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
+
+/* ---------- Piezas pequeñas de esta pantalla ---------- */
+
+function Etiqueta({ children }: { children: React.ReactNode }) {
+  return <Text style={{ color: TINTA.suave, fontSize: 14, marginBottom: 8, marginTop: 4 }}>{children}</Text>;
+}
+
+function Boton({ texto, onPress, tipo = 'principal', style, disabled }: {
+  texto: string; onPress: () => void; tipo?: 'principal' | 'secundario'; style?: StyleProp<ViewStyle>; disabled?: boolean;
+}) {
+  const principal = tipo === 'principal';
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      style={({ pressed }) => [{
+        minHeight: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16,
+        backgroundColor: principal ? MENTA : 'transparent', borderWidth: 1, borderColor: principal ? MENTA : TINTA.borde,
+        opacity: disabled ? 0.5 : pressed ? 0.85 : 1,
+      }, style]}
+    >
+      <Text style={{ color: principal ? TINTA.fondo : TINTA.texto, fontWeight: '800', fontSize: 15 }}>{texto}</Text>
+    </Pressable>
+  );
+}
+
+// Botón de texto para la derecha de un encabezado de sección
+function Enlace({ texto, onPress }: { texto: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" style={{ minHeight: 44, paddingHorizontal: 12, justifyContent: 'center', marginRight: -12 }}>
+      <Text style={{ color: MENTA, fontSize: 15, fontWeight: '700' }}>{texto}</Text>
+    </Pressable>
+  );
+}
+
+function Seccion({ titulo, accion, children }: { titulo: string; accion?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <View style={{ gap: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <Titulo size={22} style={{ flexShrink: 1 }}>{titulo}</Titulo>
+        {accion}
+      </View>
+      {children}
+    </View>
+  );
+}
+
+// Estado vacío: una tarjeta punteada que también sirve de botón
+function Vacio({ texto, accion, onPress }: { texto: string; accion: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button"
+      style={({ pressed }) => ({ ...tarjeta, borderStyle: 'dashed', alignItems: 'center', gap: 4, paddingVertical: 22, opacity: pressed ? 0.85 : 1 })}>
+      <Text style={{ color: TINTA.suave, fontSize: 14 }}>{texto}</Text>
+      <Text style={{ color: MENTA, fontSize: 15, fontWeight: '700' }}>{accion}</Text>
+    </Pressable>
+  );
+}
+
+// La × de borrar: visualmente pequeña, pero con 44 px de área
+function Quitar({ onPress, etiqueta }: { onPress: () => void; etiqueta: string }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={etiqueta}
+      style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: -10 }}>
+      <Text style={{ color: TINTA.suave, fontSize: 16 }}>✕</Text>
+    </Pressable>
+  );
+}
+
+function Barra({ pct, color, alto = 8 }: { pct: number; color: string; alto?: number }) {
+  return (
+    <View style={{ height: alto, backgroundColor: ALTO, borderRadius: 99, overflow: 'hidden' }}>
+      <View style={{ height: '100%', width: `${Math.max(0, Math.min(100, pct))}%`, backgroundColor: color, borderRadius: 99 }} />
+    </View>
+  );
+}
+
+function Interruptor({ opciones, valor, onCambio }: {
+  opciones: readonly { valor: string; texto: string; color: string }[]; valor: string; onCambio: (v: string) => void;
+}) {
+  return (
+    <View style={{ flexDirection: 'row', backgroundColor: TINTA.fondo, borderRadius: 18, padding: 4, borderWidth: 1, borderColor: TINTA.borde, marginBottom: 12 }}>
+      {opciones.map((o) => {
+        const activo = valor === o.valor;
+        return (
+          <Pressable key={o.valor} onPress={() => onCambio(o.valor)} accessibilityRole="tab" accessibilityState={{ selected: activo }}
+            style={{ flex: 1, minHeight: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: activo ? o.color : 'transparent' }}>
+            <Text style={{ color: activo ? TINTA.fondo : TINTA.texto, fontWeight: '800', fontSize: 14 }}>{o.texto}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+const TIPOS = [{ valor: 'expense', texto: 'Gasto', color: CORAL }, { valor: 'income', texto: 'Ingreso', color: MENTA }] as const;
+
+function Chips({ opciones, valor, onCambio }: { opciones: { name: string; icon?: string }[]; valor: string; onCambio: (v: string) => void }) {
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+      {opciones.map((c) => {
+        const activo = valor === c.name;
+        return (
+          <Pressable key={c.name} onPress={() => onCambio(c.name)} accessibilityRole="button" accessibilityState={{ selected: activo }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 14, borderRadius: 99, backgroundColor: activo ? MENTA : ALTO, borderWidth: 1, borderColor: activo ? MENTA : TINTA.borde }}>
+            {!!c.icon && <Text style={{ fontSize: 15 }}>{c.icon}</Text>}
+            <Text style={{ color: activo ? TINTA.fondo : TINTA.texto, fontSize: 14, fontWeight: '700' }}>{c.name}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+function CampoDinero({ value, onChangeText, placeholder = '0', grande }: { value: string; onChangeText: (v: string) => void; placeholder?: string; grande?: boolean }) {
+  return (
+    <View style={[campo, { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', marginBottom: 12 }]}>
+      <Text style={{ color: TINTA.suave, fontWeight: '700', fontSize: grande ? 22 : 18, marginRight: 6 }}>$</Text>
+      <TextInput
+        style={[{ flex: 1, color: TINTA.texto, fontSize: grande ? 22 : 18, paddingVertical: 12, fontWeight: '700' }, webSinBorde]}
+        keyboardType="decimal-pad" value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={TINTA.suave}
+      />
+    </View>
+  );
+}
+
+// Hoja inferior compartida por los formularios de esta pantalla
+function Hoja({ visible, titulo, sub, onClose, children }: { visible: boolean; titulo: string; sub?: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(8,6,5,0.72)', justifyContent: 'flex-end' }}>
+          <View style={{ maxHeight: '92%', width: '100%', maxWidth: 640, alignSelf: 'center', backgroundColor: TINTA.tarjeta, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderWidth: 1, borderBottomWidth: 0, borderColor: TINTA.borde, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28 }}>
+            <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: TINTA.borde, marginBottom: 14 }} />
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+              <View style={{ flex: 1 }}>
+                <Titulo size={24}>{titulo}</Titulo>
+                {!!sub && <Text style={{ color: TINTA.suave, fontSize: 14, marginTop: 4 }}>{sub}</Text>}
+              </View>
+              <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar"
+                style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: ALTO, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: TINTA.suave, fontSize: 18 }}>✕</Text>
+              </Pressable>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">{children}</ScrollView>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+function Acciones({ onCancelar, onGuardar, texto }: { onCancelar: () => void; onGuardar: () => void; texto: string }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
+      <Boton texto="Cancelar" tipo="secundario" onPress={onCancelar} style={{ flex: 1 }} />
+      <Boton texto={texto} onPress={onGuardar} style={{ flex: 2 }} />
+    </View>
+  );
+}
+
+/* ---------- Formularios ---------- */
+
 function UpdateGoalModal({ visible, onClose, goal, onUpdate }: {
   visible: boolean;
   onClose: () => void;
@@ -31,42 +203,41 @@ function UpdateGoalModal({ visible, onClose, goal, onUpdate }: {
   const [value, setValue] = useState('');
   if (!goal) return null;
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-        <View style={{ backgroundColor: '#18181B', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 36 }}>
-          <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '800', marginBottom: 4 }}>Actualizar Meta</Text>
-          <Text style={{ color: '#71717A', fontSize: 12, marginBottom: 16 }}>{goal.name} — Meta: ${goal.target_amount}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#27272A', borderRadius: 14, borderWidth: 1, borderColor: '#3F3F46', paddingHorizontal: 16, marginBottom: 16 }}>
-            <Text style={{ color: '#71717A', fontWeight: '700', marginRight: 6 }}>$</Text>
-            <TextInput
-              style={{ flex: 1, color: '#FAFAFA', fontSize: 20, paddingVertical: 14, fontWeight: '700' }}
-              placeholder={String(goal.current_amount)}
-              placeholderTextColor="#52525B"
-              keyboardType="decimal-pad"
-              value={value}
-              onChangeText={setValue}
-              autoFocus
-            />
-          </View>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: '#27272A', borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}>
-              <Text style={{ color: '#A1A1AA', fontWeight: '700' }}>Cancelar</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                const n = parseFloat(value);
-                if (!isNaN(n)) { onUpdate(goal.id, n); onClose(); setValue(''); }
-              }}
-              style={{ flex: 2, backgroundColor: '#14B8A6', borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>Guardar Progreso</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
-    </Modal>
+    <Hoja visible={visible} onClose={onClose} titulo="Actualizar meta" sub={`${goal.name} · meta de ${monto(goal.target_amount)}`}>
+      <Etiqueta>Lo que llevas ahorrado</Etiqueta>
+      <CampoDinero value={value} onChangeText={setValue} placeholder={String(goal.current_amount)} grande />
+      <Acciones
+        texto="Guardar progreso"
+        onCancelar={onClose}
+        onGuardar={() => {
+          const n = parseFloat(value);
+          if (!isNaN(n)) { onUpdate(goal.id, n); onClose(); setValue(''); }
+        }}
+      />
+    </Hoja>
   );
 }
+
+const CAT_INGRESO = [
+  { name: 'Sueldo', icon: '💼' },
+  { name: 'Emprendimientos', icon: '🚀' },
+  { name: 'Dropshipping', icon: '📦' },
+  { name: 'Servicios Creativos', icon: '🎨' },
+  { name: 'Freelance', icon: '💻' },
+  { name: 'Inversiones', icon: '📈' },
+  { name: 'Otros', icon: '📌' },
+];
+const CAT_GASTO = [
+  { name: 'Materiales', icon: '🛠' },
+  { name: 'Salidas', icon: '🎉' },
+  { name: 'Universidad', icon: '🎓' },
+  { name: 'Compras Online', icon: '🛒' },
+  { name: 'Comida', icon: '🍔' },
+  { name: 'Transporte', icon: '🚗' },
+  { name: 'Suscripciones', icon: '📱' },
+  { name: 'Salud', icon: '💊' },
+  { name: 'Otros', icon: '📌' },
+];
 
 function EditTransactionModal({ visible, onClose, transaction, onSave }: {
   visible: boolean;
@@ -89,135 +260,55 @@ function EditTransactionModal({ visible, onClose, transaction, onSave }: {
   }, [transaction, visible]);
 
   if (!transaction) return null;
-
-  const incomeCategories = [
-    { name: 'Sueldo', icon: '💼' },
-    { name: 'Emprendimientos', icon: '🚀' },
-    { name: 'Dropshipping', icon: '📦' },
-    { name: 'Servicios Creativos', icon: '🎨' },
-    { name: 'Freelance', icon: '💻' },
-    { name: 'Inversiones', icon: '📈' },
-    { name: 'Otros', icon: '📌' },
-  ];
-  const expenseCategories = [
-    { name: 'Materiales', icon: '🛠' },
-    { name: 'Salidas', icon: '🎉' },
-    { name: 'Universidad', icon: '🎓' },
-    { name: 'Compras Online', icon: '🛒' },
-    { name: 'Comida', icon: '🍔' },
-    { name: 'Transporte', icon: '🚗' },
-    { name: 'Suscripciones', icon: '📱' },
-    { name: 'Salud', icon: '💊' },
-    { name: 'Otros', icon: '📌' },
-  ];
-  const categories = type === 'income' ? incomeCategories : expenseCategories;
+  const categories = type === 'income' ? CAT_INGRESO : CAT_GASTO;
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-        <View style={{ backgroundColor: '#18181B', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 36 }}>
-          <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '800', marginBottom: 16 }}>Editar Transacción</Text>
+    <Hoja visible={visible} onClose={onClose} titulo="Editar movimiento">
+      <Interruptor opciones={TIPOS} valor={type} onCambio={(v) => setType(v as 'income' | 'expense')} />
 
-          {/* Type toggle */}
-          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-            <Pressable
-              onPress={() => setType('income')}
-              style={{ flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', backgroundColor: type === 'income' ? '#10B981' : '#27272A' }}
-            >
-              <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 13 }}>Ingreso</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setType('expense')}
-              style={{ flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', backgroundColor: type === 'expense' ? '#EF4444' : '#27272A' }}
-            >
-              <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 13 }}>Gasto</Text>
-            </Pressable>
-          </View>
+      <Etiqueta>Monto</Etiqueta>
+      <CampoDinero value={amount} onChangeText={setAmount} />
 
-          {/* Amount */}
-          <Text style={{ color: '#A1A1AA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Monto</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#27272A', borderRadius: 14, borderWidth: 1, borderColor: '#3F3F46', paddingHorizontal: 16, marginBottom: 12 }}>
-            <Text style={{ color: '#71717A', fontWeight: '700', marginRight: 6 }}>$</Text>
-            <TextInput
-              style={{ flex: 1, color: '#FAFAFA', fontSize: 18, paddingVertical: 12, fontWeight: '700' }}
-              keyboardType="decimal-pad"
-              value={amount}
-              onChangeText={setAmount}
-            />
-          </View>
+      <Etiqueta>Descripción</Etiqueta>
+      <TextInput
+        style={[campo, { color: TINTA.texto, fontSize: 15, marginBottom: 12 }, webSinBorde]}
+        value={note} onChangeText={setNote} placeholder="Descripción" placeholderTextColor={TINTA.suave}
+      />
 
-          {/* Description */}
-          <Text style={{ color: '#A1A1AA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Descripción</Text>
-          <TextInput
-            style={{ backgroundColor: '#27272A', borderRadius: 14, borderWidth: 1, borderColor: '#3F3F46', paddingHorizontal: 16, paddingVertical: 12, color: '#FAFAFA', fontSize: 14, marginBottom: 12 }}
-            value={note}
-            onChangeText={setNote}
-            placeholder="Descripción"
-            placeholderTextColor="#52525B"
-          />
+      <Etiqueta>Categoría</Etiqueta>
+      <Chips opciones={categories} valor={category} onCambio={setCategory} />
 
-          {/* Category chips */}
-          <Text style={{ color: '#A1A1AA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Categoría</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
-            {categories.map((cat) => (
-              <Pressable
-                key={cat.name}
-                onPress={() => setCategory(cat.name)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 6,
-                  paddingHorizontal: 14,
-                  paddingVertical: 8,
-                  borderRadius: 99,
-                  backgroundColor: category === cat.name ? '#14B8A6' : '#27272A',
-                }}
-              >
-                <Text style={{ fontSize: 14 }}>{cat.icon}</Text>
-                <Text style={{ color: category === cat.name ? '#fff' : '#E4E4E7', fontSize: 12, fontWeight: '600' }}>{cat.name}</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          {/* Actions */}
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: '#27272A', borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}>
-              <Text style={{ color: '#A1A1AA', fontWeight: '700' }}>Cancelar</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                const n = parseFloat(amount);
-                if (!isNaN(n) && n > 0) {
-                  onSave({ id: transaction.id, amount: n, note, category, type });
-                  onClose();
-                }
-              }}
-              style={{ flex: 2, backgroundColor: '#14B8A6', borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>Guardar Cambios</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
-    </Modal>
+      <Acciones
+        texto="Guardar cambios"
+        onCancelar={onClose}
+        onGuardar={() => {
+          const n = parseFloat(amount);
+          if (!isNaN(n) && n > 0) {
+            onSave({ id: transaction.id, amount: n, note, category, type });
+            onClose();
+          }
+        }}
+      />
+    </Hoja>
   );
 }
 
+/* ---------- Pantalla ---------- */
+
 export default function FinancesScreen() {
-  const colors = useColors();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
+  const [period, setPeriod] = useState<Periodo>('month');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [modalType, setModalType] = useState<'income' | 'expense'>('expense');
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [updateGoalTarget, setUpdateGoalTarget] = useState<any>(null);
 
-  // Fetch data
-  const { data: summary, isLoading: summaryLoading } = useFinancialSummary(period);
-  const { data: transactions, isLoading: transactionsLoading } = useTransactions(period);
-  const { data: expensesByCategory, isLoading: expensesLoading } = useExpensesByCategory(period);
+  // Datos
+  const { data: summary } = useFinancialSummary(period);
+  const { data: transactions } = useTransactions(period);
+  const { data: expensesByCategory } = useExpensesByCategory(period);
   const { data: savingsGoals } = useSavingsGoals();
   const deleteTransaction = useDeleteTransaction();
   const updateTransaction = useUpdateTransaction();
@@ -225,14 +316,14 @@ export default function FinancesScreen() {
   const updateSavingsGoal = useUpdateSavingsGoal();
   const [editTarget, setEditTarget] = useState<any>(null);
 
-  // Budgets & Recurring
+  // Presupuestos y recurrentes
   const { data: budgetProgress } = useBudgetProgress();
   const createBudget = useCreateBudget();
   const deleteBudget = useDeleteBudget();
   const { data: recurringTxns } = useRecurringTransactions();
   const createRecurring = useCreateRecurring();
   const deleteRecurring = useDeleteRecurring();
-  useApplyRecurring(); // Auto-apply recurring on mount
+  useApplyRecurring(); // aplica los recurrentes al abrir
 
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [budgetCategory, setBudgetCategory] = useState('');
@@ -244,18 +335,16 @@ export default function FinancesScreen() {
   const [recurringNote, setRecurringNote] = useState('');
   const [recurringDay, setRecurringDay] = useState('1');
 
-  // Prepare chart data
-  const barChartData = [
-    { x: 'Ingresos', y: summary?.income || 0 },
-    { x: 'Gastos', y: summary?.expenses || 0 },
-  ];
+  const income = summary?.income || 0;
+  const expenses = summary?.expenses || 0;
+  const balance = summary?.balance || 0;
+  const spentPct = income > 0 ? Math.min(100, Math.round((expenses / income) * 100)) : 0;
+  const colorGasto = spentPct >= 90 ? CORAL : spentPct >= 70 ? AMBAR : MENTA;
+  const maxBarra = Math.max(income, expenses, 1);
 
-  const pieChartData = (expensesByCategory || []).map((item) => ({
-    x: item.name,
-    y: item.amount,
-  }));
+  const porCategoria = [...(expensesByCategory || [])].sort((a, b) => b.amount - a.amount);
+  const totalCategorias = porCategoria.reduce((s, c) => s + c.amount, 0) || 1;
 
-  // Handle pull-to-refresh
   const onRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -270,276 +359,224 @@ export default function FinancesScreen() {
     setShowAddModal(true);
   };
 
-  const isLoading = summaryLoading || transactionsLoading || expensesLoading;
+  const cerrarPresupuesto = () => { setShowBudgetModal(false); setBudgetCategory(''); setBudgetLimit(''); };
+  const cerrarRecurrente = () => { setShowRecurringModal(false); setRecurringAmount(''); setRecurringNote(''); setRecurringCategory(''); };
+
+  const insight = income === 0
+    ? 'Registra tus ingresos para ver cómo va el período.'
+    : balance > 0
+      ? `Te sobran ${monto(income - expenses)}. Puedes pasarlos a una meta de ahorro.`
+      : `Gastaste ${monto(expenses - income)} más de lo que entró. Mira abajo en qué se fue.`;
 
   return (
-    <ScreenContainer className="p-0">
+    <ScreenContainer className="p-0" containerClassName="bg-[#110F0D]">
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: 150 }}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
+        contentContainerStyle={{ paddingBottom: 150 }}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={MENTA} />}
       >
-        {/* Header */}
-        <View className="px-6 pt-6 pb-4 flex-row justify-between items-center">
-          <View>
-            <Text className="text-3xl font-bold text-foreground" style={{ color: '#FAFAFA' }}>Finanzas</Text>
-            <Text className="text-sm text-muted mt-1" style={{ color: '#A1A1AA' }}>Gestiona tus ingresos y gastos</Text>
-          </View>
-          <Pressable
-            onPress={() => openModal('expense')}
-            className="w-12 h-12 rounded-full bg-primary items-center justify-center shadow-lg shadow-primary/30 active:scale-95"
-          >
-            <Text className="text-background text-3xl font-bold" style={{ marginTop: -2, color: '#FAFAFA' }}>+</Text>
-          </Pressable>
-        </View>
-
-        {/* Period Filter */}
-        <View className="px-6 mb-6 flex-row gap-2">
-          {(['day', 'week', 'month', 'year'] as const).map((p) => (
-            <Pressable
-              key={p}
-              onPress={() => setPeriod(p)}
-              className={`px-4 py-2 rounded-full ${period === p ? 'bg-primary' : 'bg-surface'
-                }`}
-            >
-              <Text
-                className="text-sm font-semibold"
-                style={{ color: period === p ? '#18181B' : '#E4E4E7' }}
-              >
-                {p === 'day' ? 'Hoy' : p === 'week' ? 'Semana' : p === 'month' ? 'Mes' : 'Año'}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        {/* Balance Summary Card - MEJORADA CON ACCIONES RÁPIDAS */}
-        <View className="mx-6 mb-8 bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700/50 rounded-[40px] p-8 shadow-2xl shadow-black/40">
-          <Text className="text-[10px] font-bold text-white/50 uppercase tracking-[4px] mb-2">
-            BALANCE NETO
-          </Text>
-          <Text className="text-5xl font-bold text-white mb-8">
-            ${summary?.balance || 0}
-          </Text>
-
-          <View className="flex-row justify-between mb-8">
-            <View>
-              <Text className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">INGRESOS</Text>
-              <Text className="text-xl font-bold text-white mt-1">
-                +${summary?.income || 0}
-              </Text>
-            </View>
-            <View>
-              <Text className="text-[10px] font-bold text-rose-400 uppercase text-right tracking-widest">GASTOS</Text>
-              <Text className="text-xl font-bold text-white mt-1 text-right">
-                -${summary?.expenses || 0}
-              </Text>
-            </View>
+        <View style={{ paddingHorizontal: 20, paddingTop: 24, maxWidth: 640, width: '100%', alignSelf: 'center', gap: 28 }}>
+          {/* Cabecera: deja libre la esquina del botón de menú */}
+          <View style={{ paddingRight: 110, gap: 6 }}>
+            <Titulo>Finanzas</Titulo>
+            <Text style={{ color: TINTA.suave, fontSize: 15 }}>Lo que entra, lo que sale y lo que guardas.</Text>
           </View>
 
-          <View className="flex-row gap-3">
-            <Pressable
-              onPress={() => openModal('expense')}
-              className="flex-1 bg-rose-500/10 border border-rose-500/20 rounded-2xl py-4 items-center active:bg-rose-500/20"
-            >
-              <Text className="text-rose-400 font-bold text-xs uppercase tracking-tight">- Gasto</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => openModal('income')}
-              className="flex-1 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl py-4 items-center active:bg-emerald-500/20"
-            >
-              <Text className="text-emerald-400 font-bold text-xs uppercase tracking-tight">+ Ingreso</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        {/* Charts Section (Responsive Grid) */}
-        <View className="px-6 flex-row flex-wrap -mx-2 mb-8">
-          <View className="w-full lg:w-1/2 px-2 mb-6 lg:mb-0">
-            <BarChart
-              data={barChartData}
-              title="Ingresos vs Gastos"
-              yLabel="Monto ($)"
-              color={colors.primary}
-            />
-          </View>
-          <View className="w-full lg:w-1/2 px-2">
-            {pieChartData.length > 0 ? (
-              <PieChart
-                data={pieChartData}
-                title="Desglose por Categoría"
-                colors={[colors.error, colors.warning, colors.primary, colors.success]}
-              />
-            ) : (
-              <View className="glass-card rounded-2xl p-8 items-center justify-center h-[250px]">
-                <Text className="text-muted" style={{ color: '#A1A1AA' }}>Sin datos de gastos</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        <View className="px-6 mb-8">
-          <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-xl font-bold text-foreground" style={{ color: '#FAFAFA' }}>Metas de Ahorro</Text>
-            <Pressable onPress={() => setShowGoalModal(true)}>
-              <Text className="text-sm font-semibold text-primary">+ Nueva meta</Text>
-            </Pressable>
-          </View>
-
-          {savingsGoals && savingsGoals.length > 0 ? (
-            <View className="flex-row flex-wrap gap-4">
-              {savingsGoals.map((goal) => {
-                const pct = goal.target_amount > 0
-                  ? Math.min(100, Math.round((goal.current_amount / goal.target_amount) * 100))
-                  : 0;
-                return (
-                  <View key={goal.id} className="flex-1 glass-card rounded-2xl p-5" style={{ minWidth: 140 }}>
-                    <View className="flex-row justify-between items-center mb-1">
-                      <Text className="text-sm font-bold text-foreground flex-1 mr-2" style={{ color: '#FAFAFA' }} numberOfLines={1}>{goal.name}</Text>
-                      <Pressable onPress={() =>
-                        Alert.alert('Eliminar meta', `¿Eliminar "${goal.name}"?`, [
-                          { text: 'Cancelar', style: 'cancel' },
-                          { text: 'Eliminar', style: 'destructive', onPress: () => deleteSavingsGoal.mutate(goal.id) },
-                        ])
-                      }>
-                        <Text className="text-muted text-xs" style={{ color: '#A1A1AA' }}>✕</Text>
-                      </Pressable>
-                    </View>
-                    <Text className="text-[10px] font-bold text-primary mb-3">{pct}%</Text>
-                    <View className="h-1.5 w-full bg-border rounded-full overflow-hidden mb-2">
-                      <View
-                        style={{
-                          height: '100%',
-                          width: `${pct}%`,
-                          backgroundColor: (colors[goal.color as keyof typeof colors] as string) || colors.primary,
-                          borderRadius: 999,
-                        }}
-                      />
-                    </View>
-                    <Text className="text-[10px] text-muted" style={{ color: '#A1A1AA' }}>${goal.current_amount} de ${goal.target_amount}</Text>
-                    <Pressable
-                      className="mt-2 bg-surface rounded-lg py-1 items-center"
-                      onPress={() => setUpdateGoalTarget(goal)}
-                    >
-                      <Text className="text-[10px] text-primary font-semibold">Actualizar</Text>
-                    </Pressable>
-                  </View>
-                );
-              })}
-            </View>
-          ) : (
-            <Pressable
-              onPress={() => setShowGoalModal(true)}
-              className="bg-surface border border-dashed border-border rounded-2xl p-6 items-center"
-            >
-              <Text className="text-muted text-sm mb-1" style={{ color: '#A1A1AA' }}>No tienes metas de ahorro</Text>
-              <Text className="text-primary text-sm font-semibold">+ Crear primera meta</Text>
-            </Pressable>
-          )}
-        </View>
-
-        {/* Budgets Section */}
-        <View style={{ paddingHorizontal: 24, marginBottom: 32 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <Text style={{ color: '#FAFAFA', fontSize: 20, fontWeight: '800' }}>Presupuestos</Text>
-            <Pressable onPress={() => setShowBudgetModal(true)}>
-              <Text style={{ color: '#14B8A6', fontSize: 14, fontWeight: '600' }}>+ Nuevo</Text>
-            </Pressable>
-          </View>
-
-          {budgetProgress && budgetProgress.length > 0 ? (
-            <View style={{ gap: 10 }}>
-              {budgetProgress.map((b: any) => {
-                const isOver = b.percentage >= 100;
-                const isWarning = b.percentage >= 75 && !isOver;
-                const barColor = isOver ? '#EF4444' : isWarning ? '#F59E0B' : '#14B8A6';
-                return (
-                  <View key={b.id} style={{ backgroundColor: '#18181B', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: isOver ? 'rgba(239,68,68,0.3)' : '#27272A' }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 14 }}>{b.category}</Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <Text style={{ color: isOver ? '#EF4444' : '#A1A1AA', fontSize: 12, fontWeight: '600' }}>
-                          ${b.spent} / ${b.limit_amount}
-                        </Text>
-                        <Pressable onPress={() => deleteBudget.mutate(b.id)}>
-                          <Text style={{ color: '#52525B', fontSize: 11 }}>✕</Text>
-                        </Pressable>
-                      </View>
-                    </View>
-                    <View style={{ height: 6, backgroundColor: '#27272A', borderRadius: 3, overflow: 'hidden' }}>
-                      <View style={{ height: '100%', width: `${Math.min(100, b.percentage)}%`, backgroundColor: barColor, borderRadius: 3 }} />
-                    </View>
-                    {isOver && (
-                      <Text style={{ color: '#EF4444', fontSize: 10, fontWeight: '700', marginTop: 4 }}>
-                        ⚠️ Excedido por ${(b.spent - b.limit_amount).toFixed(0)}
-                      </Text>
-                    )}
-                    {isWarning && (
-                      <Text style={{ color: '#F59E0B', fontSize: 10, fontWeight: '700', marginTop: 4 }}>
-                        ⚡ {b.percentage}% usado — cuidado
-                      </Text>
-                    )}
-                  </View>
-                );
-              })}
-            </View>
-          ) : (
-            <Pressable
-              onPress={() => setShowBudgetModal(true)}
-              style={{ backgroundColor: '#18181B', borderWidth: 1, borderStyle: 'dashed', borderColor: '#27272A', borderRadius: 16, padding: 20, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#71717A', fontSize: 13, marginBottom: 4 }}>Sin presupuestos configurados</Text>
-              <Text style={{ color: '#14B8A6', fontSize: 13, fontWeight: '600' }}>+ Crear presupuesto</Text>
-            </Pressable>
-          )}
-        </View>
-
-        {/* Recurring Transactions */}
-        <View style={{ paddingHorizontal: 24, marginBottom: 32 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <Text style={{ color: '#FAFAFA', fontSize: 20, fontWeight: '800' }}>Recurrentes</Text>
-            <Pressable onPress={() => setShowRecurringModal(true)}>
-              <Text style={{ color: '#14B8A6', fontSize: 14, fontWeight: '600' }}>+ Nuevo</Text>
-            </Pressable>
-          </View>
-
-          {recurringTxns && recurringTxns.length > 0 ? (
-            <View style={{ gap: 10 }}>
-              {recurringTxns.map((r: any) => (
-                <View key={r.id} style={{ backgroundColor: '#18181B', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: '#27272A', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 14 }}>{r.note || r.category}</Text>
-                    <Text style={{ color: '#71717A', fontSize: 11, marginTop: 2 }}>
-                      {r.type === 'income' ? '📈' : '📉'} ${Math.abs(r.amount)} — día {r.day_of_month} de cada mes
-                    </Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Text style={{ color: r.type === 'income' ? '#10B981' : '#EF4444', fontWeight: '700', fontSize: 14 }}>
-                      {r.type === 'income' ? '+' : '-'}${Math.abs(r.amount)}
-                    </Text>
-                    <Pressable onPress={() => deleteRecurring.mutate(r.id)}>
-                      <Text style={{ color: '#52525B', fontSize: 11 }}>✕</Text>
-                    </Pressable>
-                  </View>
-                </View>
+          <View style={{ gap: 16 }}>
+            {/* Período */}
+            <View style={{ flexDirection: 'row', backgroundColor: TINTA.tarjeta, borderRadius: 22, padding: 4, borderWidth: 1, borderColor: TINTA.borde }}>
+              {PERIODOS.map(([p, nombre]) => (
+                <Pressable key={p} onPress={() => setPeriod(p)} accessibilityRole="tab" accessibilityState={{ selected: period === p }}
+                  style={{ flex: 1, minHeight: 44, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: period === p ? TINTA.texto : 'transparent' }}>
+                  <Text style={{ color: period === p ? TINTA.fondo : TINTA.suave, fontWeight: '800', fontSize: 14 }}>{nombre}</Text>
+                </Pressable>
               ))}
             </View>
-          ) : (
-            <Pressable
-              onPress={() => setShowRecurringModal(true)}
-              style={{ backgroundColor: '#18181B', borderWidth: 1, borderStyle: 'dashed', borderColor: '#27272A', borderRadius: 16, padding: 20, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#71717A', fontSize: 13, marginBottom: 4 }}>Sin gastos/ingresos fijos</Text>
-              <Text style={{ color: '#14B8A6', fontSize: 13, fontWeight: '600' }}>+ Agregar recurrente</Text>
-            </Pressable>
-          )}
-        </View>
 
-        {/* Recent Transactions */}
-        <View className="px-6 flex-row flex-wrap -mx-2 items-start mb-4">
-          <View className="w-full lg:w-2/3 px-2 mb-8">
-            <Text className="text-xl font-bold text-foreground mb-4" style={{ color: '#FAFAFA' }}>Registro Histórico</Text>
-            <View className="gap-3">
-              {transactions && transactions.length > 0 ? (
-                transactions.map((transaction) => (
+            {/* Balance: la tarjeta principal, con su sticker */}
+            <View style={{ ...tarjeta, borderRadius: 28, padding: 22, marginTop: 10 }}>
+              <Sticker
+                texto={balance >= 0 ? 'a favor' : 'en rojo'}
+                color={balance >= 0 ? MENTA : CORAL}
+                giro={balance >= 0 ? 6 : -6}
+                style={{ position: 'absolute', top: -14, right: 20 }}
+              />
+              <Text style={{ color: TINTA.suave, fontSize: 14 }}>Balance del período</Text>
+              <Titulo size={46} color={balance < 0 ? CORAL : TINTA.texto} style={{ marginTop: 6 }}>
+                {balance < 0 ? '−' : ''}{monto(balance)}
+              </Titulo>
+
+              <View style={{ flexDirection: 'row', marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderColor: TINTA.borde }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: TINTA.suave, fontSize: 14 }}>Entró</Text>
+                  <Text style={{ color: MENTA, fontSize: 20, fontWeight: '800', marginTop: 2 }}>+{monto(income)}</Text>
+                </View>
+                <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                  <Text style={{ color: TINTA.suave, fontSize: 14 }}>Salió</Text>
+                  <Text style={{ color: CORAL, fontSize: 20, fontWeight: '800', marginTop: 2 }}>−{monto(expenses)}</Text>
+                </View>
+              </View>
+
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 20 }}>
+                <Boton texto="＋ Gasto" onPress={() => openModal('expense')} style={{ flex: 1.4 }} />
+                <Boton texto="＋ Ingreso" tipo="secundario" onPress={() => openModal('income')} style={{ flex: 1 }} />
+              </View>
+            </View>
+          </View>
+
+          {/* Cómo va el período */}
+          <Seccion titulo="Cómo vas">
+            <View style={{ ...tarjeta, gap: 12 }}>
+              <View style={{ gap: 8 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+                  <Text style={{ color: TINTA.suave, fontSize: 14 }}>Entró</Text>
+                  <Text style={{ color: TINTA.texto, fontSize: 14, fontWeight: '700' }}>{monto(income)}</Text>
+                </View>
+                <Barra pct={(income / maxBarra) * 100} color={MENTA} />
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginTop: 4 }}>
+                  <Text style={{ color: TINTA.suave, fontSize: 14 }}>Salió</Text>
+                  <Text style={{ color: TINTA.texto, fontSize: 14, fontWeight: '700' }}>{monto(expenses)}</Text>
+                </View>
+                <Barra pct={(expenses / maxBarra) * 100} color={CORAL} />
+              </View>
+
+              <View style={{ borderTopWidth: 1, borderColor: TINTA.borde, paddingTop: 14, gap: 6 }}>
+                <Text style={{ color: TINTA.texto, fontSize: 16, fontWeight: '800' }}>
+                  {income > 0 ? `Gastaste el ${spentPct}% de lo que entró` : 'Sin ingresos registrados'}
+                </Text>
+                {income > 0 && (
+                  <Text style={{ color: colorGasto, fontSize: 14, fontWeight: '700' }}>
+                    {spentPct >= 90 ? 'Gastos altos este período.' : spentPct >= 70 ? 'Moderado: cuida los gastos.' : 'Buen control.'}
+                  </Text>
+                )}
+                <Text style={{ color: TINTA.suave, fontSize: 14, lineHeight: 20 }}>{insight}</Text>
+              </View>
+            </View>
+          </Seccion>
+
+          {/* En qué se va */}
+          <Seccion titulo="En qué se va">
+            {porCategoria.length > 0 ? (
+              <View style={{ ...tarjeta, gap: 14 }}>
+                {porCategoria.map((c) => {
+                  const pct = Math.round((c.amount / totalCategorias) * 100);
+                  return (
+                    <View key={c.name} style={{ gap: 6 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+                        <Text style={{ color: TINTA.texto, fontSize: 15, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>{c.name}</Text>
+                        <Text style={{ color: TINTA.suave, fontSize: 14 }}>{monto(c.amount)} · {pct}%</Text>
+                      </View>
+                      <Barra pct={pct} color={CORAL} alto={6} />
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <View style={{ ...tarjeta, alignItems: 'center', paddingVertical: 22 }}>
+                <Text style={{ color: TINTA.suave, fontSize: 14 }}>Sin gastos en este período</Text>
+              </View>
+            )}
+          </Seccion>
+
+          {/* Metas de ahorro */}
+          <Seccion titulo="Metas de ahorro" accion={<Enlace texto="Nueva meta" onPress={() => setShowGoalModal(true)} />}>
+            {savingsGoals && savingsGoals.length > 0 ? (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+                {savingsGoals.map((goal) => {
+                  const pct = goal.target_amount > 0
+                    ? Math.min(100, Math.round((goal.current_amount / goal.target_amount) * 100))
+                    : 0;
+                  const color = COLOR_META[goal.color as string] || MENTA;
+                  return (
+                    <View key={goal.id} style={{ ...tarjeta, flexGrow: 1, flexBasis: 150, gap: 10 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: -10 }}>
+                        <Text style={{ color: TINTA.texto, fontSize: 16, fontWeight: '800', flex: 1, marginRight: 4 }} numberOfLines={1}>{goal.name}</Text>
+                        <Quitar
+                          etiqueta={`Eliminar ${goal.name}`}
+                          onPress={() =>
+                            Alert.alert('Eliminar meta', `¿Eliminar "${goal.name}"?`, [
+                              { text: 'Cancelar', style: 'cancel' },
+                              { text: 'Eliminar', style: 'destructive', onPress: () => deleteSavingsGoal.mutate(goal.id) },
+                            ])
+                          }
+                        />
+                      </View>
+                      <Titulo size={28} color={color}>{pct}%</Titulo>
+                      <Barra pct={pct} color={color} />
+                      <Text style={{ color: TINTA.suave, fontSize: 14 }}>{monto(goal.current_amount)} de {monto(goal.target_amount)}</Text>
+                      <Pressable onPress={() => setUpdateGoalTarget(goal)} accessibilityRole="button"
+                        style={({ pressed }) => ({ minHeight: 44, borderRadius: 16, backgroundColor: ALTO, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.85 : 1 })}>
+                        <Text style={{ color: TINTA.texto, fontSize: 14, fontWeight: '700' }}>Actualizar</Text>
+                      </Pressable>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <Vacio texto="No tienes metas de ahorro" accion="Crear la primera" onPress={() => setShowGoalModal(true)} />
+            )}
+          </Seccion>
+
+          {/* Presupuestos */}
+          <Seccion titulo="Presupuestos" accion={<Enlace texto="Nuevo" onPress={() => setShowBudgetModal(true)} />}>
+            {budgetProgress && budgetProgress.length > 0 ? (
+              <View style={{ gap: 10 }}>
+                {budgetProgress.map((b: any) => {
+                  const isOver = b.percentage >= 100;
+                  const isWarning = b.percentage >= 75 && !isOver;
+                  const barColor = isOver ? CORAL : isWarning ? AMBAR : MENTA;
+                  return (
+                    <View key={b.id} style={{ ...tarjeta, borderRadius: 24, paddingVertical: 12, gap: 8, borderColor: isOver ? 'rgba(255,122,107,0.45)' : TINTA.borde }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <Text style={{ color: TINTA.texto, fontWeight: '800', fontSize: 15, flex: 1 }} numberOfLines={1}>{b.category}</Text>
+                        <Text style={{ color: isOver ? CORAL : TINTA.suave, fontSize: 14, fontWeight: '600' }}>
+                          {monto(b.spent)} / {monto(b.limit_amount)}
+                        </Text>
+                        <Quitar etiqueta={`Eliminar presupuesto de ${b.category}`} onPress={() => deleteBudget.mutate(b.id)} />
+                      </View>
+                      <Barra pct={b.percentage} color={barColor} />
+                      {isOver && (
+                        <Text style={{ color: CORAL, fontSize: 13, fontWeight: '700' }}>Te pasaste por {monto(b.spent - b.limit_amount)}</Text>
+                      )}
+                      {isWarning && (
+                        <Text style={{ color: AMBAR, fontSize: 13, fontWeight: '700' }}>Llevas el {b.percentage}%: cuidado</Text>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <Vacio texto="Sin presupuestos todavía" accion="Crear presupuesto" onPress={() => setShowBudgetModal(true)} />
+            )}
+          </Seccion>
+
+          {/* Recurrentes */}
+          <Seccion titulo="Fijos del mes" accion={<Enlace texto="Nuevo" onPress={() => setShowRecurringModal(true)} />}>
+            {recurringTxns && recurringTxns.length > 0 ? (
+              <View style={{ ...tarjeta, paddingVertical: 6 }}>
+                {recurringTxns.map((r: any, i: number) => (
+                  <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderColor: TINTA.borde }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: TINTA.texto, fontWeight: '700', fontSize: 15 }} numberOfLines={1}>{r.note || r.category}</Text>
+                      <Text style={{ color: TINTA.suave, fontSize: 13, marginTop: 2 }}>Día {r.day_of_month} de cada mes</Text>
+                    </View>
+                    <Text style={{ color: r.type === 'income' ? MENTA : CORAL, fontWeight: '800', fontSize: 15 }}>
+                      {r.type === 'income' ? '+' : '−'}{monto(r.amount)}
+                    </Text>
+                    <Quitar etiqueta={`Eliminar ${r.note || r.category}`} onPress={() => deleteRecurring.mutate(r.id)} />
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Vacio texto="Sin gastos ni ingresos fijos" accion="Agregar uno" onPress={() => setShowRecurringModal(true)} />
+            )}
+          </Seccion>
+
+          {/* Registro */}
+          <Seccion titulo="Registro" accion={<Enlace texto="Añadir" onPress={() => setShowAddModal(true)} />}>
+            {transactions && transactions.length > 0 ? (
+              <View style={{ gap: 10 }}>
+                {transactions.map((transaction) => (
                   <TransactionCard
                     key={transaction.id}
                     amount={transaction.amount}
@@ -550,69 +587,12 @@ export default function FinancesScreen() {
                     onEdit={() => setEditTarget(transaction)}
                     onDelete={() => deleteTransaction.mutate(transaction.id as any)}
                   />
-                ))
-              ) : (
-                <View className="bg-surface rounded-lg p-8 items-center border border-border border-dashed">
-                  <Text className="text-muted" style={{ color: '#A1A1AA' }}>No hay transacciones registradas</Text>
-                </View>
-              )}
-              {/* Botón MÁS al final del histórico (NUEVO) */}
-              <Pressable
-                onPress={() => setShowAddModal(true)}
-                className="bg-surface border border-border border-dashed rounded-2xl p-4 items-center justify-center active:bg-primary/5 mt-2"
-              >
-                <Text className="text-primary font-bold uppercase text-[10px]"> + Añadir otro Registro</Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <View className="w-full lg:w-1/3 px-2">
-            <View className="glass-card rounded-2xl p-6 mb-6">
-              <Text className="font-bold text-foreground mb-1" style={{ color: '#FAFAFA' }}>Balance del Período</Text>
-              {(() => {
-                const income = summary?.income || 0;
-                const expenses = summary?.expenses || 0;
-                const spentPct = income > 0 ? Math.min(100, Math.round((expenses / income) * 100)) : 0;
-                const barColor = spentPct >= 90 ? colors.error : spentPct >= 70 ? colors.warning : colors.success;
-                return (
-                  <>
-                    <Text className="text-xs text-muted mb-3">
-                      {income > 0 ? `Gastos: ${spentPct}% de tus ingresos` : 'Sin ingresos registrados'}
-                    </Text>
-                    <View className="h-2 w-full bg-border rounded-full overflow-hidden mb-2">
-                      <View style={{ height: '100%', width: `${spentPct}%`, backgroundColor: barColor, borderRadius: 999 }} />
-                    </View>
-                    <Text className="text-xs text-muted font-medium">
-                      {spentPct >= 90 ? '⚠️ Gastos altos este período.' : spentPct >= 70 ? 'Moderado. Cuida los gastos.' : '✅ Buen control financiero.'}
-                    </Text>
-                  </>
-                );
-              })()}
-            </View>
-
-            <View className="bg-primary/5 rounded-2xl p-6 border border-primary/20 border-dashed">
-              <View className="flex-row items-center gap-2 mb-3">
-                <Text className="text-lg">💡</Text>
-                <Text className="font-bold text-primary">Insight del Período</Text>
+                ))}
               </View>
-              <Text className="text-sm text-foreground/90 leading-relaxed" style={{ color: '#E4E4E7' }}>
-                {(() => {
-                  const income = summary?.income || 0;
-                  const expenses = summary?.expenses || 0;
-                  const balance = income - expenses;
-                  if (income === 0) return 'Registra tus ingresos para ver tu análisis financiero personalizado.';
-                  if (balance > 0) return `Tienes un superávit de $${balance.toFixed(0)}. ¡Asígnalo a tus metas de ahorro!`;
-                  return `Tus gastos superan tus ingresos por $${Math.abs(balance).toFixed(0)}. Revisa las categorías más costosas.`;
-                })()}
-              </Text>
-            </View>
-          </View>
-        </View>
-        {/* Add Transaction Button */}
-        <View className="px-6 mb-8">
-          <Pressable onPress={() => setShowAddModal(true)} className="bg-primary rounded-lg p-4 items-center">
-            <Text className="text-background font-semibold" style={{ color: '#FAFAFA' }}>+ Agregar Transacción</Text>
-          </Pressable>
+            ) : (
+              <Vacio texto="No hay movimientos en este período" accion="Registrar uno" onPress={() => setShowAddModal(true)} />
+            )}
+          </Seccion>
         </View>
 
         {user && (
@@ -643,119 +623,74 @@ export default function FinancesScreen() {
           onSave={(data) => updateTransaction.mutate(data)}
         />
 
-        {/* Budget Modal */}
-        <Modal visible={showBudgetModal} transparent animationType="slide">
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-            <View style={{ backgroundColor: '#18181B', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 36 }}>
-              <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '800', marginBottom: 16 }}>Nuevo Presupuesto</Text>
-              <Text style={{ color: '#A1A1AA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Categoría</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-                {['Comida', 'Transporte', 'Salidas', 'Compras Online', 'Suscripciones', 'Salud', 'Universidad', 'Materiales', 'Otros'].map((cat) => (
-                  <Pressable
-                    key={cat}
-                    onPress={() => setBudgetCategory(cat)}
-                    style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 99, backgroundColor: budgetCategory === cat ? '#14B8A6' : '#27272A' }}
-                  >
-                    <Text style={{ color: budgetCategory === cat ? '#fff' : '#E4E4E7', fontSize: 12, fontWeight: '600' }}>{cat}</Text>
-                  </Pressable>
-                ))}
-              </View>
-              <Text style={{ color: '#A1A1AA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Límite Mensual</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#27272A', borderRadius: 14, paddingHorizontal: 16, marginBottom: 20 }}>
-                <Text style={{ color: '#71717A', fontWeight: '700', marginRight: 6 }}>$</Text>
-                <TextInput
-                  style={{ flex: 1, color: '#FAFAFA', fontSize: 20, paddingVertical: 14, fontWeight: '700' }}
-                  keyboardType="decimal-pad"
-                  value={budgetLimit}
-                  onChangeText={setBudgetLimit}
-                  placeholder="0"
-                  placeholderTextColor="#52525B"
-                />
-              </View>
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <Pressable onPress={() => { setShowBudgetModal(false); setBudgetCategory(''); setBudgetLimit(''); }} style={{ flex: 1, backgroundColor: '#27272A', borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}>
-                  <Text style={{ color: '#A1A1AA', fontWeight: '700' }}>Cancelar</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => {
-                    const n = parseFloat(budgetLimit);
-                    if (budgetCategory && !isNaN(n) && n > 0 && user?.id) {
-                      createBudget.mutate({ user_id: String(user.id), category: budgetCategory, limit_amount: n });
-                      setShowBudgetModal(false); setBudgetCategory(''); setBudgetLimit('');
-                    }
-                  }}
-                  style={{ flex: 2, backgroundColor: '#14B8A6', borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}
-                >
-                  <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>Guardar</Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </Modal>
+        {/* Nuevo presupuesto */}
+        <Hoja visible={showBudgetModal} onClose={cerrarPresupuesto} titulo="Nuevo presupuesto">
+          <Etiqueta>Categoría</Etiqueta>
+          <Chips
+            opciones={['Comida', 'Transporte', 'Salidas', 'Compras Online', 'Suscripciones', 'Salud', 'Universidad', 'Materiales', 'Otros'].map((name) => ({ name }))}
+            valor={budgetCategory}
+            onCambio={setBudgetCategory}
+          />
+          <Etiqueta>Límite mensual</Etiqueta>
+          <CampoDinero value={budgetLimit} onChangeText={setBudgetLimit} grande />
+          <Acciones
+            texto="Guardar"
+            onCancelar={cerrarPresupuesto}
+            onGuardar={() => {
+              const n = parseFloat(budgetLimit);
+              if (budgetCategory && !isNaN(n) && n > 0 && user?.id) {
+                createBudget.mutate({ user_id: String(user.id), category: budgetCategory, limit_amount: n });
+                cerrarPresupuesto();
+              }
+            }}
+          />
+        </Hoja>
 
-        {/* Recurring Modal */}
-        <Modal visible={showRecurringModal} transparent animationType="slide">
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-            <View style={{ backgroundColor: '#18181B', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 36 }}>
-              <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '800', marginBottom: 16 }}>Nuevo Recurrente</Text>
+        {/* Nuevo recurrente */}
+        <Hoja visible={showRecurringModal} onClose={cerrarRecurrente} titulo="Nuevo fijo" sub="Se registra solo cada mes, el día que elijas.">
+          <Interruptor opciones={TIPOS} valor={recurringType} onCambio={(v) => setRecurringType(v as 'income' | 'expense')} />
 
-              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-                <Pressable onPress={() => setRecurringType('expense')} style={{ flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', backgroundColor: recurringType === 'expense' ? '#EF4444' : '#27272A' }}>
-                  <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 13 }}>Gasto</Text>
-                </Pressable>
-                <Pressable onPress={() => setRecurringType('income')} style={{ flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', backgroundColor: recurringType === 'income' ? '#10B981' : '#27272A' }}>
-                  <Text style={{ color: '#FAFAFA', fontWeight: '700', fontSize: 13 }}>Ingreso</Text>
-                </Pressable>
-              </View>
+          <Etiqueta>Monto</Etiqueta>
+          <CampoDinero value={recurringAmount} onChangeText={setRecurringAmount} />
 
-              <Text style={{ color: '#A1A1AA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Monto</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#27272A', borderRadius: 14, paddingHorizontal: 16, marginBottom: 12 }}>
-                <Text style={{ color: '#71717A', fontWeight: '700', marginRight: 6 }}>$</Text>
-                <TextInput style={{ flex: 1, color: '#FAFAFA', fontSize: 18, paddingVertical: 12, fontWeight: '700' }} keyboardType="decimal-pad" value={recurringAmount} onChangeText={setRecurringAmount} />
-              </View>
+          <Etiqueta>Descripción</Etiqueta>
+          <TextInput
+            style={[campo, { color: TINTA.texto, fontSize: 15, marginBottom: 12 }, webSinBorde]}
+            value={recurringNote} onChangeText={setRecurringNote} placeholder="Ej: Netflix, renta, sueldo" placeholderTextColor={TINTA.suave}
+          />
 
-              <Text style={{ color: '#A1A1AA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Descripción</Text>
-              <TextInput style={{ backgroundColor: '#27272A', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, color: '#FAFAFA', fontSize: 14, marginBottom: 12 }} value={recurringNote} onChangeText={setRecurringNote} placeholder="Ej: Netflix, Renta, Sueldo" placeholderTextColor="#52525B" />
+          <Etiqueta>Categoría</Etiqueta>
+          <Chips
+            opciones={(recurringType === 'income'
+              ? ['Sueldo', 'Freelance', 'Inversiones', 'Otros']
+              : ['Suscripciones', 'Transporte', 'Comida', 'Salud', 'Universidad', 'Otros']
+            ).map((name) => ({ name }))}
+            valor={recurringCategory}
+            onCambio={setRecurringCategory}
+          />
 
-              <Text style={{ color: '#A1A1AA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Categoría</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-                {(recurringType === 'income'
-                  ? ['Sueldo', 'Freelance', 'Inversiones', 'Otros']
-                  : ['Suscripciones', 'Transporte', 'Comida', 'Salud', 'Universidad', 'Otros']
-                ).map((cat) => (
-                  <Pressable key={cat} onPress={() => setRecurringCategory(cat)} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 99, backgroundColor: recurringCategory === cat ? '#14B8A6' : '#27272A' }}>
-                    <Text style={{ color: recurringCategory === cat ? '#fff' : '#E4E4E7', fontSize: 12, fontWeight: '600' }}>{cat}</Text>
-                  </Pressable>
-                ))}
-              </View>
+          <Etiqueta>Día del mes</Etiqueta>
+          <TextInput
+            style={[campo, { color: TINTA.texto, fontSize: 16, fontWeight: '700', marginBottom: 12 }, webSinBorde]}
+            keyboardType="number-pad" value={recurringDay} onChangeText={setRecurringDay} placeholder="1" placeholderTextColor={TINTA.suave}
+          />
 
-              <Text style={{ color: '#A1A1AA', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Día del mes</Text>
-              <TextInput style={{ backgroundColor: '#27272A', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, color: '#FAFAFA', fontSize: 16, fontWeight: '700', marginBottom: 20 }} keyboardType="number-pad" value={recurringDay} onChangeText={setRecurringDay} placeholder="1" placeholderTextColor="#52525B" />
-
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <Pressable onPress={() => { setShowRecurringModal(false); setRecurringAmount(''); setRecurringNote(''); setRecurringCategory(''); }} style={{ flex: 1, backgroundColor: '#27272A', borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}>
-                  <Text style={{ color: '#A1A1AA', fontWeight: '700' }}>Cancelar</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => {
-                    const amt = parseFloat(recurringAmount);
-                    const day = parseInt(recurringDay) || 1;
-                    if (recurringCategory && !isNaN(amt) && amt > 0 && user?.id) {
-                      createRecurring.mutate({
-                        user_id: String(user.id), type: recurringType, amount: amt,
-                        category: recurringCategory, note: recurringNote, frequency: 'monthly', day_of_month: day,
-                      });
-                      setShowRecurringModal(false); setRecurringAmount(''); setRecurringNote(''); setRecurringCategory('');
-                    }
-                  }}
-                  style={{ flex: 2, backgroundColor: '#14B8A6', borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}
-                >
-                  <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>Guardar</Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </Modal>
+          <Acciones
+            texto="Guardar"
+            onCancelar={cerrarRecurrente}
+            onGuardar={() => {
+              const amt = parseFloat(recurringAmount);
+              const day = parseInt(recurringDay) || 1;
+              if (recurringCategory && !isNaN(amt) && amt > 0 && user?.id) {
+                createRecurring.mutate({
+                  user_id: String(user.id), type: recurringType, amount: amt,
+                  category: recurringCategory, note: recurringNote, frequency: 'monthly', day_of_month: day,
+                });
+                cerrarRecurrente();
+              }
+            }}
+          />
+        </Hoja>
       </ScrollView>
     </ScreenContainer>
   );

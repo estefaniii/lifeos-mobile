@@ -2,13 +2,9 @@ import React, { useState } from 'react';
 import { ScrollView, Text, View, Pressable, RefreshControl, Platform, Alert, Modal, TextInput } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { ScreenContainer } from '@/components/screen-container';
-import { ProgressRing } from '@/components/progress-ring';
-import { useColors } from '@/hooks/use-colors';
-import { useFinancialSummary } from '@/hooks/use-transactions';
-import { useTodayHealthSummary } from '@/hooks/use-health';
+import { useTodayHealthSummary, useHealthMetrics } from '@/hooks/use-health';
 import { useHabits, useTodayHabitLogs, useHabitStreaks, useToggleHabit, useCreateHabit, useDeleteHabit } from '@/hooks/use-habits';
-import { useTransactions, useFinancialSummary as useWeekFinancialSummary } from '@/hooks/use-transactions';
-import { useHealthMetrics } from '@/hooks/use-health';
+import { useFinancialSummary as useWeekFinancialSummary } from '@/hooks/use-transactions';
 import { useSavingsGoals } from '@/hooks/use-savings-goals';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -18,8 +14,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useNotes } from '@/hooks/use-notes';
 import { FadeInView } from '@/components/fade-in-view';
 import { WaterModal } from '@/components/water-modal';
-import { Titulo, TINTA } from '@/components/decor';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Titulo, Sticker, TINTA } from '@/components/decor';
 import { fechaLocal } from '@/lib/registros';
 
 // «Domingo, 1 de noviembre»: solo la primera letra en mayúscula
@@ -27,6 +22,23 @@ const fechaLarga = () => {
   const t = new Date().toLocaleDateString('es-PA', { weekday: 'long', day: 'numeric', month: 'long' });
   return t.charAt(0).toUpperCase() + t.slice(1);
 };
+
+// Paleta de Inicio: ámbar como acento y los colores de cada cosa
+const AMBAR = '#FFB547';
+const AGUA = '#7CC4FF';
+const CORAL = '#FF7A6B';
+const MENTA = '#5FD3A8';
+const LILA = '#C9A7FF';
+const ELEVADO = '#2A2521';
+const TARJETA = { backgroundColor: TINTA.tarjeta, borderRadius: 26, borderWidth: 1, borderColor: TINTA.borde } as const;
+
+// «L», «M»… de una fecha guardada como AAAA-MM-DD. A mediodía para que el
+// desfase de Panamá no la pase al día anterior.
+const diaCorto = (fecha: string) =>
+  new Date(`${fecha}T12:00:00`).toLocaleDateString('es-PA', { weekday: 'narrow' });
+
+// Hoja inferior de los registros rápidos
+const HOJA = { backgroundColor: TINTA.tarjeta, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderWidth: 1, borderBottomWidth: 0, borderColor: TINTA.borde, padding: 24, paddingBottom: 32 } as const;
 
 // ─── Mini Modals ─────────────────────────────────────────────────────────────
 
@@ -55,9 +67,9 @@ function MeditationModal({ visible, onClose, userId, onSave }: {
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-        <View style={{ backgroundColor: '#18181B', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24 }}>
-          <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '800', marginBottom: 4 }}>🧘 Registrar Meditación</Text>
-          <Text style={{ color: '#71717A', fontSize: 11, marginBottom: 20, textTransform: 'uppercase', letterSpacing: 2, fontWeight: '700' }}>
+        <View style={HOJA}>
+          <Titulo size={24}>Anotar meditación</Titulo>
+          <Text style={{ color: TINTA.suave, fontSize: 14, marginTop: 4, marginBottom: 20 }}>
             ¿Cuántos minutos?
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
@@ -69,20 +81,20 @@ function MeditationModal({ visible, onClose, userId, onSave }: {
                 style={{
                   flex: 1,
                   minWidth: 80,
-                  backgroundColor: 'rgba(168,85,247,0.12)',
-                  borderWidth: 1,
-                  borderColor: 'rgba(168,85,247,0.3)',
-                  borderRadius: 16,
-                  paddingVertical: 14,
+                  minHeight: 52,
+                  backgroundColor: ELEVADO,
+                  borderRadius: 18,
                   alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: saving ? 0.5 : 1,
                 }}
               >
-                <Text style={{ color: '#C084FC', fontWeight: '800', fontSize: 15 }}>{min}m</Text>
+                <Text style={{ color: LILA, fontWeight: '800', fontSize: 16 }}>{min} min</Text>
               </Pressable>
             ))}
           </View>
-          <Pressable onPress={onClose} style={{ paddingVertical: 12, alignItems: 'center' }}>
-            <Text style={{ color: '#71717A', fontWeight: '700', fontSize: 12, textTransform: 'uppercase', letterSpacing: 2 }}>Cancelar</Text>
+          <Pressable onPress={onClose} accessibilityRole="button" style={{ minHeight: 52, borderRadius: 26, borderWidth: 1, borderColor: TINTA.borde, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: TINTA.texto, fontWeight: '700', fontSize: 15 }}>Cancelar</Text>
           </Pressable>
         </View>
       </View>
@@ -135,53 +147,54 @@ function ActivityModal({ visible, onClose, type, userId, onSave }: {
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-        <View style={{ backgroundColor: '#18181B', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24 }}>
-          <Text style={{ color: '#FAFAFA', fontSize: 18, fontWeight: '800', marginBottom: 4 }}>
-            {isGym ? '💪 Registrar Gym' : '🧘‍♀️ Registrar Yoga'}
-          </Text>
-          <Text style={{ color: '#71717A', fontSize: 11, marginBottom: 20, textTransform: 'uppercase', letterSpacing: 2, fontWeight: '700' }}>
-            Duración en minutos (opcional)
+        <View style={HOJA}>
+          <Titulo size={24}>{isGym ? 'Anotar gym' : 'Anotar yoga'}</Titulo>
+          <Text style={{ color: TINTA.suave, fontSize: 14, marginTop: 4, marginBottom: 20 }}>
+            Cuánto duró, si quieres anotarlo
           </Text>
           <View style={{
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: '#27272A',
-            borderRadius: 16,
+            backgroundColor: ELEVADO,
+            borderRadius: 18,
             borderWidth: 1,
-            borderColor: '#3F3F46',
+            borderColor: TINTA.borde,
             paddingHorizontal: 16,
             marginBottom: 16,
           }}>
             <TextInput
-              style={{ flex: 1, color: '#FAFAFA', fontSize: 16, paddingVertical: 14 }}
+              style={{ flex: 1, color: TINTA.texto, fontSize: 16, minHeight: 52 }}
               placeholder="60"
-              placeholderTextColor="#52525B"
+              placeholderTextColor={TINTA.suave}
               keyboardType="number-pad"
               value={minutes}
               onChangeText={setMinutes}
             />
-            <Text style={{ color: '#71717A', fontWeight: '700' }}>min</Text>
+            <Text style={{ color: TINTA.suave, fontWeight: '700', fontSize: 15 }}>min</Text>
           </View>
           <View style={{ flexDirection: 'row', gap: 10, marginBottom: 8 }}>
             <Pressable
               onPress={onClose}
-              style={{ flex: 1, backgroundColor: '#27272A', borderRadius: 16, paddingVertical: 14, alignItems: 'center' }}
+              accessibilityRole="button"
+              style={{ flex: 1, minHeight: 52, borderRadius: 26, borderWidth: 1, borderColor: TINTA.borde, alignItems: 'center', justifyContent: 'center' }}
             >
-              <Text style={{ color: '#A1A1AA', fontWeight: '700', fontSize: 13 }}>Cancelar</Text>
+              <Text style={{ color: TINTA.texto, fontWeight: '700', fontSize: 15 }}>Cancelar</Text>
             </Pressable>
             <Pressable
               onPress={handleLog}
               disabled={saving}
               style={{
                 flex: 2,
-                backgroundColor: isGym ? 'rgba(249,115,22,0.9)' : 'rgba(16,185,129,0.9)',
-                borderRadius: 16,
-                paddingVertical: 14,
+                minHeight: 52,
+                backgroundColor: isGym ? CORAL : MENTA,
+                borderRadius: 26,
                 alignItems: 'center',
+                justifyContent: 'center',
+                opacity: saving ? 0.6 : 1,
               }}
             >
-              <Text style={{ color: '#FAFAFA', fontWeight: '800', fontSize: 13 }}>
-                {saving ? 'Guardando...' : 'Registrar ✓'}
+              <Text style={{ color: TINTA.fondo, fontWeight: '800', fontSize: 15 }}>
+                {saving ? 'Guardando…' : 'Anotar'}
               </Text>
             </Pressable>
           </View>
@@ -194,7 +207,6 @@ function ActivityModal({ visible, onClose, type, userId, onSave }: {
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
-  const colors = useColors();
   const queryClient = useQueryClient();
   const router = useRouter();
   const { user } = useAuth();
@@ -218,8 +230,6 @@ export default function HomeScreen() {
   const createHabit = useCreateHabit();
   const deleteHabit = useDeleteHabit();
 
-  // Fetch data
-  const { data: financialSummary } = useFinancialSummary('day');
   const { data: healthSummary } = useTodayHealthSummary();
 
   // Resumen del día (notas personales)
@@ -236,19 +246,9 @@ export default function HomeScreen() {
   const { data: weekSteps } = useHealthMetrics('steps', 7);
   const { data: weekSleep } = useHealthMetrics('sleep_minutes', 7);
 
-  // Progress percentages
-  const financesProgress = financialSummary && financialSummary.income > 0
-    ? Math.min(Math.max((financialSummary.balance / financialSummary.income) * 100, 0), 100)
-    : 0;
-  const healthProgress = healthSummary
-    ? Math.min((healthSummary.steps / 10000) * 100, 100)
-    : 0;
-  const productivityProgress = healthSummary
-    ? Math.min((healthSummary.exerciseMinutes / 30) * 100, 100)
-    : 0;
-  const waterProgress = healthSummary
-    ? Math.min(((healthSummary.water_ml || 0) / 2000) * 100, 100)
-    : 0;
+  const vasos = Math.floor((healthSummary?.water_ml || 0) / 250);
+  const habitosHechos = todayLogs?.filter((l: any) => l.completed).length || 0;
+  const todosHechos = !!habits?.length && habitosHechos === habits.length;
 
   const onRefresh = async () => {
     setIsRefreshing(true);
@@ -276,267 +276,179 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
         className="pb-4"
       >
-        <View style={{ flex: 1, paddingHorizontal: 16, paddingVertical: 24, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
+          <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 24, maxWidth: 640, alignSelf: 'center', width: '100%' }}>
 
-          {/* Cabecera: saludo grande, la fecha y los accesos a Historial, Salud y Perfil */}
-          <View style={{ marginBottom: 22, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          {/* Cabecera: la fecha y el saludo. Historial, Sueño y agua y Perfil están en el menú de arriba */}
+          <View style={{ marginBottom: 22, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingRight: 110 }}>
             <View style={{ flex: 1 }}>
               <Text style={{ color: TINTA.suave, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>{fechaLarga()}</Text>
               <Titulo size={32}>Hola, {user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'tú'}</Titulo>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              {([['/history', 'clock.arrow.circlepath', 'Historial'], ['/health', 'heart.fill', 'Salud'], ['/profile', 'person.fill', 'Perfil']] as const).map(([ruta, icono, nombre]) => (
-                <Pressable
-                  key={ruta}
-                  onPress={() => router.push(ruta)}
-                  accessibilityLabel={nombre}
-                  style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: TINTA.tarjeta, borderWidth: 1, borderColor: TINTA.borde, alignItems: 'center', justifyContent: 'center' }}
-                >
-                  <IconSymbol name={icono} size={20} color={TINTA.texto} />
-                </Pressable>
-              ))}
-            </View>
           </View>
 
           {/* Grid Principal */}
-          <View style={{ flexDirection: 'column', gap: 16 }}>
+          <View style={{ flexDirection: 'column', gap: 24 }}>
 
             {/* Resumen del día */}
             {(pinnedNotes.length > 0 || reminderNotes.length > 0) && (
-              <FadeInView style={{ backgroundColor: '#18181B', borderRadius: 28, padding: 20, borderWidth: 1, borderColor: 'rgba(63,63,70,0.5)' }}>
+              <FadeInView style={{ ...TARJETA, padding: 20 }}>
                 <Titulo size={22} style={{ marginBottom: 14 }}>Tu día hoy</Titulo>
 
                 {reminderNotes.length > 0 && (
-                  <Pressable onPress={() => router.push('/notes')} style={{ marginBottom: 14 }}>
+                  <Pressable onPress={() => router.push('/notes')} accessibilityRole="link" style={{ marginBottom: 14, minHeight: 44 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <Text style={{ color: '#F59E0B', fontSize: 13, fontWeight: '800' }}>⏰ Recordatorios</Text>
-                      <Text style={{ color: '#52525B', fontSize: 16 }}>›</Text>
+                      <Text style={{ color: AMBAR, fontSize: 14, fontWeight: '800' }}>⏰ Recordatorios</Text>
+                      <Text style={{ color: TINTA.suave, fontSize: 18 }}>›</Text>
                     </View>
                     {reminderNotes.map((n) => (
-                      <Text key={n.id} style={{ color: '#A1A1AA', fontSize: 13, marginBottom: 2 }} numberOfLines={1}>• {n.title}</Text>
+                      <Text key={n.id} style={{ color: TINTA.texto, fontSize: 14, lineHeight: 21 }} numberOfLines={1}>• {n.title}</Text>
                     ))}
                   </Pressable>
                 )}
 
                 {pinnedNotes.length > 0 && (
-                  <Pressable onPress={() => router.push('/notes')}>
+                  <Pressable onPress={() => router.push('/notes')} accessibilityRole="link" style={{ minHeight: 44 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <Text style={{ color: '#C084FC', fontSize: 13, fontWeight: '800' }}>📌 Notas fijadas</Text>
-                      <Text style={{ color: '#52525B', fontSize: 16 }}>›</Text>
+                      <Text style={{ color: LILA, fontSize: 14, fontWeight: '800' }}>📌 Notas fijadas</Text>
+                      <Text style={{ color: TINTA.suave, fontSize: 18 }}>›</Text>
                     </View>
                     {pinnedNotes.map((n) => (
-                      <Text key={n.id} style={{ color: '#A1A1AA', fontSize: 13, marginBottom: 2 }} numberOfLines={1}>• {n.title}</Text>
+                      <Text key={n.id} style={{ color: TINTA.texto, fontSize: 14, lineHeight: 21 }} numberOfLines={1}>• {n.title}</Text>
                     ))}
                   </Pressable>
                 )}
               </FadeInView>
             )}
 
-            {/* Métricas */}
-            <View style={{
-              backgroundColor: '#18181B',
-              borderRadius: 28,
-              padding: 20,
-              borderWidth: 1,
-              borderColor: '#27272A',
-            }}>
-              <Titulo size={22} style={{ marginBottom: 16 }}>Cómo vas hoy</Titulo>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }}>
-                <ProgressRing
-                  progress={financesProgress}
-                  label="Finanzas"
-                  value={`$${financialSummary?.income || 0}`}
-                  color={colors.success}
-                  size={85}
-                  onPress={() => router.push('/finances')}
-                />
-                <ProgressRing
-                  progress={waterProgress}
-                  label="Agua"
-                  value={`${Math.round((healthSummary?.water_ml || 0) / 250)} 🥛`}
-                  color="#60A5FA"
-                  size={85}
-                  onPress={() => router.push('/health')}
-                />
-                <ProgressRing
-                  progress={productivityProgress}
-                  label="Ejercicio"
-                  value={`${healthSummary?.exerciseMinutes || 0}m`}
-                  color={colors.warning}
-                  size={85}
-                  onPress={() => router.push('/health')}
-                />
-              </View>
-            </View>
-
             {/* Registros rápidos: cada toque queda en el historial con su hora */}
-            <View style={{ marginBottom: 8 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
+            <View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <Titulo size={22}>Anotar rápido</Titulo>
                 <Pressable onPress={() => router.push('/history')} style={{ minHeight: 44, justifyContent: 'center' }}>
-                  <Text style={{ color: '#FFB547', fontWeight: '800', fontSize: 14 }}>Ver historial ›</Text>
+                  <Text style={{ color: AMBAR, fontWeight: '800', fontSize: 14 }}>Ver historial ›</Text>
                 </Pressable>
               </View>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 {([
-                  ['💧', 'Agua', `${Math.round((healthSummary?.water_ml || 0) / 250)} vasos`, '#7CC4FF', () => setShowWaterModal(true)],
-                  ['🧘', 'Meditar', 'minutos', '#C9A7FF', () => setShowMeditationModal(true)],
-                  ['💪', 'Gym', healthSummary?.gymSessions ? 'hecho ✓' : 'anotar', '#FF7A6B', () => setShowGymModal(true)],
-                  ['🧘‍♀️', 'Yoga', healthSummary?.yogaSessions ? 'hecho ✓' : 'anotar', '#5FD3A8', () => setShowYogaModal(true)],
+                  ['💧', 'Agua', `${vasos} ${vasos === 1 ? 'vaso' : 'vasos'}`, AGUA, () => setShowWaterModal(true)],
+                  ['🧘', 'Meditar', 'minutos', LILA, () => setShowMeditationModal(true)],
+                  ['💪', 'Gym', healthSummary?.gymSessions ? 'hecho ✓' : 'anotar', CORAL, () => setShowGymModal(true)],
+                  ['🧘‍♀️', 'Yoga', healthSummary?.yogaSessions ? 'hecho ✓' : 'anotar', MENTA, () => setShowYogaModal(true)],
                 ] as const).map(([emoji, nombre, dato, color, abrir], k) => (
                   <Pressable
                     key={nombre}
                     onPress={abrir}
                     accessibilityRole="button"
                     accessibilityLabel={`Anotar ${nombre}`}
-                    style={{ flex: 1, backgroundColor: TINTA.tarjeta, borderWidth: 1, borderColor: TINTA.borde, borderRadius: 22, paddingVertical: 14, alignItems: 'center', minHeight: 96 }}
+                    style={{ flex: 1, backgroundColor: TINTA.tarjeta, borderWidth: 1, borderColor: TINTA.borde, borderRadius: 24, paddingVertical: 14, paddingHorizontal: 4, alignItems: 'center', minHeight: 96 }}
                   >
                     <View style={{ width: 40, height: 40, borderRadius: 14, backgroundColor: color, alignItems: 'center', justifyContent: 'center', marginBottom: 6, transform: [{ rotate: k % 2 ? '5deg' : '-5deg' }] }}>
                       <Text style={{ fontSize: 20 }}>{emoji}</Text>
                     </View>
-                    <Text style={{ color: TINTA.texto, fontWeight: '800', fontSize: 13 }}>{nombre}</Text>
-                    <Text style={{ color: TINTA.suave, fontSize: 11.5, marginTop: 1 }}>{dato}</Text>
+                    <Text style={{ color: TINTA.texto, fontWeight: '800', fontSize: 13 }} numberOfLines={1}>{nombre}</Text>
+                    <Text style={{ color: TINTA.suave, fontSize: 12, marginTop: 1 }} numberOfLines={1}>{dato}</Text>
                   </Pressable>
                 ))}
               </View>
             </View>
 
-            {/* Agua - indicador visual rápido */}
-            <View style={{ marginBottom: 16 }}>
-              <Pressable
-                onPress={() => setShowWaterModal(true)}
-                style={{ backgroundColor: 'rgba(59,130,246,0.06)', borderWidth: 1, borderColor: 'rgba(59,130,246,0.15)', borderRadius: 20, padding: 14 }}
-              >
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <Text style={{ color: '#60A5FA', fontWeight: '700', fontSize: 14 }}>💧 Hidratación Hoy</Text>
-                  <Text style={{ color: 'rgba(96,165,250,0.8)', fontSize: 12, fontWeight: '700' }}>{Math.round((healthSummary?.water_ml || 0) / 250)} / 8 vasos</Text>
+            {/* Hidratación: ocho vasos, se rellenan al anotar */}
+            <Pressable
+              onPress={() => setShowWaterModal(true)}
+              accessibilityRole="button"
+              accessibilityLabel={`Hidratación: ${vasos} de 8 vasos. Toca para anotar`}
+              style={{ ...TARJETA, padding: 18 }}
+            >
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, gap: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Titulo size={22}>Hidratación</Titulo>
+                  <Text style={{ color: TINTA.suave, fontSize: 13, marginTop: 2 }}>Toca para anotar un vaso</Text>
                 </View>
-                <View style={{ flexDirection: 'row', gap: 6 }}>
-                  {[1,2,3,4,5,6,7,8].map(i => {
-                    const filled = Math.floor((healthSummary?.water_ml || 0) / 250);
-                    const isFilled = i <= filled;
-                    return (
-                      <View
-                        key={i}
-                        style={{
-                          flex: 1,
-                          height: 24,
-                          borderRadius: 6,
-                          backgroundColor: isFilled ? 'rgba(96,165,250,0.7)' : 'rgba(59,130,246,0.1)',
-                          borderWidth: 1,
-                          borderColor: isFilled ? 'rgba(96,165,250,0.4)' : 'rgba(59,130,246,0.2)',
-                        }}
-                      />
-                    );
-                  })}
-                </View>
-                <Text style={{ color: 'rgba(96,165,250,0.5)', fontSize: 9, textAlign: 'center', marginTop: 6, fontWeight: '500' }}>Toca para registrar</Text>
-              </Pressable>
-            </View>
+                <Text style={{ color: AGUA, fontSize: 15, fontWeight: '800' }}>{vasos} de 8</Text>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <View key={i} style={{ flex: 1, height: 28, borderRadius: 8, backgroundColor: i <= vasos ? AGUA : ELEVADO }} />
+                ))}
+              </View>
+            </Pressable>
 
-            {/* Mis Hábitos */}
-            <View style={{ marginBottom: 20 }}>
+            {/* Mis hábitos */}
+            <View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <Titulo size={22}>Mis hábitos</Titulo>
-                <Pressable onPress={() => setShowHabitModal(true)} style={{
-                  backgroundColor: 'rgba(20,184,166,0.15)',
-                  borderWidth: 1,
-                  borderColor: 'rgba(20,184,166,0.3)',
-                  borderRadius: 12,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 4,
-                }}>
-                  <Text style={{ color: '#14B8A6', fontSize: 14, fontWeight: '800' }}>+</Text>
-                  <Text style={{ color: '#14B8A6', fontSize: 12, fontWeight: '800' }}>Nuevo</Text>
+                <Pressable
+                  onPress={() => setShowHabitModal(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Nuevo hábito"
+                  style={{ minHeight: 44, paddingHorizontal: 16, borderRadius: 22, backgroundColor: AMBAR, justifyContent: 'center' }}
+                >
+                  <Text style={{ color: TINTA.fondo, fontSize: 14, fontWeight: '800' }}>+ Nuevo</Text>
                 </Pressable>
               </View>
 
               {(!habits || habits.length === 0) ? (
-                <View style={{
-                  backgroundColor: 'rgba(20,184,166,0.06)',
-                  borderWidth: 1,
-                  borderColor: 'rgba(20,184,166,0.15)',
-                  borderRadius: 24,
-                  padding: 24,
-                  alignItems: 'center',
-                }}>
-                  <Text style={{ fontSize: 32, marginBottom: 8 }}>🎯</Text>
-                  <Text style={{ color: '#A1A1AA', fontSize: 13, fontWeight: '600', textAlign: 'center' }}>
+                <Pressable onPress={() => setShowHabitModal(true)} accessibilityRole="button" style={{ ...TARJETA, borderStyle: 'dashed', padding: 24, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 30, marginBottom: 8 }}>🎯</Text>
+                  <Text style={{ color: TINTA.texto, fontSize: 15, fontWeight: '700', textAlign: 'center' }}>
                     Agrega tu primer hábito diario
                   </Text>
-                  <Text style={{ color: '#71717A', fontSize: 11, marginTop: 4, textAlign: 'center' }}>
-                    Leer, skincare, vitaminas, ejercicio...
+                  <Text style={{ color: TINTA.suave, fontSize: 13, marginTop: 4, textAlign: 'center' }}>
+                    Leer, skincare, vitaminas, ejercicio…
                   </Text>
-                </View>
+                </Pressable>
               ) : (
-                <View style={{ gap: 8 }}>
-                  {habits.map((habit: any) => {
+                <View style={{ ...TARJETA, paddingVertical: 6, paddingHorizontal: 14, marginTop: todosHechos ? 8 : 0 }}>
+                  {todosHechos && <Sticker texto="¡todo hecho!" giro={5} style={{ position: 'absolute', top: -14, right: 18 }} />}
+                  {habits.map((habit: any, k: number) => {
                     const isCompleted = todayLogs?.some((l: any) => l.habit_id === habit.id && l.completed);
                     const streak = streaks?.[habit.id] || 0;
 
                     return (
-                      <Pressable
+                      <View
                         key={habit.id}
-                        onPress={() => toggleHabit.mutate({ habitId: habit.id, completed: !isCompleted })}
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          backgroundColor: isCompleted ? `${habit.color}15` : '#18181B',
-                          borderWidth: 1,
-                          borderColor: isCompleted ? `${habit.color}40` : '#27272A',
-                          borderRadius: 20,
-                          padding: 14,
-                          gap: 12,
-                        }}
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderTopWidth: k ? 1 : 0, borderTopColor: TINTA.borde }}
                       >
-                        {/* Checkbox */}
-                        <View style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 10,
-                          borderWidth: 2,
-                          borderColor: isCompleted ? habit.color : '#3F3F46',
-                          backgroundColor: isCompleted ? habit.color : 'transparent',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}>
-                          {isCompleted && (
-                            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>✓</Text>
-                          )}
-                        </View>
-
-                        {/* Emoji + Name */}
-                        <Text style={{ fontSize: 20 }}>{habit.emoji}</Text>
-                        <Text style={{
-                          flex: 1,
-                          color: isCompleted ? '#71717A' : '#FAFAFA',
-                          fontSize: 14,
-                          fontWeight: '700',
-                          textDecorationLine: isCompleted ? 'line-through' : 'none',
-                        }}>
-                          {habit.name}
-                        </Text>
-
-                        {/* Streak badge */}
-                        {streak > 0 && (
+                        <Pressable
+                          onPress={() => toggleHabit.mutate({ habitId: habit.id, completed: !isCompleted })}
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: !!isCompleted }}
+                          accessibilityLabel={habit.name}
+                          style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 58 }}
+                        >
                           <View style={{
-                            backgroundColor: `${habit.color}20`,
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            borderRadius: 8,
-                            flexDirection: 'row',
+                            width: 30,
+                            height: 30,
+                            borderRadius: 10,
+                            borderWidth: 2,
+                            borderColor: isCompleted ? habit.color : TINTA.borde,
+                            backgroundColor: isCompleted ? habit.color : 'transparent',
                             alignItems: 'center',
-                            gap: 3,
+                            justifyContent: 'center',
                           }}>
-                            <Text style={{ fontSize: 10 }}>🔥</Text>
-                            <Text style={{ color: habit.color, fontSize: 11, fontWeight: '800' }}>{streak}</Text>
+                            {isCompleted && <Text style={{ color: TINTA.fondo, fontSize: 16, fontWeight: '900' }}>✓</Text>}
                           </View>
-                        )}
+                          <Text style={{ fontSize: 20 }}>{habit.emoji}</Text>
+                          <Text
+                            numberOfLines={2}
+                            style={{
+                              flex: 1,
+                              color: isCompleted ? TINTA.suave : TINTA.texto,
+                              fontSize: 15,
+                              fontWeight: '700',
+                              textDecorationLine: isCompleted ? 'line-through' : 'none',
+                            }}
+                          >
+                            {habit.name}
+                          </Text>
+                          {streak > 0 && (
+                            <View style={{ backgroundColor: ELEVADO, paddingHorizontal: 10, minHeight: 28, borderRadius: 14, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                              <Text style={{ fontSize: 12 }}>🔥</Text>
+                              <Text style={{ color: TINTA.texto, fontSize: 13, fontWeight: '800' }}>{streak}</Text>
+                            </View>
+                          )}
+                        </Pressable>
 
-                        {/* Delete */}
                         <Pressable
                           onPress={() => {
                             if (Platform.OS === 'web') {
@@ -548,185 +460,140 @@ export default function HomeScreen() {
                               ]);
                             }
                           }}
-                          style={{ padding: 4 }}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Eliminar ${habit.name}`}
+                          style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
                         >
-                          <Text style={{ color: '#52525B', fontSize: 14 }}>🗑</Text>
+                          <Text style={{ color: TINTA.suave, fontSize: 18 }}>×</Text>
                         </Pressable>
-                      </Pressable>
+                      </View>
                     );
                   })}
-
-                  {/* Summary */}
-                  {habits.length > 0 && (
-                    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                      <Text style={{ color: '#71717A', fontSize: 11, fontWeight: '600' }}>
-                        {todayLogs?.filter((l: any) => l.completed).length || 0}/{habits.length} completados hoy
-                      </Text>
-                      {todayLogs && habits.length > 0 && (todayLogs.filter((l: any) => l.completed).length === habits.length) && (
-                        <Text style={{ fontSize: 14 }}>🎉</Text>
-                      )}
-                    </View>
-                  )}
+                  <Text style={{ color: TINTA.suave, fontSize: 13, fontWeight: '600', textAlign: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: TINTA.borde }}>
+                    {habitosHechos} de {habits.length} hechos hoy
+                  </Text>
                 </View>
               )}
             </View>
 
-            {/* Acciones de Finanzas e IA */}
-            <View style={{ marginBottom: 24 }}>
-              <View style={{ flexDirection: 'row', gap: 10 }}>
+            {/* Dinero: anotar un gasto o un ingreso */}
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              {([
+                ['expense', '💸', 'Anotar gasto', CORAL],
+                ['income', '💰', 'Anotar ingreso', MENTA],
+              ] as const).map(([tipo, emoji, texto, color], k) => (
                 <Pressable
-                  onPress={() => openModal('expense')}
-                  style={{ flex: 1, backgroundColor: 'rgba(244,63,94,0.1)', borderWidth: 1, borderColor: 'rgba(244,63,94,0.2)', borderRadius: 22, paddingVertical: 18, alignItems: 'center' }}
+                  key={tipo}
+                  onPress={() => openModal(tipo)}
+                  accessibilityRole="button"
+                  style={{ ...TARJETA, flex: 1, padding: 16, minHeight: 104, justifyContent: 'space-between', gap: 10 }}
                 >
-                  <Text style={{ fontSize: 28, marginBottom: 4 }}>💸</Text>
-                  <Text style={{ color: '#FB7185', fontWeight: '800', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Gasto</Text>
+                  <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: color, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: k ? '5deg' : '-5deg' }] }}>
+                    <Text style={{ fontSize: 21 }}>{emoji}</Text>
+                  </View>
+                  <Text style={{ color: TINTA.texto, fontSize: 15, fontWeight: '800' }}>{texto}</Text>
                 </Pressable>
-                <Pressable
-                  onPress={() => openModal('income')}
-                  style={{ flex: 1, backgroundColor: 'rgba(16,185,129,0.1)', borderWidth: 1, borderColor: 'rgba(16,185,129,0.2)', borderRadius: 22, paddingVertical: 18, alignItems: 'center' }}
-                >
-                  <Text style={{ fontSize: 28, marginBottom: 4 }}>💰</Text>
-                  <Text style={{ color: '#34D399', fontWeight: '800', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Ingreso</Text>
-                </Pressable>
-                
-              </View>
+              ))}
             </View>
 
-            {/* C: Metas de Ahorro */}
+            {/* Metas de ahorro */}
             {savingsGoals && savingsGoals.length > 0 && (
-              <View style={{ marginBottom: 20 }}>
+              <View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <Titulo size={22}>Metas de ahorro</Titulo>
-                  <Pressable onPress={() => router.push('/finances')} style={{
-                    backgroundColor: 'rgba(245,158,11,0.15)',
-                    borderWidth: 1,
-                    borderColor: 'rgba(245,158,11,0.3)',
-                    borderRadius: 12,
-                    paddingHorizontal: 10,
-                    paddingVertical: 5,
-                  }}>
-                    <Text style={{ color: '#F59E0B', fontSize: 12, fontWeight: '800' }}>Ver todas</Text>
+                  <Pressable onPress={() => router.push('/finances')} accessibilityRole="link" style={{ minHeight: 44, justifyContent: 'center' }}>
+                    <Text style={{ color: AMBAR, fontSize: 14, fontWeight: '800' }}>Ver todas ›</Text>
                   </Pressable>
                 </View>
-                <View style={{ gap: 10 }}>
-                  {savingsGoals.slice(0, 3).map((goal: any) => {
+                <Pressable onPress={() => router.push('/finances')} accessibilityRole="button" style={{ ...TARJETA, paddingVertical: 6, paddingHorizontal: 18 }}>
+                  {savingsGoals.slice(0, 3).map((goal: any, k: number) => {
                     const pct = goal.target_amount > 0 ? Math.min(100, Math.round((goal.current_amount / goal.target_amount) * 100)) : 0;
-                    const goalColor = pct >= 100 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#3B82F6';
+                    const goalColor = pct >= 100 ? MENTA : AMBAR;
                     return (
-                      <Pressable
-                        key={goal.id}
-                        onPress={() => router.push('/finances')}
-                        style={{
-                          backgroundColor: '#18181B',
-                          borderWidth: 1,
-                          borderColor: '#27272A',
-                          borderRadius: 20,
-                          padding: 16,
-                        }}
-                      >
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                          <Text style={{ color: '#FAFAFA', fontSize: 14, fontWeight: '700', flex: 1 }} numberOfLines={1}>{goal.name}</Text>
-                          <Text style={{ color: goalColor, fontSize: 12, fontWeight: '800' }}>{pct}%</Text>
+                      <View key={goal.id} style={{ paddingVertical: 14, borderTopWidth: k ? 1 : 0, borderTopColor: TINTA.borde }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                          <Text style={{ color: TINTA.texto, fontSize: 15, fontWeight: '700', flex: 1 }} numberOfLines={1}>{goal.name}</Text>
+                          <Text style={{ color: goalColor, fontSize: 14, fontWeight: '800' }}>{pct >= 100 ? '¡Lograda!' : `${pct}%`}</Text>
                         </View>
-                        <View style={{ height: 8, backgroundColor: 'rgba(59,130,246,0.1)', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
-                          <View style={{ height: '100%', width: `${pct}%`, backgroundColor: goalColor, borderRadius: 99 }} />
+                        <View style={{ height: 8, backgroundColor: ELEVADO, borderRadius: 4, overflow: 'hidden', marginBottom: 6 }}>
+                          <View style={{ height: '100%', width: `${pct}%`, backgroundColor: goalColor, borderRadius: 4 }} />
                         </View>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                          <Text style={{ color: '#71717A', fontSize: 11, fontWeight: '600' }}>${goal.current_amount}</Text>
-                          <Text style={{ color: '#52525B', fontSize: 11, fontWeight: '600' }}>Meta: ${goal.target_amount}</Text>
-                        </View>
-                        {pct >= 100 && (
-                          <Text style={{ color: '#10B981', fontSize: 10, fontWeight: '700', marginTop: 4, textAlign: 'center' }}>
-                            🎉 ¡Meta alcanzada!
-                          </Text>
-                        )}
-                      </Pressable>
+                        <Text style={{ color: TINTA.suave, fontSize: 13 }}>${goal.current_amount} de ${goal.target_amount}</Text>
+                      </View>
                     );
                   })}
-                </View>
+                </Pressable>
               </View>
             )}
 
-            {/* D: Resumen Semanal */}
-            <View style={{ marginBottom: 20 }}>
+            {/* Resumen semanal */}
+            <View>
               <Titulo size={22} style={{ marginBottom: 12 }}>Resumen semanal</Titulo>
-              <View style={{ backgroundColor: '#18181B', borderWidth: 1, borderColor: '#27272A', borderRadius: 24, padding: 16 }}>
-                {/* Financial weekly */}
-                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
-                  <View style={{ flex: 1, backgroundColor: 'rgba(16,185,129,0.08)', borderRadius: 16, padding: 12, alignItems: 'center' }}>
-                    <Text style={{ color: '#71717A', fontSize: 12, fontWeight: '700', marginBottom: 4 }}>Ingresos 7d</Text>
-                    <Text style={{ color: '#10B981', fontSize: 18, fontWeight: '800' }}>${weekSummary?.income || 0}</Text>
-                  </View>
-                  <View style={{ flex: 1, backgroundColor: 'rgba(239,68,68,0.08)', borderRadius: 16, padding: 12, alignItems: 'center' }}>
-                    <Text style={{ color: '#71717A', fontSize: 12, fontWeight: '700', marginBottom: 4 }}>Gastos 7d</Text>
-                    <Text style={{ color: '#EF4444', fontSize: 18, fontWeight: '800' }}>${weekSummary?.expenses || 0}</Text>
-                  </View>
-                  <View style={{ flex: 1, backgroundColor: 'rgba(59,130,246,0.08)', borderRadius: 16, padding: 12, alignItems: 'center' }}>
-                    <Text style={{ color: '#71717A', fontSize: 12, fontWeight: '700', marginBottom: 4 }}>Balance</Text>
-                    <Text style={{ color: (weekSummary?.balance || 0) >= 0 ? '#10B981' : '#EF4444', fontSize: 18, fontWeight: '800' }}>
-                      ${weekSummary?.balance || 0}
-                    </Text>
-                  </View>
+              <View style={{ ...TARJETA, padding: 18 }}>
+                {/* Dinero de los últimos 7 días: tres columnas, sin cajas dentro de la tarjeta */}
+                <View style={{ flexDirection: 'row' }}>
+                  {([
+                    ['Ingresos', weekSummary?.income || 0, MENTA],
+                    ['Gastos', weekSummary?.expenses || 0, CORAL],
+                    ['Balance', weekSummary?.balance || 0, (weekSummary?.balance || 0) >= 0 ? MENTA : CORAL],
+                  ] as const).map(([nombre, valor, color], k) => (
+                    <View key={nombre} style={{ flex: 1, paddingLeft: k ? 12 : 0, borderLeftWidth: k ? 1 : 0, borderLeftColor: TINTA.borde }}>
+                      <Text style={{ color: TINTA.suave, fontSize: 13, fontWeight: '600', marginBottom: 4 }}>{nombre}</Text>
+                      <Text numberOfLines={1} adjustsFontSizeToFit style={{ color, fontSize: 19, fontWeight: '800' }}>${valor}</Text>
+                    </View>
+                  ))}
                 </View>
+                <Text style={{ color: TINTA.suave, fontSize: 12.5, marginTop: 6 }}>Últimos 7 días</Text>
 
-                {/* Steps mini chart */}
                 {weekSteps && weekSteps.length > 0 && (
-                  <View style={{ marginBottom: 14 }}>
-                    <Text style={{ color: '#71717A', fontSize: 12, fontWeight: '700', marginBottom: 8 }}>
-                      Pasos (7 días)
-                    </Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 40 }}>
+                  <View style={{ marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: TINTA.borde }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10, gap: 8 }}>
+                      <Text style={{ color: TINTA.texto, fontSize: 15, fontWeight: '700' }}>Pasos</Text>
+                      <Text style={{ color: TINTA.suave, fontSize: 13 }}>
+                        {Math.round(weekSteps.reduce((s: number, d: any) => s + d.value, 0) / weekSteps.length)} al día
+                      </Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6 }}>
                       {weekSteps.map((d: any, i: number) => {
                         const maxVal = Math.max(...weekSteps.map((s: any) => s.value), 1);
-                        const barH = Math.max(4, (d.value / maxVal) * 40);
+                        const barH = Math.max(4, (d.value / maxVal) * 48);
                         const isToday = i === weekSteps.length - 1;
                         return (
-                          <View key={i} style={{ flex: 1, alignItems: 'center' }}>
-                            <View style={{
-                              height: barH,
-                              width: '100%',
-                              backgroundColor: isToday ? 'rgba(20,184,166,0.5)' : 'rgba(20,184,166,0.2)',
-                              borderRadius: 4,
-                              borderWidth: isToday ? 1 : 0,
-                              borderColor: 'rgba(20,184,166,0.6)',
-                            }} />
-                            <Text style={{ color: '#52525B', fontSize: 7, fontWeight: '700', marginTop: 2 }}>
-                              {new Date(d.date).toLocaleDateString('es-ES', { weekday: 'narrow' })}
-                            </Text>
+                          <View key={i} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
+                            <View style={{ height: 48, width: '100%', justifyContent: 'flex-end', backgroundColor: ELEVADO, borderRadius: 6, overflow: 'hidden' }}>
+                              <View style={{ height: barH, backgroundColor: AMBAR, opacity: isToday ? 1 : 0.55, borderRadius: 6 }} />
+                            </View>
+                            <Text style={{ color: TINTA.suave, fontSize: 12, fontWeight: '700' }}>{diaCorto(d.date)}</Text>
                           </View>
                         );
                       })}
                     </View>
-                    <Text style={{ color: '#52525B', fontSize: 9, textAlign: 'right', marginTop: 2 }}>
-                      Promedio: {Math.round(weekSteps.reduce((s: number, d: any) => s + d.value, 0) / weekSteps.length)} pasos/día
-                    </Text>
                   </View>
                 )}
 
-                {/* Sleep mini chart */}
                 {weekSleep && weekSleep.length > 0 && (
-                  <View>
-                    <Text style={{ color: '#71717A', fontSize: 12, fontWeight: '700', marginBottom: 8 }}>
-                      Sueño (7 días)
-                    </Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 40 }}>
+                  <View style={{ marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: TINTA.borde }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10, gap: 8 }}>
+                      <Text style={{ color: TINTA.texto, fontSize: 15, fontWeight: '700' }}>Sueño</Text>
+                      <Text style={{ color: TINTA.suave, fontSize: 13 }}>
+                        {(weekSleep.reduce((s: number, d: any) => s + d.value, 0) / weekSleep.length / 60).toFixed(1)} h por noche
+                      </Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6 }}>
                       {weekSleep.map((d: any, i: number) => {
                         const hrs = d.value / 60;
-                        const barH = Math.max(4, (hrs / 10) * 40);
-                        const color = hrs >= 7 ? '#8B5CF6' : hrs >= 5 ? '#F59E0B' : '#EF4444';
+                        const barH = Math.max(4, Math.min(hrs / 10, 1) * 48);
+                        const color = hrs >= 7 ? LILA : hrs >= 5 ? AMBAR : CORAL;
                         return (
-                          <View key={i} style={{ flex: 1, alignItems: 'center' }}>
-                            <View style={{ height: barH, width: '100%', backgroundColor: `${color}40`, borderRadius: 4 }} />
-                            <Text style={{ color: '#52525B', fontSize: 7, fontWeight: '700', marginTop: 2 }}>
-                              {new Date(d.date).toLocaleDateString('es-ES', { weekday: 'narrow' })}
-                            </Text>
+                          <View key={i} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
+                            <View style={{ height: 48, width: '100%', justifyContent: 'flex-end', backgroundColor: ELEVADO, borderRadius: 6, overflow: 'hidden' }}>
+                              <View style={{ height: barH, backgroundColor: color, borderRadius: 6 }} />
+                            </View>
+                            <Text style={{ color: TINTA.suave, fontSize: 12, fontWeight: '700' }}>{diaCorto(d.date)}</Text>
                           </View>
                         );
                       })}
                     </View>
-                    <Text style={{ color: '#52525B', fontSize: 9, textAlign: 'right', marginTop: 2 }}>
-                      Promedio: {(weekSleep.reduce((s: number, d: any) => s + d.value, 0) / weekSleep.length / 60).toFixed(1)}h/noche
-                    </Text>
                   </View>
                 )}
               </View>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, Alert, Platform } from 'react-native';
-import { useColors } from '@/hooks/use-colors';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { TINTA } from '@/components/decor';
 
 interface TransactionCardProps {
   amount: number;
@@ -14,6 +14,19 @@ interface TransactionCardProps {
   onEdit?: () => void;
 }
 
+const MENTA = '#5FD3A8';
+const CORAL = '#FF7A6B';
+const ALTO = '#2A2521';
+
+const CATEGORY_ICONS: Record<string, string> = {
+  'Sueldo': '💼', 'Emprendimientos': '🚀', 'Dropshipping': '📦', 'Servicios Creativos': '🎨',
+  'Freelance': '💻', 'Inversiones': '📈', 'Materiales': '🛠', 'Salidas': '🎉',
+  'Universidad': '🎓', 'Compras Online': '🛒', 'Comida': '🍔', 'Transporte': '🚗',
+  'Suscripciones': '📱', 'Salud': '💊', 'Otros': '📌',
+};
+
+// Un movimiento: icono, categoría y nota a la izquierda; monto, fecha y
+// acciones a la derecha. Los botones miden 34 px pero tocan en 44.
 export function TransactionCard({
   amount,
   category,
@@ -24,120 +37,79 @@ export function TransactionCard({
   onDelete,
   onEdit,
 }: TransactionCardProps) {
-  const colors = useColors();
-
-  const CATEGORY_ICONS: Record<string, string> = {
-    'Sueldo': '💼', 'Emprendimientos': '🚀', 'Dropshipping': '📦', 'Servicios Creativos': '🎨',
-    'Freelance': '💻', 'Inversiones': '📈', 'Materiales': '🛠', 'Salidas': '🎉',
-    'Universidad': '🎓', 'Compras Online': '🛒', 'Comida': '🍔', 'Transporte': '🚗',
-    'Suscripciones': '📱', 'Salud': '💊', 'Otros': '📌',
-  };
-
   const isIncome = type === 'income';
-  const amountColor = isIncome ? colors.success : colors.error;
-  const amountSign = isIncome ? '+' : '-';
-  const formattedAmount = `${amountSign}$${Math.abs(amount).toFixed(2)}`;
+  const amountColor = isIncome ? MENTA : CORAL;
+  const formattedAmount = `${isIncome ? '+' : '−'}$${Math.abs(amount).toFixed(2)}`;
   const categoryIcon = CATEGORY_ICONS[category] || (isIncome ? '💰' : '💸');
 
-  const dateObj = new Date(date);
-  const formattedDate = dateObj.toLocaleDateString('es-ES', {
-    month: 'short',
-    day: 'numeric',
-  });
+  // La fecha llega como AAAA-MM-DD: se arma a mediodía local para que no salte de día
+  const dateObj = /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(`${date}T12:00:00`) : new Date(date);
+  const formattedDate = dateObj.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+
+  const confirmarBorrado = () => {
+    if (!onDelete) return;
+    if (Platform.OS === 'web') {
+      if (window.confirm('¿Estás seguro de eliminar este registro?')) onDelete();
+    } else {
+      Alert.alert('Eliminar registro', '¿Estás seguro de eliminar este registro?', [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Eliminar', style: 'destructive', onPress: onDelete },
+      ]);
+    }
+  };
 
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        { opacity: pressed ? 0.7 : 1 },
-      ]}
-    >
+    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
       <View style={{
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#27272A',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 8,
+        gap: 12,
+        backgroundColor: TINTA.tarjeta,
+        borderRadius: 24,
+        borderWidth: 1,
+        borderColor: TINTA.borde,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
       }}>
-        {/* Left side: Category and Description */}
-        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <View style={{
-            width: 40, height: 40, borderRadius: 12,
-            backgroundColor: isIncome ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-            alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Text style={{ fontSize: 18 }}>{categoryIcon}</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: '#FAFAFA' }}>
-              {category}
-            </Text>
-            {description && (
-              <Text style={{ fontSize: 12, color: '#A1A1AA', marginTop: 2 }}>
-                {description}
-              </Text>
-            )}
-          </View>
+        <View style={{ width: 44, height: 44, borderRadius: 16, backgroundColor: ALTO, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: 20 }}>{categoryIcon}</Text>
         </View>
 
-        {/* Right side: Amount, Date and Actions */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <View style={{ alignItems: 'flex-end', gap: 4 }}>
-            <Text
-              style={{ fontSize: 16, fontWeight: '700', color: amountColor }}
-            >
-              {formattedAmount}
-            </Text>
-            <Text style={{ fontSize: 12, color: '#A1A1AA' }}>
-              {formattedDate}
-            </Text>
-          </View>
-
-          {onEdit && (
-            <Pressable
-              onPress={(e) => {
-                e.stopPropagation();
-                onEdit();
-              }}
-              style={{
-                padding: 8,
-                backgroundColor: 'rgba(59,130,246,0.1)',
-                borderRadius: 99,
-              }}
-            >
-              <IconSymbol name="pencil" size={14} color="#60A5FA" />
-            </Pressable>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: TINTA.texto }} numberOfLines={1}>{category}</Text>
+          {!!description && (
+            <Text style={{ fontSize: 13, color: TINTA.suave, marginTop: 2 }} numberOfLines={2}>{description}</Text>
           )}
+          <Text style={{ fontSize: 13, color: TINTA.suave, marginTop: 2 }}>{formattedDate}</Text>
+        </View>
 
-          {onDelete && (
-            <Pressable
-              onPress={(e) => {
-                e.stopPropagation();
-                if (Platform.OS === 'web') {
-                  if (window.confirm("¿Estás seguro de eliminar este registro?")) {
-                    onDelete();
-                  }
-                } else {
-                  Alert.alert(
-                    "Eliminar registro",
-                    "¿Estás seguro de eliminar este registro?",
-                    [
-                      { text: "Cancelar", style: "cancel" },
-                      { text: "Eliminar", style: "destructive", onPress: onDelete }
-                    ]
-                  );
-                }
-              }}
-              style={{
-                padding: 8,
-                backgroundColor: 'rgba(239,68,68,0.1)',
-                borderRadius: 99,
-              }}
-            >
-              <IconSymbol name="trash.fill" size={14} color={colors.error} />
-            </Pressable>
+        <View style={{ alignItems: 'flex-end', gap: 6 }}>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: amountColor }}>{formattedAmount}</Text>
+          {(onEdit || onDelete) && (
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              {onEdit && (
+                <Pressable
+                  onPress={(e) => { e.stopPropagation(); onEdit(); }}
+                  hitSlop={5}
+                  accessibilityRole="button"
+                  accessibilityLabel="Editar movimiento"
+                  style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: ALTO, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <IconSymbol name="pencil" size={15} color={TINTA.suave} />
+                </Pressable>
+              )}
+              {onDelete && (
+                <Pressable
+                  onPress={(e) => { e.stopPropagation(); confirmarBorrado(); }}
+                  hitSlop={5}
+                  accessibilityRole="button"
+                  accessibilityLabel="Eliminar movimiento"
+                  style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: ALTO, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <IconSymbol name="trash.fill" size={15} color={CORAL} />
+                </Pressable>
+              )}
+            </View>
           )}
         </View>
       </View>

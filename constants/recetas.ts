@@ -213,6 +213,17 @@ export const RECETAS: Receta[] = [
       'Tapa y cocina 5 a 7 minutos, hasta que la clara cuaje. Termina con perejil.',
     ],
   }, // Pexels 6275160
+  {
+    id: 'acai', titulo: 'Bowl de açaí con mango y granola', slot: 'desayuno', minutos: 10, porciones: 1,
+    foto: require('../assets/images/recetas/acai.jpg'), etiquetas: ['Rápida', 'Sin cocinar', 'Dulce'],
+    ingredientes: ['100 g de pulpa de açaí congelada', '1 plátano congelado', '1/4 taza de leche de coco o de almendra', '1/2 mango', '3 cdas de granola', '1 cda de coco rallado', 'Arándanos'],
+    pasos: [
+      'Licúa el açaí, la mitad del plátano y la leche hasta tener una crema espesa. Usa poco líquido.',
+      'Sírvelo enseguida en un bol, antes de que se derrita.',
+      'Cubre con el resto del plátano en rodajas, el mango en cubos y los arándanos.',
+      'Termina con la granola y el coco.',
+    ],
+  }, // Pexels 12273052
 
   // ── Meriendas ──
   {
@@ -269,6 +280,18 @@ export const RECETAS: Receta[] = [
       'Escurre en papel, ponles sal y sírvelas con queso blanco si quieres.',
     ],
   }, // Pexels 27556971
+  {
+    id: 'guacamole', titulo: 'Guacamole con totopos horneados', slot: 'merienda', minutos: 20, porciones: 2,
+    foto: require('../assets/images/recetas/guacamole.jpg'), etiquetas: ['Vegetariana', 'Para compartir'],
+    ingredientes: ['2 aguacates maduros', '1 limón', '1/4 cebolla morada', '1 tomate', 'Culantro picado', '4 tortillas de maíz', '1 cdta de aceite de oliva', 'Sal'],
+    pasos: [
+      'Calienta el horno a 200 °C. Corta las tortillas en triángulos, úntalas con el aceite y sal.',
+      'Hornéalas en una bandeja 8 a 10 minutos, hasta que estén doradas y crujientes.',
+      'Aplasta los aguacates con el jugo del limón y sal.',
+      'Agrega la cebolla, el tomate sin semillas y el culantro, todo picado fino.',
+      'Sirve enseguida con los totopos.',
+    ],
+  }, // Pexels 7227467
 
   // ── Almuerzos ──
   {
@@ -306,6 +329,30 @@ export const RECETAS: Receta[] = [
       'Calienta las tortillas y rellénalas con repollo, pescado, cebolla, salsa y cilantro.',
     ],
   }, // Pexels 9044685
+  {
+    id: 'wrap-pollo', titulo: 'Wrap de pollo con aguacate', slot: 'almuerzo', minutos: 20, porciones: 2,
+    foto: require('../assets/images/recetas/wrap-pollo.jpg'), etiquetas: ['Para llevar', 'Proteína'],
+    ingredientes: ['1 pechuga de pollo', '2 tortillas integrales grandes', '1 aguacate', '1/2 mango', '2 puñados de espinaca', '1/4 cebolla morada', '1 limón', '1/2 cdta de comino'],
+    pasos: [
+      'Sazona la pechuga con comino, sal y jugo de medio limón.',
+      'Ásala en un sartén caliente 6 minutos por lado y córtala en tiras.',
+      'Aplasta el aguacate con el resto del limón y sal, y úntalo en las tortillas.',
+      'Pon encima la espinaca, el pollo, el mango en cubos y la cebolla en láminas finas.',
+      'Enrolla firme y dóralo 1 minuto por lado en el sartén para sellarlo.',
+    ],
+  }, // Pexels 9624298
+  {
+    id: 'ensalada-camaron', titulo: 'Ensalada de camarones y aguacate', slot: 'almuerzo', minutos: 15, porciones: 2,
+    foto: require('../assets/images/recetas/ensalada-camaron.jpg'), etiquetas: ['Proteína', 'Rápida'],
+    ingredientes: ['300 g de camarones pelados', '1 lechuga', '1 aguacate', '2 tomates', '1/2 cebolla blanca', '2 limones', '2 cdas de aceite de oliva', '1 cdta de mostaza', '1 diente de ajo'],
+    pasos: [
+      'Sazona los camarones con el ajo picado, sal y pimienta.',
+      'Saltéalos en 1 cda de aceite a fuego alto, 2 minutos por lado, hasta que estén rosados.',
+      'Mezcla el jugo de los limones con la mostaza, el resto del aceite y sal para el aderezo.',
+      'Arma la ensalada con la lechuga, el tomate, la cebolla en aros y el aguacate en cubos.',
+      'Pon los camarones encima y báñala con el aderezo.',
+    ],
+  }, // Pexels 27603332
 
   // ── Cenas ──
   {
@@ -365,4 +412,16 @@ export const RECETAS: Receta[] = [
       'Junta el pollo con los vegetales y sirve con tortillas calientes y aguacate.',
     ],
   }, // Pexels 32371267
+  {
+    id: 'pargo', titulo: 'Pargo a la plancha con vegetales asados', slot: 'cena', minutos: 30, porciones: 2,
+    foto: require('../assets/images/recetas/pargo.jpg'), etiquetas: ['Proteína', 'Panameña'],
+    ingredientes: ['1 pargo entero limpio (unos 600 g) o 2 filetes', '1 calabacín', '1 pimentón rojo', '150 g de hongos', '1 limón', '2 dientes de ajo', 'Tomillo', '2 cdas de aceite de oliva', 'Sal y pimienta'],
+    pasos: [
+      'Haz 2 o 3 cortes en cada lado del pescado y frótalo con el ajo machacado, limón, sal y tomillo.',
+      'Corta el calabacín en rodajas y el pimentón en tiras. Mézclalos con los hongos, aceite y sal.',
+      'Ásalos en una plancha caliente 4 minutos por lado y resérvalos.',
+      'En la misma plancha, cocina el pargo 6 a 7 minutos por lado, sin moverlo, hasta que la carne se separe fácil.',
+      'Sirve con los vegetales y medio limón asado.',
+    ],
+  }, // Pexels 11653557
 ];

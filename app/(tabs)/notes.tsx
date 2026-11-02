@@ -1,21 +1,19 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, Pressable, RefreshControl, TextInput, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
-import { AddNoteModal } from '@/components/modals/add-note-modal';
+import { AddNoteModal, fondoNota } from '@/components/modals/add-note-modal';
+import { Titulo, Sticker, TINTA } from '@/components/decor';
 import { FadeInView } from '@/components/fade-in-view';
 import { useNotes } from '@/hooks/use-notes';
 import type { Note } from '@/lib/supabase';
 import { fechaLocal } from '@/lib/registros';
 
-const COLORS = {
-  bg: '#09090B', card: '#0F0F12', surface: '#18181B', border: '#27272A',
-  text: '#FAFAFA', textDim: '#E4E4E7', muted: '#A1A1AA', subtle: '#52525B', primary: '#14B8A6',
-};
+// Notas: un solo acento (azul) para crear y filtrar.
+const AZUL = '#8FB8FF';
+const ALTO = '#2A2521';
 const todayISO = fechaLocal();
 
 export default function NotesScreen() {
-  const router = useRouter();
   const { data: notes = [], refetch, isRefetching } = useNotes();
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<Note | null>(null);
@@ -40,109 +38,117 @@ export default function NotesScreen() {
   const webNoOutline = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
 
   return (
-    <ScreenContainer containerClassName="bg-background">
-      <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
-        <View style={{ paddingHorizontal: 20, paddingTop: 8 }}>
-          <Pressable onPress={() => router.push('/')} style={{ marginBottom: 8 }}>
-            <Text style={{ color: COLORS.primary, fontSize: 14, fontWeight: '700' }}>‹ Inicio</Text>
-          </Pressable>
-          <Text style={{ color: COLORS.text, fontSize: 28, fontWeight: '800' }}>Notas</Text>
-          <Text style={{ color: COLORS.muted, fontSize: 13, marginTop: 2 }}>Ideas, recordatorios y apuntes rápidos</Text>
-        </View>
-
-        {/* Búsqueda */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 12 }}>
-          <TextInput
-            value={q}
-            onChangeText={setQ}
-            placeholder="🔍  Buscar en tus notas…"
-            placeholderTextColor={COLORS.subtle}
-            style={[{ backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11, color: COLORS.text, fontSize: 14 }, webNoOutline]}
-          />
-        </View>
-
-        {/* Filtros */}
-        <View style={{ paddingLeft: 20, paddingTop: 10 }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20, gap: 8, alignItems: 'center' }}>
-            <Chip label="Todas" active={!clientFilter && !showArchived} onPress={() => { setClientFilter(null); setShowArchived(false); }} />
-            <Chip label="Archivadas" active={showArchived} onPress={() => { setClientFilter(null); setShowArchived((s) => !s); }} />
-          </ScrollView>
-        </View>
-
+    <ScreenContainer className="p-0" containerClassName="bg-[#110F0D]">
+      <View style={{ flex: 1, backgroundColor: TINTA.fondo }}>
         <ScrollView
-          style={{ flex: 1, marginTop: 14 }}
-          contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 150 }}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={COLORS.primary} />}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: 150 }}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={AZUL} />}
         >
-          {filtered.length === 0 ? (
-            <View style={{ alignItems: 'center', paddingTop: 70, paddingHorizontal: 30 }}>
-              <Text style={{ fontSize: 44, marginBottom: 12 }}>📝</Text>
-              <Text style={{ color: COLORS.text, fontSize: 18, fontWeight: '700', textAlign: 'center' }}>
-                {notes.length ? 'Nada con esa búsqueda' : 'Aún no hay notas'}
-              </Text>
-              <Text style={{ color: COLORS.muted, fontSize: 13, textAlign: 'center', marginTop: 6, marginBottom: 18 }}>
-                {notes.length ? 'Prueba con otras palabras.' : 'Captura una idea con el botón +'}
-              </Text>
-              {!notes.length && (
-                <Pressable onPress={openNew} style={{ backgroundColor: COLORS.primary, borderRadius: 14, paddingHorizontal: 20, paddingVertical: 12 }}>
-                  <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>+ Nueva nota</Text>
-                </Pressable>
-              )}
+          <View style={{ paddingHorizontal: 20, paddingTop: 24, maxWidth: 640, width: '100%', alignSelf: 'center', gap: 16 }}>
+            {/* Cabecera: deja libre la esquina del botón de menú */}
+            <View style={{ paddingRight: 110, gap: 6 }}>
+              <Titulo>Notas</Titulo>
+              <Text style={{ color: TINTA.suave, fontSize: 15 }}>Ideas, recordatorios y apuntes rápidos.</Text>
             </View>
-          ) : (
-            <FadeInView style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-              {filtered.map((n) => (
-                <View key={n.id} style={{ width: '50%', padding: 6 }}>
-                  <Pressable
-                    onPress={() => openEdit(n)}
-                    style={({ pressed }) => ({
-                      backgroundColor: n.color || COLORS.card,
-                      borderRadius: 16,
-                      borderWidth: 1,
-                      borderColor: COLORS.border,
-                      padding: 14,
-                      minHeight: 96,
-                      opacity: pressed ? 0.85 : 1,
-                    })}
-                  >
-                    {n.pinned && <Text style={{ position: 'absolute', top: 10, right: 12, fontSize: 12 }}>📌</Text>}
-                    <Text style={{ color: COLORS.text, fontSize: 15, fontWeight: '700', marginBottom: 6, paddingRight: n.pinned ? 16 : 0 }} numberOfLines={2}>
-                      {n.title}
-                    </Text>
-                    {!!n.content && (
-                      <Text style={{ color: COLORS.muted, fontSize: 12, lineHeight: 17 }} numberOfLines={6}>
-                        {n.content}
-                      </Text>
-                    )}
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                      {!!n.remind_at && (
-                        <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, backgroundColor: n.remind_at <= todayISO ? 'rgba(245,158,11,0.18)' : 'rgba(161,161,170,0.15)' }}>
-                          <Text style={{ color: n.remind_at <= todayISO ? '#F59E0B' : COLORS.muted, fontSize: 10, fontWeight: '700' }}>⏰ {n.remind_at.slice(5)}</Text>
-                        </View>
-                      )}
-                      {!!n.client && (
-                        <View style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, backgroundColor: 'rgba(20,184,166,0.15)' }}>
-                          <Text style={{ color: COLORS.primary, fontSize: 10, fontWeight: '700' }}>{n.client}</Text>
-                        </View>
-                      )}
-                    </View>
+
+            {/* Búsqueda */}
+            <TextInput
+              value={q}
+              onChangeText={setQ}
+              placeholder="Buscar en tus notas…"
+              placeholderTextColor={TINTA.suave}
+              accessibilityLabel="Buscar en tus notas"
+              style={[{ backgroundColor: TINTA.tarjeta, borderWidth: 1, borderColor: TINTA.borde, borderRadius: 18, paddingHorizontal: 16, minHeight: 50, color: TINTA.texto, fontSize: 15 }, webNoOutline]}
+            />
+
+            {/* Filtros */}
+            <View style={{ flexDirection: 'row', backgroundColor: TINTA.tarjeta, borderRadius: 22, padding: 4, borderWidth: 1, borderColor: TINTA.borde }}>
+              <Filtro label="Todas" active={!clientFilter && !showArchived} onPress={() => { setClientFilter(null); setShowArchived(false); }} />
+              <Filtro label="Archivadas" active={showArchived} onPress={() => { setClientFilter(null); setShowArchived((s) => !s); }} />
+            </View>
+
+            {filtered.length === 0 ? (
+              <View style={{ backgroundColor: TINTA.tarjeta, borderRadius: 28, borderWidth: 1, borderColor: TINTA.borde, alignItems: 'center', paddingVertical: 36, paddingHorizontal: 24, marginTop: 8 }}>
+                <Sticker texto={notes.length ? 'nada por aquí' : 'hoja en blanco'} color={AZUL} giro={-5} style={{ position: 'absolute', top: -14, left: 20 }} />
+                <Titulo size={22} style={{ textAlign: 'center' }}>
+                  {notes.length ? 'Nada con esa búsqueda' : 'Aún no hay notas'}
+                </Titulo>
+                <Text style={{ color: TINTA.suave, fontSize: 15, textAlign: 'center', marginTop: 8 }}>
+                  {notes.length ? 'Prueba con otras palabras.' : 'Apunta la primera idea que tengas en la cabeza.'}
+                </Text>
+                {!notes.length && (
+                  <Pressable onPress={openNew} accessibilityRole="button"
+                    style={({ pressed }) => ({ backgroundColor: AZUL, borderRadius: 18, minHeight: 52, paddingHorizontal: 24, justifyContent: 'center', marginTop: 20, opacity: pressed ? 0.85 : 1 })}>
+                    <Text style={{ color: TINTA.fondo, fontWeight: '800', fontSize: 15 }}>Escribir una nota</Text>
                   </Pressable>
-                </View>
-              ))}
-            </FadeInView>
-          )}
+                )}
+              </View>
+            ) : (
+              <FadeInView style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -5 }}>
+                {filtered.map((n) => {
+                  const vence = !!n.remind_at && n.remind_at <= todayISO;
+                  return (
+                    <View key={n.id} style={{ width: '50%', padding: 5 }}>
+                      <Pressable
+                        onPress={() => openEdit(n)}
+                        accessibilityRole="button"
+                        style={({ pressed }) => ({
+                          backgroundColor: fondoNota(n.color),
+                          borderRadius: 24,
+                          borderWidth: 1,
+                          borderColor: TINTA.borde,
+                          padding: 16,
+                          minHeight: 120,
+                          opacity: pressed ? 0.85 : 1,
+                        })}
+                      >
+                        {n.pinned && <Text style={{ position: 'absolute', top: 12, right: 12, fontSize: 14 }} accessibilityLabel="Fijada">📌</Text>}
+                        <Text style={{ color: TINTA.texto, fontSize: 16, fontWeight: '800', lineHeight: 21, marginBottom: 6, paddingRight: n.pinned ? 20 : 0 }} numberOfLines={2}>
+                          {n.title}
+                        </Text>
+                        {!!n.content && (
+                          <Text style={{ color: TINTA.suave, fontSize: 14, lineHeight: 20 }} numberOfLines={6}>
+                            {n.content}
+                          </Text>
+                        )}
+                        {(!!n.remind_at || !!n.client) && (
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+                            {!!n.remind_at && (
+                              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, backgroundColor: vence ? AZUL : ALTO }}>
+                                <Text style={{ color: vence ? TINTA.fondo : TINTA.suave, fontSize: 12, fontWeight: '700' }}>⏰ {n.remind_at.slice(5)}</Text>
+                              </View>
+                            )}
+                            {!!n.client && (
+                              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99, backgroundColor: ALTO }}>
+                                <Text style={{ color: TINTA.suave, fontSize: 12, fontWeight: '700' }}>{n.client}</Text>
+                              </View>
+                            )}
+                          </View>
+                        )}
+                      </Pressable>
+                    </View>
+                  );
+                })}
+              </FadeInView>
+            )}
+          </View>
         </ScrollView>
 
+        {/* Nueva nota: sobre el menú flotante de abajo */}
         <Pressable
           onPress={openNew}
+          accessibilityRole="button"
+          accessibilityLabel="Nueva nota"
           style={({ pressed }) => ({
-            position: 'absolute', right: 20, bottom: 110, width: 60, height: 60, borderRadius: 30,
-            backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center',
-            shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 8,
-            opacity: pressed ? 0.9 : 1,
+            position: 'absolute', right: 20, bottom: 116, minHeight: 52, paddingHorizontal: 20, borderRadius: 20,
+            backgroundColor: AZUL, borderWidth: 2, borderColor: TINTA.fondo, flexDirection: 'row', alignItems: 'center', gap: 6,
+            opacity: pressed ? 0.85 : 1,
           })}
         >
-          <Text style={{ color: '#fff', fontSize: 30, marginTop: -2 }}>+</Text>
+          <Text style={{ color: TINTA.fondo, fontSize: 22, fontWeight: '800', marginTop: -2 }}>+</Text>
+          <Text style={{ color: TINTA.fondo, fontSize: 15, fontWeight: '800' }}>Nota</Text>
         </Pressable>
       </View>
 
@@ -151,13 +157,15 @@ export default function NotesScreen() {
   );
 }
 
-function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function Filtro({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   return (
     <Pressable
       onPress={onPress}
-      style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 99, backgroundColor: active ? COLORS.primary : COLORS.surface, borderWidth: 1, borderColor: active ? COLORS.primary : COLORS.border }}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: active }}
+      style={{ flex: 1, minHeight: 44, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? AZUL : 'transparent' }}
     >
-      <Text style={{ color: active ? '#fff' : COLORS.textDim, fontSize: 12, fontWeight: '600' }}>{label}</Text>
+      <Text style={{ color: active ? TINTA.fondo : TINTA.texto, fontSize: 14, fontWeight: '800' }}>{label}</Text>
     </Pressable>
   );
 }

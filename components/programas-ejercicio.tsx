@@ -32,6 +32,10 @@ import {
 /** Qué día de qué programa se está haciendo, para marcarlo al terminar la rutina. */
 export type MarcaDia = { programId: string; dia: number; yaHecho: boolean };
 
+// El acento de Ejercicio (coral) con texto oscuro encima
+const ACENTO = '#FF7A6B';
+const SOBRE = '#110F0D';
+
 const zonaDe = (id: string) => ZONAS.find((z) => z.id === id) ?? ZONAS[0];
 /** El programa guardado de un reto, si ya lo empezó. Se reconoce por autor y nombre. */
 const programaDelReto = (programas: Programa[], r: Reto) =>
@@ -99,7 +103,7 @@ export function ProgramasEjercicio({
       )}
 
       {/* ---------- retos de 21 días ---------- */}
-      <Titulo size={24} color={c.foreground}>Retos de 21 días</Titulo>
+      <Titulo size={22} color={c.foreground}>Retos de 21 días</Titulo>
       <Text style={{ color: c.muted, fontSize: 13.5, marginTop: -6 }}>
         Elige uno y te lo paso a tu plan. Tú vas contando los días.
       </Text>
@@ -118,18 +122,18 @@ export function ProgramasEjercicio({
               accessibilityRole="button"
               accessibilityLabel={r.nombre}
               style={({ pressed }) => ({
-                width: 236, backgroundColor: c.surface, borderRadius: 22,
+                width: 236, backgroundColor: c.surface, borderRadius: 24,
                 borderWidth: 1, borderColor: c.border, opacity: pressed ? 0.85 : 1,
               })}
             >
               <Image
                 source={z.foto}
                 resizeMode="cover"
-                style={{ width: '100%', height: 118, borderTopLeftRadius: 21, borderTopRightRadius: 21 }}
+                style={{ width: '100%', height: 118, borderTopLeftRadius: 23, borderTopRightRadius: 23 }}
               />
               <Sticker texto="21 días" color={z.color} giro={5} style={{ position: 'absolute', top: -10, right: 12 }} />
               <View style={{ padding: 14, gap: 4 }}>
-                <Text style={{ color: c.foreground, fontSize: 16.5, fontWeight: '800' }}>{r.nombre}</Text>
+                <Titulo size={20} color={c.foreground}>{r.nombre}</Titulo>
                 <Text style={{ color: c.muted, fontSize: 13, lineHeight: 18 }} numberOfLines={3}>{r.para}</Text>
                 {guardado && (
                   <Text style={{ color: z.color, fontSize: 12.5, fontWeight: '700', marginTop: 4 }}>
@@ -143,17 +147,17 @@ export function ProgramasEjercicio({
       </ScrollView>
 
       {/* ---------- los programas guardados ---------- */}
-      <Text style={{ color: c.foreground, fontSize: 18, fontWeight: '800', marginTop: 14 }}>Tus programas</Text>
+      <Titulo size={22} color={c.foreground} style={{ marginTop: 14 }}>Tus programas</Titulo>
 
       <Pressable
         onPress={() => setEditando('nuevo')}
         accessibilityRole="button"
         style={({ pressed }) => ({
-          borderRadius: 18, borderWidth: 1, borderStyle: 'dashed', borderColor: c.border,
-          minHeight: 48, justifyContent: 'center', alignItems: 'center', opacity: pressed ? 0.7 : 1,
+          borderRadius: 24, borderWidth: 1, borderStyle: 'dashed', borderColor: c.border,
+          minHeight: 52, justifyContent: 'center', alignItems: 'center', opacity: pressed ? 0.7 : 1,
         })}
       >
-        <Text style={{ color: c.primary, fontWeight: '700' }}>+ Nuevo programa</Text>
+        <Text style={{ color: ACENTO, fontWeight: '700' }}>+ Nuevo programa</Text>
       </Pressable>
 
       {isLoading && <Text style={{ color: c.muted, fontSize: 13 }}>Cargando…</Text>}
@@ -175,16 +179,16 @@ export function ProgramasEjercicio({
             onPress={() => alAbrir(p.id)}
             accessibilityRole="button"
             style={({ pressed }) => ({
-              backgroundColor: c.surface, borderRadius: 22, padding: 18,
+              backgroundColor: c.surface, borderRadius: 24, padding: 18,
               borderWidth: 1, borderColor: c.border, opacity: pressed ? 0.85 : 1,
             })}
           >
-            <Text style={{ color: c.foreground, fontSize: 18, fontWeight: '700' }}>{p.name}</Text>
+            <Titulo size={20} color={c.foreground}>{p.name}</Titulo>
             {!!p.author && (
-              <Text style={{ color: c.muted, fontSize: 13 }}>de {p.author}</Text>
+              <Text style={{ color: c.muted, fontSize: 13, marginTop: 2 }}>de {p.author}</Text>
             )}
             <View style={{ height: 6, backgroundColor: c.border, borderRadius: 6, marginTop: 12, overflow: 'hidden' }}>
-              <View style={{ width: `${Math.round((hechosDeEste / total) * 100)}%`, height: '100%', backgroundColor: c.primary }} />
+              <View style={{ width: `${Math.round((hechosDeEste / total) * 100)}%`, height: '100%', backgroundColor: ACENTO }} />
             </View>
             <Text style={{ color: c.muted, fontSize: 12.5, marginTop: 6 }}>
               {hechosDeEste} de {p.days.length} días
@@ -229,7 +233,7 @@ function VistaReto({
     <View style={{ gap: 12 }}>
       <Atras c={c} texto="← Programas" onPress={alSalir} />
       <View>
-        <Image source={z.foto} resizeMode="cover" style={{ width: '100%', height: 190, borderRadius: 22 }} />
+        <Image source={z.foto} resizeMode="cover" style={{ width: '100%', height: 190, borderRadius: 26 }} />
         <Sticker texto="21 días" color={z.color} giro={-5} style={{ position: 'absolute', bottom: -12, right: 16 }} />
       </View>
       <Titulo size={28} color={c.foreground} style={{ marginTop: 8 }}>{reto.nombre}</Titulo>
@@ -240,8 +244,8 @@ function VistaReto({
       </Text>
 
       {[0, 1, 2].map((s) => (
-        <View key={s} style={{ backgroundColor: c.surface, borderRadius: 18, padding: 14, borderWidth: 1, borderColor: c.border, gap: 4 }}>
-          <Text style={{ color: c.foreground, fontWeight: '800', fontSize: 15, marginBottom: 2 }}>Semana {s + 1}</Text>
+        <View key={s} style={{ backgroundColor: c.surface, borderRadius: 24, padding: 16, borderWidth: 1, borderColor: c.border, gap: 4 }}>
+          <Titulo size={20} color={c.foreground} style={{ marginBottom: 4 }}>Semana {s + 1}</Titulo>
           {reto.dias.slice(s * 7, s * 7 + 7).map((d) => (
             <Text key={d.dia} style={{ color: d.descanso ? c.muted : c.foreground, fontSize: 13.5 }}>
               Día {d.dia} · {d.titulo}
@@ -307,11 +311,11 @@ function Dias({
       <Titulo size={28} color={c.foreground}>{programa.name}</Titulo>
 
       {total > 0 && (
-        <View style={{ backgroundColor: c.surface, borderRadius: 22, padding: 16, borderWidth: 1, borderColor: c.border, gap: 12 }}>
+        <View style={{ backgroundColor: c.surface, borderRadius: 26, padding: 18, borderWidth: 1, borderColor: c.border, gap: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
-            <Text style={{ color: c.foreground, fontSize: 22, fontWeight: '800' }}>
+            <Titulo size={22} color={c.foreground}>
               {siguiente ? `Día ${siguiente.dia} de ${total}` : '¡Terminado!'}
-            </Text>
+            </Titulo>
             <Text style={{ color: c.muted, fontSize: 13 }}>{hechosN} hechos</Text>
           </View>
           {/* Una casilla por día, siete por fila: se ve de un vistazo lo hecho y lo que falta. */}
@@ -324,12 +328,12 @@ function Dias({
                   key={d.dia}
                   style={{
                     width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: hecho ? c.primary : 'transparent',
-                    borderWidth: hoy ? 2 : 1, borderColor: hecho || hoy ? c.primary : c.border,
+                    backgroundColor: hecho ? ACENTO : 'transparent',
+                    borderWidth: hoy ? 2 : 1, borderColor: hecho || hoy ? ACENTO : c.border,
                     borderStyle: d.descanso && !hecho ? 'dashed' : 'solid',
                   }}
                 >
-                  <Text style={{ color: hecho ? c.background : hoy ? c.foreground : c.muted, fontSize: 12.5, fontWeight: '700' }}>
+                  <Text style={{ color: hecho ? SOBRE : hoy ? c.foreground : c.muted, fontSize: 12.5, fontWeight: '700' }}>
                     {hecho ? '✓' : d.dia}
                   </Text>
                 </View>
@@ -337,13 +341,13 @@ function Dias({
             })}
           </View>
           {programa.days.some((d) => d.descanso) && (
-            <Text style={{ color: c.muted, fontSize: 12 }}>Las casillas punteadas son descanso activo.</Text>
+            <Text style={{ color: c.muted, fontSize: 12.5 }}>Las casillas punteadas son descanso activo.</Text>
           )}
         </View>
       )}
       {!!programa.source_url && (
-        <Pressable onPress={() => abrirVideo(programa.source_url!)}>
-          <Text style={{ color: c.primary, fontSize: 13 }}>Ver el programa completo</Text>
+        <Pressable onPress={() => abrirVideo(programa.source_url!)} accessibilityRole="link" style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
+          <Text style={{ color: ACENTO, fontSize: 14, fontWeight: '700' }}>Ver el programa completo</Text>
         </Pressable>
       )}
 
@@ -359,8 +363,8 @@ function Dias({
           <View
             key={d.dia}
             style={{
-              backgroundColor: c.surface, borderRadius: 20, padding: 16,
-              borderWidth: hoy ? 2 : 1, borderColor: hecho || hoy ? c.primary : c.border,
+              backgroundColor: c.surface, borderRadius: 24, padding: 16,
+              borderWidth: 1, borderColor: hecho || hoy ? ACENTO : c.border,
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -371,12 +375,12 @@ function Dias({
                 hitSlop={10}
                 style={{
                   width: 26, height: 26, borderRadius: 9, borderWidth: 1.6,
-                  borderColor: hecho ? c.primary : c.border,
-                  backgroundColor: hecho ? c.primary : 'transparent',
+                  borderColor: hecho ? ACENTO : c.border,
+                  backgroundColor: hecho ? ACENTO : 'transparent',
                   alignItems: 'center', justifyContent: 'center',
                 }}
               >
-                {hecho && <Text style={{ color: c.background, fontWeight: '800', fontSize: 14 }}>✓</Text>}
+                {hecho && <Text style={{ color: SOBRE, fontWeight: '800', fontSize: 14 }}>✓</Text>}
               </Pressable>
 
               <View style={{ flex: 1 }}>
@@ -409,12 +413,12 @@ function Dias({
                 onPress={() => alHacerRutina(r.rutina.id, { programId: programa.id, dia: d.dia, yaHecho: hecho })}
                 accessibilityRole="button"
                 style={({ pressed }) => ({
-                  marginTop: 12, borderRadius: 14, minHeight: 46, justifyContent: 'center',
-                  backgroundColor: hoy ? c.primary : 'transparent', borderWidth: hoy ? 0 : 1.5, borderColor: c.border,
+                  marginTop: 12, borderRadius: 23, minHeight: 46, justifyContent: 'center',
+                  backgroundColor: hoy ? ACENTO : 'transparent', borderWidth: hoy ? 0 : 1.5, borderColor: c.border,
                   alignItems: 'center', opacity: pressed ? 0.85 : 1,
                 })}
               >
-                <Text style={{ color: hoy ? c.background : c.foreground, fontWeight: '800' }}>
+                <Text style={{ color: hoy ? SOBRE : c.foreground, fontWeight: '800' }}>
                   {hecho ? 'Repetir la rutina' : 'Hacer la rutina'}
                 </Text>
               </Pressable>
@@ -423,11 +427,11 @@ function Dias({
                 onPress={() => abrirVideo(d.video!)}
                 accessibilityRole="button"
                 style={({ pressed }) => ({
-                  marginTop: 12, borderRadius: 14, minHeight: 46, justifyContent: 'center',
-                  backgroundColor: c.primary, alignItems: 'center', opacity: pressed ? 0.85 : 1,
+                  marginTop: 12, borderRadius: 23, minHeight: 46, justifyContent: 'center',
+                  backgroundColor: ACENTO, alignItems: 'center', opacity: pressed ? 0.85 : 1,
                 })}
               >
-                <Text style={{ color: c.background, fontWeight: '800' }}>Ver el video</Text>
+                <Text style={{ color: SOBRE, fontWeight: '800' }}>Ver el video</Text>
               </Pressable>
             ) : (
               !d.descanso && (
@@ -472,9 +476,9 @@ function Editor({ programa, alSalir }: { programa: Programa | null; alSalir: () 
     <View style={{ gap: 12 }}>
       <Atras c={c} texto="← Cancelar" onPress={alSalir} />
 
-      <Text style={{ color: c.foreground, fontSize: 24, fontWeight: '800' }}>
+      <Titulo size={28} color={c.foreground}>
         {programa ? 'Editar programa' : 'Nuevo programa'}
-      </Text>
+      </Titulo>
 
       <Campo c={c} etiqueta="Nombre" valor={nombre} alCambiar={setNombre} ejemplo="2 Week Shred" />
       <Campo c={c} etiqueta="De quién es" valor={autor} alCambiar={setAutor} ejemplo="Chloe Ting" />
@@ -486,37 +490,39 @@ function Editor({ programa, alSalir }: { programa: Programa | null; alSalir: () 
         ejemplo="https://…"
       />
 
-      <Text style={{ color: c.foreground, fontSize: 17, fontWeight: '700', marginTop: 8 }}>
+      <Titulo size={22} color={c.foreground} style={{ marginTop: 8 }}>
         Los días
-      </Text>
+      </Titulo>
 
       {dias.map((d, i) => (
         <View
           key={i}
-          style={{ backgroundColor: c.surface, borderRadius: 18, padding: 14, borderWidth: 1, borderColor: c.border, gap: 8 }}
+          style={{ backgroundColor: c.surface, borderRadius: 24, padding: 16, borderWidth: 1, borderColor: c.border, gap: 8 }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text style={{ color: c.muted, fontSize: 12.5, fontWeight: '700' }}>
               Día {d.dia}
             </Text>
-            <Pressable onPress={() => quitar(i)} hitSlop={10}>
-              <Text style={{ color: c.muted, fontSize: 13 }}>Quitar</Text>
+            <Pressable onPress={() => quitar(i)} accessibilityRole="button" style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' }}>
+              <Text style={{ color: c.muted, fontSize: 14, fontWeight: '600' }}>Quitar</Text>
             </Pressable>
           </View>
           <Campo c={c} valor={d.titulo} alCambiar={(v) => cambiar(i, 'titulo', v)} ejemplo="Abs + cardio" />
           <Campo c={c} valor={d.video ?? ''} alCambiar={(v) => cambiar(i, 'video', v)} ejemplo="Enlace del video" />
           <Pressable
             onPress={() => cambiar(i, 'descanso', !d.descanso)}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 }}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: !!d.descanso }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}
           >
             <View
               style={{
-                width: 20, height: 20, borderRadius: 7, borderWidth: 1.6,
-                borderColor: d.descanso ? c.primary : c.border,
-                backgroundColor: d.descanso ? c.primary : 'transparent',
+                width: 24, height: 24, borderRadius: 8, borderWidth: 1.6,
+                borderColor: d.descanso ? ACENTO : c.border,
+                backgroundColor: d.descanso ? ACENTO : 'transparent',
               }}
             />
-            <Text style={{ color: c.muted, fontSize: 13 }}>Día de descanso</Text>
+            <Text style={{ color: c.foreground, fontSize: 14 }}>Día de descanso</Text>
           </Pressable>
         </View>
       ))}
@@ -524,11 +530,11 @@ function Editor({ programa, alSalir }: { programa: Programa | null; alSalir: () 
       <Pressable
         onPress={añadir}
         style={({ pressed }) => ({
-          borderRadius: 16, borderWidth: 1, borderStyle: 'dashed', borderColor: c.border,
-          paddingVertical: 12, alignItems: 'center', opacity: pressed ? 0.7 : 1,
+          borderRadius: 24, borderWidth: 1, borderStyle: 'dashed', borderColor: c.border,
+          minHeight: 52, justifyContent: 'center', alignItems: 'center', opacity: pressed ? 0.7 : 1,
         })}
       >
-        <Text style={{ color: c.primary, fontWeight: '700' }}>+ Añadir día</Text>
+        <Text style={{ color: ACENTO, fontWeight: '700' }}>+ Añadir día</Text>
       </Pressable>
 
       <Pressable
@@ -543,11 +549,11 @@ function Editor({ programa, alSalir }: { programa: Programa | null; alSalir: () 
           )
         }
         style={({ pressed }) => ({
-          borderRadius: 16, paddingVertical: 14, alignItems: 'center',
-          backgroundColor: c.primary, opacity: !puedeGuardar ? 0.5 : pressed ? 0.85 : 1,
+          borderRadius: 26, minHeight: 52, justifyContent: 'center', alignItems: 'center',
+          backgroundColor: ACENTO, opacity: !puedeGuardar ? 0.5 : pressed ? 0.85 : 1,
         })}
       >
-        <Text style={{ color: c.background, fontWeight: '800' }}>
+        <Text style={{ color: SOBRE, fontWeight: '800' }}>
           {guardar.isPending ? 'Guardando…' : 'Guardar'}
         </Text>
       </Pressable>
@@ -564,9 +570,9 @@ function Editor({ programa, alSalir }: { programa: Programa | null; alSalir: () 
               },
             ])
           }
-          style={{ paddingVertical: 12, alignItems: 'center' }}
+          style={{ minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
         >
-          <Text style={{ color: c.muted, fontSize: 13 }}>Borrar este programa</Text>
+          <Text style={{ color: c.muted, fontSize: 14 }}>Borrar este programa</Text>
         </Pressable>
       )}
     </View>
@@ -591,7 +597,7 @@ function Campo({
   return (
     <View style={{ gap: 4 }}>
       {!!etiqueta && (
-        <Text style={{ color: c.muted, fontSize: 12.5 }}>{etiqueta}</Text>
+        <Text style={{ color: c.muted, fontSize: 13, fontWeight: '600' }}>{etiqueta}</Text>
       )}
       <TextInput
         value={valor}
@@ -600,8 +606,8 @@ function Campo({
         placeholderTextColor={c.muted}
         autoCapitalize="none"
         style={{
-          backgroundColor: c.surface, borderRadius: 14, borderWidth: 1, borderColor: c.border,
-          paddingHorizontal: 12, paddingVertical: 10, color: c.foreground, fontSize: 15,
+          backgroundColor: c.background, borderRadius: 16, borderWidth: 1, borderColor: c.border,
+          paddingHorizontal: 14, minHeight: 48, color: c.foreground, fontSize: 15,
         }}
       />
     </View>
@@ -611,7 +617,7 @@ function Campo({
 function Atras({ c, texto, onPress }: { c: ReturnType<typeof useColors>; texto: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
-      <Text style={{ color: c.primary, fontWeight: '700' }}>{texto}</Text>
+      <Text style={{ color: ACENTO, fontWeight: '700' }}>{texto}</Text>
     </Pressable>
   );
 }
@@ -626,17 +632,17 @@ function BotonLleno({ c, texto, onPress, deshabilitado }: {
       accessibilityRole="button"
       style={({ pressed }) => ({
         minHeight: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 22,
-        backgroundColor: c.primary, opacity: deshabilitado ? 0.5 : pressed ? 0.85 : 1,
+        backgroundColor: ACENTO, opacity: deshabilitado ? 0.5 : pressed ? 0.85 : 1,
       })}
     >
-      <Text style={{ color: c.background, fontWeight: '800', fontSize: 16 }}>{texto}</Text>
+      <Text style={{ color: SOBRE, fontWeight: '800', fontSize: 16 }}>{texto}</Text>
     </Pressable>
   );
 }
 
 function Aviso({ c, children }: { c: ReturnType<typeof useColors>; children: React.ReactNode }) {
   return (
-    <View style={{ borderRadius: 18, borderWidth: 1, borderStyle: 'dashed', borderColor: c.border, padding: 16 }}>
+    <View style={{ borderRadius: 24, borderWidth: 1, borderStyle: 'dashed', borderColor: c.border, padding: 18 }}>
       <Text style={{ color: c.muted, fontSize: 13.5, lineHeight: 20 }}>{children}</Text>
     </View>
   );

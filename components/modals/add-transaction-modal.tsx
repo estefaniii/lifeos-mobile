@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { supabase } from '@/lib/supabase';
+import { fechaLocal } from '@/lib/registros';
+import { Titulo, TINTA } from '@/components/decor';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface AddTransactionModalProps {
@@ -21,18 +23,18 @@ interface AddTransactionModalProps {
 }
 
 const COLORS = {
-  bg: '#09090B',
-  card: '#0F0F12',
-  surface: '#18181B',
-  border: '#27272A',
-  text: '#FAFAFA',
-  textDim: '#E4E4E7',
-  muted: '#A1A1AA',
-  subtle: '#52525B',
-  primary: '#14B8A6',
-  income: '#22C55E',
-  expense: '#EF4444',
+  bg: TINTA.fondo,
+  card: TINTA.tarjeta,
+  alto: '#2A2521',
+  border: TINTA.borde,
+  text: TINTA.texto,
+  muted: TINTA.suave,
+  primary: '#5FD3A8',
+  income: '#5FD3A8',
+  expense: '#FF7A6B',
 };
+
+const webSinBorde = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
 
 const INCOME_CATEGORIES = [
   { name: 'Sueldo', icon: '💼' },
@@ -109,7 +111,7 @@ export function AddTransactionModal({
           note: note || null,
           category,
           type,
-          date: new Date().toISOString().split('T')[0],
+          date: fechaLocal(),
         },
       ]);
       if (insertError) throw insertError;
@@ -133,134 +135,55 @@ export function AddTransactionModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-          <View
-            style={{
-              maxHeight: '92%',
-              backgroundColor: COLORS.surface,
-              borderTopLeftRadius: 28,
-              borderTopRightRadius: 28,
-              paddingHorizontal: 22,
-              paddingTop: 14,
-              paddingBottom: 24,
-              borderTopWidth: 1,
-              borderColor: COLORS.border,
-            }}
-          >
-            {/* Drag handle */}
-            <View
-              style={{
-                alignSelf: 'center',
-                width: 40,
-                height: 4,
-                borderRadius: 2,
-                backgroundColor: COLORS.border,
-                marginBottom: 12,
-              }}
-            />
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(8,6,5,0.72)', justifyContent: 'flex-end' }}>
+          <View style={styles.hoja}>
+            <View style={styles.asa} />
 
-            {/* Header */}
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 16,
-              }}
-            >
-              <Text style={{ fontSize: 20, fontWeight: '800', color: COLORS.text }}>
-                Nueva transacción
-              </Text>
-              <Pressable onPress={onClose} hitSlop={12}>
-                <Text style={{ fontSize: 22, color: COLORS.muted }}>✕</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+              <Titulo size={24} style={{ flex: 1 }}>{type === 'income' ? 'Nuevo ingreso' : 'Nuevo gasto'}</Titulo>
+              <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar" style={styles.cerrar}>
+                <Text style={{ fontSize: 18, color: COLORS.muted }}>✕</Text>
               </Pressable>
             </View>
 
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingBottom: 12 }}
-            >
-              {/* Type segmented control */}
-              <View
-                style={{
-                  flexDirection: 'row',
-                  backgroundColor: COLORS.bg,
-                  borderRadius: 12,
-                  padding: 4,
-                  marginBottom: 16,
-                  borderWidth: 1,
-                  borderColor: COLORS.border,
-                }}
-              >
-                {(['income', 'expense'] as const).map((t) => {
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 8 }}>
+              {/* Tipo */}
+              <View style={{ flexDirection: 'row', backgroundColor: COLORS.bg, borderRadius: 18, padding: 4, marginBottom: 16, borderWidth: 1, borderColor: COLORS.border }}>
+                {(['expense', 'income'] as const).map((t) => {
                   const active = type === t;
                   const tint = t === 'income' ? COLORS.income : COLORS.expense;
                   return (
                     <Pressable
                       key={t}
                       onPress={() => setType(t)}
-                      style={{
-                        flex: 1,
-                        paddingVertical: 10,
-                        alignItems: 'center',
-                        borderRadius: 10,
-                        backgroundColor: active ? tint : 'transparent',
-                      }}
+                      accessibilityRole="tab"
+                      accessibilityState={{ selected: active }}
+                      style={{ flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: active ? tint : 'transparent' }}
                     >
-                      <Text
-                        style={{
-                          color: active ? '#fff' : COLORS.muted,
-                          fontWeight: '700',
-                          fontSize: 13,
-                        }}
-                      >
-                        {t === 'income' ? '↑ Ingreso' : '↓ Gasto'}
+                      <Text style={{ color: active ? COLORS.bg : COLORS.text, fontWeight: '800', fontSize: 14 }}>
+                        {t === 'income' ? 'Ingreso' : 'Gasto'}
                       </Text>
                     </Pressable>
                   );
                 })}
               </View>
 
-              {/* Amount */}
+              {/* Monto */}
               <Text style={styles.label}>Monto</Text>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: COLORS.bg,
-                  borderWidth: 1,
-                  borderColor: COLORS.border,
-                  borderRadius: 14,
-                  paddingHorizontal: 16,
-                  marginBottom: 16,
-                }}
-              >
-                <Text style={{ color: COLORS.muted, fontSize: 22, marginRight: 6 }}>$</Text>
+              <View style={[styles.campo, { flexDirection: 'row', alignItems: 'center', marginBottom: 16 }]}>
+                <Text style={{ color: COLORS.muted, fontSize: 24, fontWeight: '700', marginRight: 6 }}>$</Text>
                 <TextInput
                   value={amount}
                   onChangeText={(v) => setAmount(v.replace(/[^\d.,]/g, ''))}
                   placeholder="0.00"
-                  placeholderTextColor={COLORS.subtle}
+                  placeholderTextColor={COLORS.muted}
                   keyboardType="decimal-pad"
-                  style={[
-                    {
-                      flex: 1,
-                      color: COLORS.text,
-                      fontSize: 22,
-                      fontWeight: '700',
-                      paddingVertical: 14,
-                    },
-                    Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null,
-                  ]}
+                  style={[{ flex: 1, color: COLORS.text, fontSize: 24, fontWeight: '800', paddingVertical: 12 }, webSinBorde]}
                 />
               </View>
 
-              {/* Category */}
+              {/* Categoría */}
               <Text style={styles.label}>Categoría</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                 {categories.map((cat) => {
@@ -269,111 +192,61 @@ export function AddTransactionModal({
                     <Pressable
                       key={cat.name}
                       onPress={() => setCategory(cat.name)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
                       style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 6,
-                        paddingHorizontal: 12,
-                        paddingVertical: 9,
-                        borderRadius: 99,
-                        backgroundColor: active ? COLORS.primary : COLORS.bg,
-                        borderWidth: 1,
-                        borderColor: active ? COLORS.primary : COLORS.border,
+                        flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 14, borderRadius: 99,
+                        backgroundColor: active ? COLORS.primary : COLORS.alto, borderWidth: 1, borderColor: active ? COLORS.primary : COLORS.border,
                       }}
                     >
-                      <Text style={{ fontSize: 13 }}>{cat.icon}</Text>
-                      <Text
-                        style={{
-                          color: active ? '#fff' : COLORS.textDim,
-                          fontSize: 12,
-                          fontWeight: '600',
-                        }}
-                      >
-                        {cat.name}
-                      </Text>
+                      <Text style={{ fontSize: 15 }}>{cat.icon}</Text>
+                      <Text style={{ color: active ? COLORS.bg : COLORS.text, fontSize: 14, fontWeight: '700' }}>{cat.name}</Text>
                     </Pressable>
                   );
                 })}
               </View>
 
-              {/* Description */}
+              {/* Nota */}
               <Text style={styles.label}>Nota (opcional)</Text>
               <TextInput
                 value={description}
                 onChangeText={setDescription}
-                placeholder="Ej: Almuerzo con cliente"
-                placeholderTextColor={COLORS.subtle}
+                placeholder="Ej: almuerzo con Ana"
+                placeholderTextColor={COLORS.muted}
                 multiline
-                style={[
-                  {
-                    backgroundColor: COLORS.bg,
-                    borderWidth: 1,
-                    borderColor: COLORS.border,
-                    borderRadius: 14,
-                    paddingHorizontal: 14,
-                    paddingVertical: 12,
-                    color: COLORS.text,
-                    fontSize: 14,
-                    minHeight: 64,
-                    textAlignVertical: 'top',
-                    marginBottom: 16,
-                  },
-                  Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null,
-                ]}
+                style={[styles.campo, { paddingVertical: 14, color: COLORS.text, fontSize: 15, minHeight: 72, textAlignVertical: 'top', marginBottom: 16 }, webSinBorde]}
               />
 
-              {/* Error / Success */}
               {error && (
-                <View style={[styles.alert, { backgroundColor: 'rgba(239,68,68,0.10)', borderColor: 'rgba(239,68,68,0.35)' }]}>
-                  <Text style={{ color: '#FCA5A5', fontSize: 13, textAlign: 'center' }}>{error}</Text>
+                <View style={[styles.alert, { backgroundColor: 'rgba(255,122,107,0.10)', borderColor: 'rgba(255,122,107,0.40)' }]}>
+                  <Text style={{ color: COLORS.expense, fontSize: 14, textAlign: 'center' }}>{error}</Text>
                 </View>
               )}
               {success && (
-                <View style={[styles.alert, { backgroundColor: 'rgba(34,197,94,0.10)', borderColor: 'rgba(34,197,94,0.35)' }]}>
-                  <Text style={{ color: '#86EFAC', fontSize: 13, textAlign: 'center' }}>
-                    ¡Transacción guardada!
-                  </Text>
+                <View style={[styles.alert, { backgroundColor: 'rgba(95,211,168,0.10)', borderColor: 'rgba(95,211,168,0.40)' }]}>
+                  <Text style={{ color: COLORS.income, fontSize: 14, textAlign: 'center' }}>¡Guardado!</Text>
                 </View>
               )}
 
-              {/* Actions */}
               <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
                 <Pressable
                   onPress={onClose}
                   disabled={saving}
-                  style={{
-                    flex: 1,
-                    backgroundColor: COLORS.bg,
-                    borderWidth: 1,
-                    borderColor: COLORS.border,
-                    borderRadius: 14,
-                    paddingVertical: 14,
-                    alignItems: 'center',
-                    opacity: saving ? 0.5 : 1,
-                  }}
+                  accessibilityRole="button"
+                  style={[styles.boton, { flex: 1, borderWidth: 1, borderColor: COLORS.border, opacity: saving ? 0.5 : 1 }]}
                 >
-                  <Text style={{ color: COLORS.textDim, fontWeight: '700', fontSize: 14 }}>
-                    Cancelar
-                  </Text>
+                  <Text style={{ color: COLORS.text, fontWeight: '800', fontSize: 15 }}>Cancelar</Text>
                 </Pressable>
                 <Pressable
                   onPress={submit}
                   disabled={saving}
-                  style={({ pressed }) => ({
-                    flex: 1.4,
-                    backgroundColor: COLORS.primary,
-                    borderRadius: 14,
-                    paddingVertical: 14,
-                    alignItems: 'center',
-                    opacity: saving ? 0.6 : pressed ? 0.9 : 1,
-                  })}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [styles.boton, { flex: 2, backgroundColor: COLORS.primary, opacity: saving ? 0.6 : pressed ? 0.85 : 1 }]}
                 >
                   {saving ? (
-                    <ActivityIndicator color="#fff" />
+                    <ActivityIndicator color={COLORS.bg} />
                   ) : (
-                    <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>
-                      Guardar
-                    </Text>
+                    <Text style={{ color: COLORS.bg, fontWeight: '800', fontSize: 15 }}>Guardar</Text>
                   )}
                 </Pressable>
               </View>
@@ -386,19 +259,16 @@ export function AddTransactionModal({
 }
 
 const styles = {
-  label: {
-    color: COLORS.muted,
-    fontSize: 12,
-    fontWeight: '600' as const,
-    marginBottom: 6,
-    marginLeft: 2,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 1,
+  hoja: {
+    maxHeight: '92%' as const, width: '100%' as const, maxWidth: 640, alignSelf: 'center' as const,
+    backgroundColor: COLORS.card, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    borderWidth: 1, borderBottomWidth: 0, borderColor: COLORS.border,
+    paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28,
   },
-  alert: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-  },
+  asa: { alignSelf: 'center' as const, width: 40, height: 4, borderRadius: 2, backgroundColor: COLORS.border, marginBottom: 14 },
+  cerrar: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.alto, alignItems: 'center' as const, justifyContent: 'center' as const },
+  label: { color: COLORS.muted, fontSize: 14, marginBottom: 8, marginLeft: 2 },
+  campo: { backgroundColor: COLORS.alto, borderWidth: 1, borderColor: COLORS.border, borderRadius: 16, paddingHorizontal: 16 },
+  boton: { minHeight: 52, borderRadius: 18, alignItems: 'center' as const, justifyContent: 'center' as const },
+  alert: { borderWidth: 1, borderRadius: 16, padding: 12, marginBottom: 12 },
 };

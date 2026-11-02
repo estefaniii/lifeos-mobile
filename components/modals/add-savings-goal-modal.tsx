@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, TextInput, Pressable, ScrollView, Alert } from 'react-native';
-import { useColors } from '@/hooks/use-colors';
+import { Modal, View, Text, TextInput, Pressable, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { Titulo, TINTA } from '@/components/decor';
 import { useCreateSavingsGoal } from '@/hooks/use-savings-goals';
 
+// La meta guarda la clave; Finanzas la traduce a estos mismos colores
 const GOAL_COLORS = [
-  { label: 'Teal', value: 'primary' },
-  { label: 'Verde', value: 'success' },
-  { label: 'Amarillo', value: 'warning' },
-  { label: 'Morado', value: 'accent' },
+  { label: 'Menta', value: 'primary', hex: '#5FD3A8' },
+  { label: 'Verde', value: 'success', hex: '#A8D672' },
+  { label: 'Ámbar', value: 'warning', hex: '#FFB547' },
+  { label: 'Lila', value: 'accent', hex: '#C9A2FF' },
 ];
+
+const MENTA = '#5FD3A8';
+const ALTO = '#2A2521';
+const webSinBorde = Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null;
+const campo = { backgroundColor: ALTO, borderWidth: 1, borderColor: TINTA.borde, borderRadius: 16, paddingHorizontal: 16, minHeight: 52 };
+const etiqueta = { color: TINTA.suave, fontSize: 14, marginBottom: 8, marginLeft: 2 };
 
 interface AddSavingsGoalModalProps {
   visible: boolean;
@@ -17,7 +24,6 @@ interface AddSavingsGoalModalProps {
 }
 
 export function AddSavingsGoalModal({ visible, onClose, userId }: AddSavingsGoalModalProps) {
-  const colors = useColors();
   const createGoal = useCreateSavingsGoal();
 
   const [name, setName] = useState('');
@@ -58,95 +64,94 @@ export function AddSavingsGoalModal({ visible, onClose, userId }: AddSavingsGoal
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View className="flex-1 bg-black/50">
-        <View className="flex-1 mt-auto bg-background rounded-t-3xl p-6">
-          <View className="flex-row justify-between items-center mb-6">
-            <Text className="text-2xl font-bold text-foreground" style={{ color: '#FAFAFA' }}>Nueva Meta de Ahorro</Text>
-            <Pressable onPress={onClose}>
-              <Text className="text-2xl text-muted" style={{ color: '#A1A1AA' }}>✕</Text>
-            </Pressable>
-          </View>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(8,6,5,0.72)', justifyContent: 'flex-end' }}>
+          <View style={{ maxHeight: '92%', width: '100%', maxWidth: 640, alignSelf: 'center', backgroundColor: TINTA.tarjeta, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderWidth: 1, borderBottomWidth: 0, borderColor: TINTA.borde, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28 }}>
+            <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: TINTA.borde, marginBottom: 14 }} />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <Titulo size={24} style={{ flex: 1 }}>Nueva meta de ahorro</Titulo>
+              <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cerrar"
+                style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: ALTO, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 18, color: TINTA.suave }}>✕</Text>
+              </Pressable>
+            </View>
 
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <View className="mb-4">
-              <Text className="text-sm font-semibold text-foreground mb-2" style={{ color: '#FAFAFA' }}>Nombre de la meta</Text>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <Text style={etiqueta}>Nombre de la meta</Text>
               <TextInput
-                className="bg-surface rounded-lg px-4 py-3 text-foreground"
-                style={{ color: '#FAFAFA' }}
-                placeholder="Ej: Vacaciones, Fondo de emergencia"
-                placeholderTextColor={colors.muted}
+                style={[campo, { color: TINTA.texto, fontSize: 15, marginBottom: 16 }, webSinBorde]}
+                placeholder="Ej: vacaciones, fondo de emergencia"
+                placeholderTextColor={TINTA.suave}
                 value={name}
                 onChangeText={setName}
               />
-            </View>
 
-            <View className="mb-4">
-              <Text className="text-sm font-semibold text-foreground mb-2" style={{ color: '#FAFAFA' }}>Meta total ($)</Text>
-              <View className="flex-row items-center bg-surface rounded-lg px-4 py-3">
-                <Text className="text-lg text-muted mr-2" style={{ color: '#A1A1AA' }}>$</Text>
+              <Text style={etiqueta}>Cuánto quieres juntar</Text>
+              <View style={[campo, { flexDirection: 'row', alignItems: 'center', marginBottom: 16 }]}>
+                <Text style={{ fontSize: 20, fontWeight: '700', color: TINTA.suave, marginRight: 6 }}>$</Text>
                 <TextInput
-                  className="flex-1 text-lg text-foreground"
-                  style={{ color: '#FAFAFA' }}
+                  style={[{ flex: 1, fontSize: 20, fontWeight: '800', color: TINTA.texto, paddingVertical: 12 }, webSinBorde]}
                   placeholder="0.00"
-                  placeholderTextColor={colors.muted}
+                  placeholderTextColor={TINTA.suave}
                   keyboardType="decimal-pad"
                   value={targetAmount}
                   onChangeText={setTargetAmount}
                 />
               </View>
-            </View>
 
-            <View className="mb-4">
-              <Text className="text-sm font-semibold text-foreground mb-2" style={{ color: '#FAFAFA' }}>Ya tienes ahorrado ($)</Text>
-              <View className="flex-row items-center bg-surface rounded-lg px-4 py-3">
-                <Text className="text-lg text-muted mr-2" style={{ color: '#A1A1AA' }}>$</Text>
+              <Text style={etiqueta}>Lo que ya tienes ahorrado</Text>
+              <View style={[campo, { flexDirection: 'row', alignItems: 'center', marginBottom: 16 }]}>
+                <Text style={{ fontSize: 20, fontWeight: '700', color: TINTA.suave, marginRight: 6 }}>$</Text>
                 <TextInput
-                  className="flex-1 text-lg text-foreground"
-                  style={{ color: '#FAFAFA' }}
+                  style={[{ flex: 1, fontSize: 20, fontWeight: '800', color: TINTA.texto, paddingVertical: 12 }, webSinBorde]}
                   placeholder="0.00"
-                  placeholderTextColor={colors.muted}
+                  placeholderTextColor={TINTA.suave}
                   keyboardType="decimal-pad"
                   value={currentAmount}
                   onChangeText={setCurrentAmount}
                 />
               </View>
-            </View>
 
-            <View className="mb-6">
-              <Text className="text-sm font-semibold text-foreground mb-2" style={{ color: '#FAFAFA' }}>Color</Text>
-              <View className="flex-row gap-2">
-                {GOAL_COLORS.map((c) => (
-                  <Pressable
-                    key={c.value}
-                    onPress={() => setSelectedColor(c.value)}
-                    className={`flex-1 py-3 rounded-lg items-center border-2 ${
-                      selectedColor === c.value ? 'border-primary' : 'border-transparent bg-surface'
-                    }`}
-                  >
-                    <Text className="text-xs font-semibold text-foreground" style={{ color: '#FAFAFA' }}>{c.label}</Text>
-                  </Pressable>
-                ))}
+              <Text style={etiqueta}>Color</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+                {GOAL_COLORS.map((c) => {
+                  const activo = selectedColor === c.value;
+                  return (
+                    <Pressable
+                      key={c.value}
+                      onPress={() => setSelectedColor(c.value)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: activo }}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 14, borderRadius: 99, backgroundColor: ALTO, borderWidth: 1.5, borderColor: activo ? TINTA.texto : TINTA.borde }}
+                    >
+                      <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: c.hex }} />
+                      <Text style={{ fontSize: 14, fontWeight: '700', color: activo ? TINTA.texto : TINTA.suave }}>{c.label}</Text>
+                    </Pressable>
+                  );
+                })}
               </View>
-            </View>
 
-            <View className="flex-row gap-3 mb-6">
-              <Pressable onPress={onClose} className="flex-1 bg-surface rounded-lg py-3 items-center">
-                <Text className="text-foreground font-semibold" style={{ color: '#E4E4E7' }}>Cancelar</Text>
-              </Pressable>
-              <Pressable
-                onPress={handleSave}
-                disabled={createGoal.isPending}
-                className={`flex-1 rounded-lg py-3 items-center ${createGoal.isPending ? 'bg-primary opacity-50' : 'bg-primary'}`}
-              >
-                <Text className="text-background font-semibold" style={{ color: '#FAFAFA' }}>
-                  {createGoal.isPending ? 'Guardando...' : 'Guardar'}
-                </Text>
-              </Pressable>
-            </View>
-          </ScrollView>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <Pressable onPress={onClose} accessibilityRole="button"
+                  style={{ flex: 1, minHeight: 52, borderRadius: 18, borderWidth: 1, borderColor: TINTA.borde, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ color: TINTA.texto, fontWeight: '800', fontSize: 15 }}>Cancelar</Text>
+                </Pressable>
+                <Pressable
+                  onPress={handleSave}
+                  disabled={createGoal.isPending}
+                  accessibilityRole="button"
+                  style={({ pressed }) => ({ flex: 2, minHeight: 52, borderRadius: 18, backgroundColor: MENTA, alignItems: 'center', justifyContent: 'center', opacity: createGoal.isPending ? 0.5 : pressed ? 0.85 : 1 })}
+                >
+                  <Text style={{ color: TINTA.fondo, fontWeight: '800', fontSize: 15 }}>
+                    {createGoal.isPending ? 'Guardando…' : 'Guardar meta'}
+                  </Text>
+                </Pressable>
+              </View>
+            </ScrollView>
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

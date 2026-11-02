@@ -15,12 +15,28 @@ import { fechaLocal } from '@/lib/registros';
 
 type C = ReturnType<typeof useColors>;
 
+// El acento de Ejercicio (coral) con texto oscuro encima
+const ACENTO = '#FF7A6B';
+const SOBRE = '#110F0D';
+const ELEVADO = '#2A2521';
+
 /** La rutina en curso. Con `marca` viene de un día de un programa o reto. */
 type EnCurso = { rutina: Rutina; zona: Zona; marca?: MarcaDia };
 
-// Abre un enlace externo (YouTube, Spotify). A nivel de módulo para no
-// recrearlo en cada render.
+// Abre un enlace externo (YouTube, Spotify). En la web es un <a> que se pulsa
+// dentro del mismo toque: Linking.openURL usa window.open, y el iPhone con la
+// app instalada en la pantalla de inicio lo ignora sin decir nada.
 function abrir(url: string) {
+  if (Platform.OS === 'web') {
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    return;
+  }
   Linking.openURL(url).catch(() => Alert.alert('No pude abrirlo', 'Prueba otra vez en un momento.'));
 }
 
@@ -83,14 +99,17 @@ export default function ExerciseScreen() {
             <CabeceraZona c={c} zona={zona} alVolver={() => setZona(null)} />
           ) : (
             <>
-              <Titulo color={c.foreground}>Ejercicio</Titulo>
+              {/* paddingRight: el botón de menú flotante ocupa la esquina de arriba a la derecha */}
+              <View style={{ paddingRight: 110 }}>
+                <Titulo color={c.foreground}>Ejercicio</Titulo>
+              </View>
               <Text style={{ color: c.muted, fontSize: 14, marginTop: 6, marginBottom: 18 }}>
                 {vista === 'programas'
                   ? 'Tus retos de 21 días y los planes que sigues, día por día.'
                   : 'Rutinas por zona, en casa y a tu ritmo.'}
               </Text>
 
-              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 18 }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
                 {([['zonas', 'Rutinas'], ['programas', 'Programas y retos']] as const).map(([k, texto]) => (
                   <Pressable
                     key={k}
@@ -99,11 +118,11 @@ export default function ExerciseScreen() {
                     accessibilityState={{ selected: vista === k }}
                     style={{
                       paddingHorizontal: 16, minHeight: 44, justifyContent: 'center', borderRadius: 999,
-                      backgroundColor: vista === k ? c.primary : c.surface,
-                      borderWidth: 1, borderColor: vista === k ? c.primary : c.border,
+                      backgroundColor: vista === k ? ACENTO : c.surface,
+                      borderWidth: 1, borderColor: vista === k ? ACENTO : c.border,
                     }}
                   >
-                    <Text style={{ color: vista === k ? c.background : c.muted, fontWeight: '700', fontSize: 14 }}>
+                    <Text style={{ color: vista === k ? SOBRE : c.foreground, fontWeight: '700', fontSize: 14 }}>
                       {texto}
                     </Text>
                   </Pressable>
@@ -139,7 +158,7 @@ export default function ExerciseScreen() {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
               {ZONAS.map((z) => (
                 <Pressable key={z.id} onPress={() => setZona(z)} accessibilityRole="button" accessibilityLabel={z.nombre}
-                  style={({ pressed }) => ({ width: '48%', flexGrow: 1, backgroundColor: c.surface, borderRadius: 22,
+                  style={({ pressed }) => ({ width: '47%', flexGrow: 1, backgroundColor: c.surface, borderRadius: 24,
                     borderWidth: 1, borderColor: c.border, opacity: pressed ? 0.85 : 1, overflow: 'hidden' })}>
                   <Image source={z.foto} resizeMode="cover" style={{ width: '100%', height: 108 }} />
                   <View style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -156,10 +175,10 @@ export default function ExerciseScreen() {
             <View style={{ gap: 12 }}>
               {zona.rutinas.map((r) => (
                 <Pressable key={r.id} onPress={() => setEnCurso({ rutina: r, zona })} accessibilityRole="button"
-                  style={({ pressed }) => ({ backgroundColor: c.surface, borderRadius: 22, padding: 18, borderWidth: 1, borderColor: c.border, opacity: pressed ? 0.85 : 1 })}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-                    <Text style={{ color: c.foreground, fontSize: 18, fontWeight: '700', flex: 1 }}>{r.nombre}</Text>
-                    <View style={{ borderRadius: 999, borderWidth: 1, borderColor: zona.color, paddingHorizontal: 10, paddingVertical: 3 }}>
+                  style={({ pressed }) => ({ backgroundColor: c.surface, borderRadius: 24, padding: 18, borderWidth: 1, borderColor: c.border, opacity: pressed ? 0.85 : 1 })}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                    <Titulo size={20} color={c.foreground} style={{ flex: 1, minWidth: 140 }}>{r.nombre}</Titulo>
+                    <View style={{ borderRadius: 999, borderWidth: 1, borderColor: zona.color, paddingHorizontal: 10, paddingVertical: 4 }}>
                       <Text style={{ color: zona.color, fontSize: 12, fontWeight: '800' }}>{r.nivel} · {r.minutos} min</Text>
                     </View>
                   </View>
@@ -167,7 +186,7 @@ export default function ExerciseScreen() {
                 </Pressable>
               ))}
               <Pressable onPress={() => setZona(null)} accessibilityRole="button" style={{ minHeight: 48, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: c.primary, fontWeight: '700' }}>← Todas las zonas</Text>
+                <Text style={{ color: ACENTO, fontWeight: '700' }}>← Todas las zonas</Text>
               </Pressable>
             </View>
           )}
@@ -182,10 +201,10 @@ function CabeceraZona({ c, zona, alVolver }: { c: C; zona: Zona; alVolver: () =>
   return (
     <View style={{ marginBottom: 18 }}>
       <Pressable onPress={alVolver} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
-        <Text style={{ color: c.primary, fontWeight: '700' }}>← Todas las zonas</Text>
+        <Text style={{ color: ACENTO, fontWeight: '700' }}>← Todas las zonas</Text>
       </Pressable>
       <View style={{ marginTop: 4 }}>
-        <Image source={zona.foto} resizeMode="cover" style={{ width: '100%', height: 170, borderRadius: 22 }} />
+        <Image source={zona.foto} resizeMode="cover" style={{ width: '100%', height: 170, borderRadius: 26 }} />
         <Sticker texto={`${zona.rutinas.length} rutinas`} color={zona.color} giro={-5} style={{ position: 'absolute', bottom: -12, left: 16 }} />
       </View>
       <Titulo color={c.foreground} style={{ marginTop: 18 }}>{zona.nombre}</Titulo>
@@ -196,9 +215,9 @@ function CabeceraZona({ c, zona, alVolver }: { c: C; zona: Zona; alVolver: () =>
 
 function Dato({ c, valor, texto }: { c: C; valor: number; texto: string }) {
   return (
-    <View style={{ flex: 1, backgroundColor: c.surface, borderRadius: 18, padding: 14, borderWidth: 1, borderColor: c.border }}>
-      <Text style={{ color: c.foreground, fontSize: 26, fontWeight: '800' }}>{valor}</Text>
-      <Text style={{ color: c.muted, fontSize: 12.5 }}>{texto}</Text>
+    <View style={{ flex: 1, backgroundColor: c.surface, borderRadius: 24, padding: 16, borderWidth: 1, borderColor: c.border }}>
+      <Titulo size={30} color={c.foreground}>{valor}</Titulo>
+      <Text style={{ color: c.muted, fontSize: 13, marginTop: 2 }}>{texto}</Text>
     </View>
   );
 }
@@ -207,13 +226,13 @@ function Dato({ c, valor, texto }: { c: C; valor: number; texto: string }) {
 function Musica({ c, titulo, zonaId }: { c: C; titulo: string; zonaId?: string }) {
   return (
     <View style={{ marginBottom: 20 }}>
-      <Text style={{ color: c.foreground, fontSize: 16, fontWeight: '800', marginBottom: 10 }}>{titulo}</Text>
+      <Titulo size={22} color={c.foreground} style={{ marginBottom: 12 }}>{titulo}</Titulo>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 20 }}>
         {listasPara(zonaId).map((l) => (
-          <View key={l.busqueda} style={{ width: 176, backgroundColor: c.surface, borderRadius: 18, borderWidth: 1, borderColor: c.border, padding: 12, gap: 10 }}>
+          <View key={l.busqueda} style={{ width: 184, backgroundColor: c.surface, borderRadius: 24, borderWidth: 1, borderColor: c.border, padding: 12, gap: 10 }}>
             <View>
               <Text style={{ color: c.foreground, fontWeight: '800', fontSize: 15 }}>{l.nombre}</Text>
-              <Text style={{ color: c.muted, fontSize: 12 }} numberOfLines={1}>{l.busqueda}</Text>
+              <Text style={{ color: c.muted, fontSize: 12.5 }} numberOfLines={1}>{l.busqueda}</Text>
             </View>
             <View style={{ flexDirection: 'row', gap: 6 }}>
               <BotonChico c={c} texto="Spotify" onPress={() => abrir(urlSpotify(l))} etiqueta={`${l.nombre} en Spotify`} />
@@ -229,7 +248,7 @@ function Musica({ c, titulo, zonaId }: { c: C; titulo: string; zonaId?: string }
 function BotonChico({ c, texto, onPress, etiqueta }: { c: C; texto: string; onPress: () => void; etiqueta?: string }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="link" accessibilityLabel={etiqueta ?? texto}
-      style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 12, borderWidth: 1, borderColor: c.border,
+      style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 22, backgroundColor: ELEVADO,
         alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}>
       <Text style={{ color: c.foreground, fontWeight: '700', fontSize: 13 }}>{texto}</Text>
     </Pressable>
@@ -282,10 +301,10 @@ function Reproductor({ rutina, zona, volverA, alSalir, alTerminar }: {
       <ScrollView contentContainerStyle={{ paddingBottom: 150 }}>
         <View style={{ paddingHorizontal: 20, paddingTop: 24, maxWidth: 640, width: '100%', alignSelf: 'center' }}>
           <Pressable onPress={alSalir} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
-            <Text style={{ color: c.primary, fontWeight: '700' }}>← {volverA}</Text>
+            <Text style={{ color: ACENTO, fontWeight: '700' }}>← {volverA}</Text>
           </Pressable>
           <View style={{ marginTop: 4 }}>
-            <Image source={zona.foto} resizeMode="cover" style={{ width: '100%', height: 160, borderRadius: 22 }} />
+            <Image source={zona.foto} resizeMode="cover" style={{ width: '100%', height: 160, borderRadius: 26 }} />
             <Sticker texto={`${rutina.nivel} · ${rutina.minutos} min`} color={zona.color} giro={4} style={{ position: 'absolute', bottom: -12, right: 16 }} />
           </View>
           <Titulo size={28} color={c.foreground} style={{ marginTop: 18 }}>{rutina.nombre}</Titulo>
@@ -295,7 +314,7 @@ function Reproductor({ rutina, zona, volverA, alSalir, alTerminar }: {
 
           {modo === 'fin' ? (
             <View style={{ backgroundColor: c.surface, borderRadius: 26, padding: 24, borderWidth: 1, borderColor: c.border, alignItems: 'center' }}>
-              <Text style={{ color: c.foreground, fontSize: 24, fontWeight: '800', marginBottom: 6 }}>¡Rutina completa!</Text>
+              <Titulo size={28} color={c.foreground} style={{ marginBottom: 8, textAlign: 'center' }}>¡Rutina completa!</Titulo>
               <Text style={{ color: c.muted, textAlign: 'center', marginBottom: 18 }}>
                 {guardar.isSuccess
                   ? alTerminar ? 'Quedó guardada en tu semana y el día está marcado.' : 'Quedó guardada en tu semana.'
@@ -306,8 +325,8 @@ function Reproductor({ rutina, zona, volverA, alSalir, alTerminar }: {
           ) : (
             <View style={{ backgroundColor: c.surface, borderRadius: 26, padding: 22, borderWidth: 1, borderColor: c.border }}>
               <Text style={{ color: c.muted, fontSize: 13, fontWeight: '700' }}>Ejercicio {i + 1} de {rutina.ejercicios.length} · Serie {serie} de {e.series}</Text>
-              <Text style={{ color: c.foreground, fontSize: 28, fontWeight: '800', marginTop: 6 }}>{e.nombre}</Text>
-              <Text style={{ color: zona.color, fontSize: 40, fontWeight: '800', marginVertical: 10 }}>
+              <Titulo size={28} color={c.foreground} style={{ marginTop: 8 }}>{e.nombre}</Titulo>
+              <Text style={{ color: zona.color, fontSize: 44, fontFamily: 'BricolageGrotesque_800ExtraBold', marginVertical: 10 }}>
                 {modo === 'descanso' || modo === 'trabajo' ? `${cuenta}s` : e.reps ? `${e.reps} reps` : `${e.segundos}s`}
               </Text>
               <Text style={{ color: c.muted, fontSize: 15, marginBottom: 18 }}>
@@ -349,8 +368,8 @@ function Boton({ c, texto, onPress, sec }: { c: C; texto: string; onPress: () =>
   return (
     <Pressable onPress={onPress} accessibilityRole="button"
       style={({ pressed }) => ({ minHeight: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 22,
-        backgroundColor: sec ? 'transparent' : c.primary, borderWidth: sec ? 1.5 : 0, borderColor: c.border, opacity: pressed ? 0.85 : 1 })}>
-      <Text style={{ color: sec ? c.foreground : c.background, fontWeight: '800', fontSize: 16 }}>{texto}</Text>
+        backgroundColor: sec ? 'transparent' : ACENTO, borderWidth: sec ? 1.5 : 0, borderColor: c.border, opacity: pressed ? 0.85 : 1 })}>
+      <Text style={{ color: sec ? c.foreground : SOBRE, fontWeight: '800', fontSize: 16 }}>{texto}</Text>
     </Pressable>
   );
 }

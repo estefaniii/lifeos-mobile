@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
+import { Titulo, TINTA } from '@/components/decor';
 
 type Mode = 'login' | 'register' | 'forgot';
 
@@ -127,25 +128,26 @@ export default function LoginScreen() {
     setSuccess(null);
   };
 
+  // La paleta oscura cálida de toda la app; el ámbar de Inicio como acento
   const C = {
-    bg: '#09090B',
-    card: '#18181B',
-    border: '#27272A',
-    text: '#FAFAFA',
-    muted: '#71717A',
-    dim: '#52525B',
-    accent: '#14B8A6',
+    bg: TINTA.fondo,
+    card: TINTA.tarjeta,
+    border: TINTA.borde,
+    text: TINTA.texto,
+    muted: TINTA.suave,
+    accent: '#FFB547',
+    onAccent: TINTA.fondo,
   };
 
   const inp = {
     backgroundColor: C.card,
     borderWidth: 1,
     borderColor: C.border,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    minHeight: 54,
     color: C.text,
-    fontSize: 15,
+    fontSize: 16,
   } as any;
 
   return (
@@ -164,28 +166,21 @@ export default function LoginScreen() {
         >
           <Image
             source={require('@/assets/images/icon.png')}
-            style={{ width: 88, height: 88, borderRadius: 22, marginBottom: 16 }}
+            style={{ width: 80, height: 80, borderRadius: 24, marginBottom: 18 }}
           />
-          <Text
-            style={{
-              fontSize: 32,
-              fontWeight: '800',
-              color: C.text,
-              textAlign: 'center',
-              marginBottom: 6,
-            }}
-          >
-            LifeOS
-          </Text>
+          <Titulo size={36} style={{ textAlign: 'center' }}>LifeOS</Titulo>
           <Text
             style={{
               fontSize: 15,
+              lineHeight: 22,
               color: C.muted,
               textAlign: 'center',
+              marginTop: 8,
               marginBottom: 32,
+              maxWidth: 320,
             }}
           >
-            Tu centro de control personal con IA
+            Tu ejercicio, tu comida, tus hobbies y tu dinero, en un solo lugar.
           </Text>
 
           {mode !== 'forgot' && (
@@ -200,14 +195,14 @@ export default function LoginScreen() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 10,
-                  backgroundColor: '#FAFAFA',
-                  borderRadius: 10,
-                  paddingVertical: 13,
+                  backgroundColor: C.text,
+                  borderRadius: 27,
+                  minHeight: 54,
                   opacity: loading ? 0.6 : 1,
                 }}
               >
-                <Text style={{ fontSize: 18, fontWeight: '700' }}>G</Text>
-                <Text style={{ color: '#18181B', fontSize: 15, fontWeight: '700' }}>
+                <Text style={{ color: C.onAccent, fontSize: 18, fontWeight: '800' }}>G</Text>
+                <Text style={{ color: C.onAccent, fontSize: 16, fontWeight: '700' }}>
                   Continuar con Google
                 </Text>
               </Pressable>
@@ -222,7 +217,7 @@ export default function LoginScreen() {
                 }}
               >
                 <View style={{ flex: 1, height: 1, backgroundColor: C.border }} />
-                <Text style={{ color: C.dim, fontSize: 13, marginHorizontal: 12 }}>
+                <Text style={{ color: C.muted, fontSize: 13, marginHorizontal: 12 }}>
                   o con correo
                 </Text>
                 <View style={{ flex: 1, height: 1, backgroundColor: C.border }} />
@@ -232,16 +227,7 @@ export default function LoginScreen() {
 
           {mode === 'forgot' && (
             <View style={{ marginBottom: 20, alignItems: 'center', width: '100%', maxWidth: 360 }}>
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: '700',
-                  color: C.text,
-                  marginBottom: 8,
-                }}
-              >
-                Recuperar contraseña
-              </Text>
+              <Titulo size={24} style={{ marginBottom: 8, textAlign: 'center' }}>Recuperar contraseña</Titulo>
               <Text
                 style={{
                   fontSize: 14,
@@ -259,7 +245,7 @@ export default function LoginScreen() {
             <TextInput
               style={inp}
               placeholder="Correo electrónico"
-              placeholderTextColor={C.dim}
+              placeholderTextColor={C.muted}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -270,7 +256,7 @@ export default function LoginScreen() {
               <TextInput
                 style={inp}
                 placeholder="Contraseña"
-                placeholderTextColor={C.dim}
+                placeholderTextColor={C.muted}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -280,7 +266,7 @@ export default function LoginScreen() {
             {error ? (
               <Text
                 style={{
-                  color: '#ef4444',
+                  color: '#FF7A6B',
                   fontSize: 13,
                   textAlign: 'center',
                 }}
@@ -306,17 +292,18 @@ export default function LoginScreen() {
               disabled={loading}
               style={{
                 backgroundColor: C.accent,
-                borderRadius: 10,
-                paddingVertical: 14,
+                borderRadius: 27,
+                minHeight: 54,
                 alignItems: 'center',
+                justifyContent: 'center',
                 opacity: loading ? 0.6 : 1,
                 marginTop: 4,
               }}
             >
               {loading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={C.onAccent} />
               ) : (
-                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>
+                <Text style={{ color: C.onAccent, fontSize: 16, fontWeight: '800' }}>
                   {mode === 'register'
                     ? 'Crear cuenta'
                     : mode === 'forgot'
@@ -329,9 +316,9 @@ export default function LoginScreen() {
             {mode === 'login' && (
               <Pressable
                 onPress={() => switchMode('forgot')}
-                style={{ alignItems: 'center', marginTop: 4 }}
+                style={{ alignItems: 'center', justifyContent: 'center', minHeight: 44 }}
               >
-                <Text style={{ color: C.muted, fontSize: 13 }}>
+                <Text style={{ color: C.muted, fontSize: 14 }}>
                   ¿Olvidaste tu contraseña?{' '}
                   <Text style={{ color: C.accent, fontWeight: '600' }}>Recupérala</Text>
                 </Text>
@@ -344,9 +331,9 @@ export default function LoginScreen() {
                   mode === 'register' ? 'login' : mode === 'forgot' ? 'login' : 'register'
                 )
               }
-              style={{ marginTop: 8, alignItems: 'center' }}
+              style={{ alignItems: 'center', justifyContent: 'center', minHeight: 44 }}
             >
-              <Text style={{ color: C.muted, fontSize: 13 }}>
+              <Text style={{ color: C.muted, fontSize: 14 }}>
                 {mode === 'forgot'
                   ? '← Volver al inicio de sesión'
                   : mode === 'register'
