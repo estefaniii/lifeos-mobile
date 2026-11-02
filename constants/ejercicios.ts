@@ -45,7 +45,7 @@ export const ZONAS: Zona[] = [
   },
   {
     id: 'gluteos', nombre: 'Glúteos', icono: 'figure.run', color: '#F472B6',
-    foto: require('../assets/images/ejercicio/gluteos.jpg'), // Pexels 8846273
+    foto: require('../assets/images/ejercicio/gluteos.jpg'), // Pexels 4807549
     rutinas: [
       { id: 'gluteos-express', nombre: 'Glúteos en 10', nivel: 'Express', minutos: 10, ejercicios: [
         { nombre: 'Puente de glúteo', series: 3, reps: 20, descanso: 20, consejo: 'Empuja con los talones y aprieta arriba.' },
@@ -198,7 +198,7 @@ export const ZONAS: Zona[] = [
   },
   {
     id: 'movilidad', nombre: 'Movilidad', icono: 'figure.run', color: '#34D399',
-    foto: require('../assets/images/ejercicio/movilidad.jpg'), // Pexels 6697192
+    foto: require('../assets/images/ejercicio/movilidad.jpg'), // Pexels 1953894
     rutinas: [
       { id: 'movilidad-espalda', nombre: 'Espalda suelta', nivel: 'Suave', minutos: 12, ejercicios: [
         { nombre: 'Gato-camello', series: 1, segundos: 60, descanso: 10, consejo: 'Redondea al exhalar, arquea al inhalar.' },
