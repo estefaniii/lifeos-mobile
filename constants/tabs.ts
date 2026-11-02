@@ -11,6 +11,7 @@ export const SECCIONES: Seccion[] = [
   { ruta: 'finances', nombre: 'Finanzas', color: '#5FD3A8', icon: 'dollarsign.circle.fill', abajo: true },
   { ruta: 'notes', nombre: 'Notas', color: '#8FB8FF', icon: 'doc.text.fill', descripcion: 'Ideas y pendientes' },
   { ruta: 'history', nombre: 'Historial', color: '#C9A7FF', icon: 'clock.arrow.circlepath', descripcion: 'Todo lo que hiciste, por día' },
+  { ruta: 'progreso', nombre: 'Mi progreso', color: '#FF7A6B', icon: 'camera.fill', descripcion: 'Fotos de tu cuerpo, solo para ti' },
   { ruta: 'health', nombre: 'Sueño y agua', color: '#7CC4FF', icon: 'moon.fill', descripcion: 'Cómo dormiste y cuánta agua' },
   { ruta: 'profile', nombre: 'Perfil', color: '#F5EFE8', icon: 'person.fill', descripcion: 'Foto, recordatorios y tus datos' },
 ];

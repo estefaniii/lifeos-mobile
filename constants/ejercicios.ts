@@ -261,31 +261,37 @@ export const urlComoSeHace = (e: Ejercicio) =>
 // Listas por búsqueda, nunca por ID: así siempre sale algo aunque una lista desaparezca.
 export type ListaMusica = { nombre: string; busqueda: string };
 
-const CON_ENERGIA: ListaMusica[] = [
-  { nombre: 'Reggaetón', busqueda: 'reggaetón para entrenar' },
-  { nombre: 'Pop', busqueda: 'pop para entrenar' },
-  { nombre: 'Hip hop', busqueda: 'hip hop gym workout' },
-  { nombre: 'Salsa', busqueda: 'salsa cardio' },
-];
-const PARA_CARDIO: ListaMusica[] = [
-  { nombre: 'Salsa', busqueda: 'salsa cardio' },
-  { nombre: 'Pop para correr', busqueda: 'pop para correr' },
-  { nombre: 'Reggaetón', busqueda: 'reggaetón para entrenar' },
-  { nombre: 'Electrónica', busqueda: 'electrónica cardio workout' },
-];
-const TRANQUILA: ListaMusica[] = [
-  { nombre: 'Lo-fi', busqueda: 'lo-fi para estirar' },
-  { nombre: 'Piano', busqueda: 'piano relajante para estirar' },
-  { nombre: 'Acústica', busqueda: 'acústica tranquila' },
-  { nombre: 'Lluvia', busqueda: 'sonido de lluvia relajante' },
+/**
+ * Cada lista dice en qué zonas encaja. Las de fuerza (pesas, pecho, espalda)
+ * llevan rock y hip hop; las de glúteos y abdomen, ritmos para moverse;
+ * cardio, lo más rápido; movilidad, lo tranquilo. Cada zona tiene de 3 a 5.
+ */
+export type ListaConZonas = ListaMusica & { zonas: string[] };
+
+export const LISTAS: ListaConZonas[] = [
+  { nombre: 'Reggaetón', busqueda: 'reggaetón para entrenar', zonas: ['piernas', 'gluteos', 'cardio'] },
+  { nombre: 'Dembow', busqueda: 'dembow gym workout', zonas: ['gluteos', 'abdomen'] },
+  { nombre: 'Bad Bunny workout', busqueda: 'Bad Bunny workout', zonas: ['gluteos', 'brazos', 'pecho'] },
+  { nombre: 'Afrobeats', busqueda: 'afrobeats workout', zonas: ['gluteos', 'abdomen'] },
+  { nombre: 'Pop latino 2000s', busqueda: 'pop latino 2000s éxitos', zonas: ['abdomen', 'brazos'] },
+  { nombre: 'K-pop', busqueda: 'k-pop workout', zonas: ['abdomen', 'brazos'] },
+  { nombre: 'Hip hop', busqueda: 'hip hop gym workout', zonas: ['piernas', 'brazos', 'espalda', 'pecho'] },
+  { nombre: 'Rock para pesas', busqueda: 'rock gym pesas', zonas: ['piernas', 'espalda', 'pecho'] },
+  { nombre: 'Motivación en inglés', busqueda: 'motivational workout songs', zonas: ['espalda', 'pecho'] },
+  { nombre: 'Electrónica y house', busqueda: 'house music cardio workout', zonas: ['piernas', 'cardio'] },
+  { nombre: 'Salsa', busqueda: 'salsa cardio', zonas: ['cardio'] },
+  { nombre: 'Bachata', busqueda: 'bachata para bailar y entrenar', zonas: ['cardio'] },
+  { nombre: 'Pop para correr', busqueda: 'pop para correr', zonas: ['cardio'] },
+  { nombre: 'Lo-fi', busqueda: 'lo-fi para estirar', zonas: ['movilidad'] },
+  { nombre: 'Lluvia y naturaleza', busqueda: 'sonidos de lluvia y naturaleza relajante', zonas: ['movilidad'] },
+  { nombre: 'Piano suave', busqueda: 'piano suave relajante', zonas: ['movilidad'] },
 ];
 
-/** Sin zona: una mezcla para la portada de Ejercicio. */
+/** Las de una zona; sin zona, todas (la portada de Ejercicio). */
 export function listasPara(zonaId?: string): ListaMusica[] {
-  if (zonaId === 'movilidad') return TRANQUILA;
-  if (zonaId === 'cardio') return PARA_CARDIO;
-  if (zonaId) return CON_ENERGIA;
-  return [CON_ENERGIA[0], PARA_CARDIO[1], CON_ENERGIA[3], TRANQUILA[0]];
+  if (!zonaId) return LISTAS;
+  const deZona = LISTAS.filter((l) => l.zonas.includes(zonaId));
+  return deZona.length ? deZona : LISTAS;
 }
 
 export const urlSpotify = (l: ListaMusica) => `https://open.spotify.com/search/${encodeURIComponent(l.busqueda)}/playlists`;

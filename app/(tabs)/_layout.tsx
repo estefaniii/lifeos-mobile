@@ -131,6 +131,7 @@ export default function TabLayout() {
         <Tabs.Screen name="notes" options={{ title: "Notas" }} />
         {/* ===== Ocultas (accesibles desde los hubs) ===== */}
         <Tabs.Screen name="history" options={{ href: null }} />
+        <Tabs.Screen name="progreso" options={{ href: null }} />
         <Tabs.Screen name="health" options={{ href: null }} />
         <Tabs.Screen name="profile" options={{ href: null }} />
       </Tabs>

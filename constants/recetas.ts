@@ -424,4 +424,27 @@ export const RECETAS: Receta[] = [
       'Sirve con los vegetales y medio limón asado.',
     ],
   }, // Pexels 11653557
+  {
+    id: 'arepas', titulo: 'Arepas con pollo desmechado y aguacate', slot: 'desayuno', minutos: 25, porciones: 2,
+    foto: require('../assets/images/recetas/arepas.jpg'), etiquetas: ['Proteína', 'Latina'],
+    ingredientes: ['1 taza de harina de maíz precocida', '1 1/4 taza de agua tibia', '1 pechuga de pollo cocida', '1/2 pimentón rojo', '1/4 de cebolla', '1 aguacate', '1 limón', 'Sal'],
+    pasos: [
+      'Mezcla la harina de maíz con el agua tibia y una pizca de sal. Amasa 2 minutos y deja reposar 5.',
+      'Forma 4 bolitas, aplánalas a 1 cm y cocínalas en un sartén sin aceite 6 minutos por lado, hasta que suenen huecas.',
+      'Desmecha el pollo y mézclalo con el pimentón y la cebolla picados finos, limón y sal.',
+      'Abre las arepas por un lado y rellénalas con el pollo y rodajas de aguacate.',
+    ],
+  }, // Pexels 29496089
+  {
+    id: 'ropa-vieja', titulo: 'Ropa vieja con arroz, frijoles y tajadas', slot: 'cena', minutos: 40, porciones: 3,
+    foto: require('../assets/images/recetas/ropa-vieja.jpg'), etiquetas: ['Proteína', 'Panameña'],
+    ingredientes: ['500 g de falda de res', '1 cebolla', '1 pimentón rojo', '2 tomates', '3 dientes de ajo', '1 cdta de comino', '1 taza de arroz', '1 lata de frijoles negros', '1 plátano maduro', '1 cda de aceite', 'Culantro y sal'],
+    pasos: [
+      'Cocina la falda en olla de presión con agua, sal y medio ajo 25 minutos. Guarda 1 taza del caldo.',
+      'Mientras, cocina el arroz y calienta los frijoles con un poco de comino.',
+      'Desmecha la carne. Sofríe la cebolla, el pimentón y el ajo en tiras, agrega el tomate picado y el caldo.',
+      'Mete la carne en la salsa 10 minutos, hasta que espese, y termina con culantro.',
+      'Corta el plátano en tajadas y dóralas en un sartén con poco aceite. Sirve todo junto.',
+    ],
+  }, // Pexels 29450673
 ];

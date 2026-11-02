@@ -74,3 +74,24 @@ describe('hobbies', () => {
     expect(duracion(95)).toBe('1 h 35 min');
   });
 });
+
+describe('hora de inicio del día y rachas', () => {
+  it('con el día empezando a las 4, la 1 a. m. cuenta para ayer', async () => {
+    const { setHoraInicioDia, fechaLocal: f } = await import('../lib/registros');
+    setHoraInicioDia(4);
+    expect(f(new Date(2026, 10, 2, 1, 30))).toBe('2026-11-01');
+    expect(f(new Date(2026, 10, 2, 4, 30))).toBe('2026-11-02');
+    setHoraInicioDia(0);
+    expect(f(new Date(2026, 10, 2, 1, 30))).toBe('2026-11-02');
+  });
+
+  it('cuenta los días seguidos y no se rompe si hoy aún no se cumplió', async () => {
+    const { racha, hitoRacha } = await import('../lib/registros');
+    const hoy = new Date(2026, 10, 5, 9);
+    expect(racha(['2026-11-05', '2026-11-04', '2026-11-03'], hoy)).toBe(3);
+    expect(racha(['2026-11-04', '2026-11-03'], hoy)).toBe(2);
+    expect(racha(['2026-11-03'], hoy)).toBe(0);
+    expect(hitoRacha(6)).toBeNull();
+    expect(hitoRacha(15)).toBe(14);
+  });
+});

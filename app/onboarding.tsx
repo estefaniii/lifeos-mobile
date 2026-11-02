@@ -129,9 +129,9 @@ export default function OnboardingScreen() {
 
             <View style={{ width: '100%', gap: 10 }}>
               {([
-                { value: 'femenino' as Gender, emoji: '👸', label: 'Femenino', sub: '«Reina, tu deseo ya es tuyo»' },
-                { value: 'masculino' as Gender, emoji: '👑', label: 'Masculino', sub: '«Rey, asume tu poder»' },
-                { value: 'otro' as Gender, emoji: '✨', label: 'Neutro', sub: '«Tu potencial es infinito»' },
+                { value: 'femenino' as Gender, emoji: '👸', label: 'Femenino', sub: 'Te hablo en femenino' },
+                { value: 'masculino' as Gender, emoji: '👑', label: 'Masculino', sub: 'Te hablo en masculino' },
+                { value: 'otro' as Gender, emoji: '✨', label: 'Neutro', sub: 'Sin género' },
               ]).map((opt) => {
                 const selected = gender === opt.value;
                 return (

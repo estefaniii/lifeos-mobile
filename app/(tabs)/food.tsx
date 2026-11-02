@@ -10,7 +10,7 @@ import { useMealPlan, useSaveMeal, filasSugeridas, useShopping, useShoppingActio
 import { useLifeLogsHoy, useRegistrar, useBorrarRegistro } from '@/hooks/use-registros';
 import { horaCorta } from '@/lib/registros';
 import {
-  repartirSemana, siguienteOpcion, ingredientesDelPlan, sinLoQueYaHay, etiquetaComida, huecosLlenos, type FilaPlan,
+  repartirSemana, siguienteOpcion, ingredientesDelPlan, sinLoQueYaHay, etiquetaComida, huecosLlenos, porPasillo, type FilaPlan,
 } from '@/lib/semana-comida';
 
 // Comida: armar la semana eligiendo recetas, el plan de cada día con su check «La comí»,
@@ -57,6 +57,9 @@ export default function FoodScreen() {
   const guardar = useSaveMeal();
   const { data: compras = [] } = useShopping();
   const { add, addMany, toggle, clearDone } = useShoppingActions();
+  // Lo pendiente, por pasillo del súper; lo comprado va abajo, en una sola tanda.
+  const pendientesPorPasillo = useMemo(() => porPasillo(compras.filter((x) => !x.done)), [compras]);
+  const comprados = useMemo(() => compras.filter((x) => x.done), [compras]);
   const { data: logs = [] } = useLifeLogsHoy();
   const registrar = useRegistrar();
   const borrar = useBorrarRegistro();
@@ -151,6 +154,15 @@ export default function FoodScreen() {
   const botonBorde = { borderRadius: 18, minHeight: 50, paddingHorizontal: 16, justifyContent: 'center' as const, alignItems: 'center' as const, borderWidth: 1.5, borderColor: ACENTO };
   const casilla = (on: boolean, size = 26) => ({ width: size, height: size, borderRadius: size / 3, borderWidth: 2, borderColor: on ? ACENTO : c.muted,
     backgroundColor: on ? ACENTO : 'transparent', alignItems: 'center' as const, justifyContent: 'center' as const });
+  const itemCompra = (x: (typeof compras)[number]) => (
+    <Pressable key={x.id} onPress={() => toggle.mutate(x)} accessibilityRole="checkbox" accessibilityState={{ checked: x.done }}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48 }}>
+      <View style={casilla(x.done, 24)}>
+        {x.done && <Text style={{ color: SOBRE, fontWeight: '900', fontSize: 14 }}>✓</Text>}
+      </View>
+      <Text style={{ color: x.done ? c.muted : c.foreground, fontSize: 16, textDecorationLine: x.done ? 'line-through' : 'none', flex: 1 }}>{x.name}</Text>
+    </Pressable>
+  );
 
   return (
     <ScreenContainer className="p-0">
@@ -345,15 +357,24 @@ export default function FoodScreen() {
               </Pressable>
             </View>
             {compras.length === 0 && <Text style={{ color: c.muted, paddingVertical: 8 }}>Tu lista está vacía. Al armar tu semana te la lleno.</Text>}
-            {compras.map((x) => (
-              <Pressable key={x.id} onPress={() => toggle.mutate(x)} accessibilityRole="checkbox" accessibilityState={{ checked: x.done }}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48 }}>
-                <View style={casilla(x.done, 24)}>
-                  {x.done && <Text style={{ color: SOBRE, fontWeight: '900', fontSize: 14 }}>✓</Text>}
+            {pendientesPorPasillo.map((g) => (
+              <View key={g.id} style={{ marginTop: 10 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }} accessibilityRole="header">
+                  <Text style={{ fontSize: 16 }}>{g.emoji}</Text>
+                  <Text style={{ color: c.muted, fontSize: 13, fontWeight: '800', letterSpacing: 0.4, textTransform: 'uppercase', flex: 1 }}>{g.nombre}</Text>
+                  <Text style={{ color: c.muted, fontSize: 12.5 }}>{g.items.length}</Text>
                 </View>
-                <Text style={{ color: x.done ? c.muted : c.foreground, fontSize: 16, textDecorationLine: x.done ? 'line-through' : 'none', flex: 1 }}>{x.name}</Text>
-              </Pressable>
+                {g.items.map(itemCompra)}
+              </View>
             ))}
+            {comprados.length > 0 && (
+              <View style={{ marginTop: 14, paddingTop: 6, borderTopWidth: 1, borderTopColor: c.border }}>
+                <Text style={{ color: c.muted, fontSize: 13, fontWeight: '800', letterSpacing: 0.4, textTransform: 'uppercase', marginTop: 6 }}>
+                  Comprado · {comprados.length}
+                </Text>
+                {comprados.map(itemCompra)}
+              </View>
+            )}
           </View>
           </>}
         </View>

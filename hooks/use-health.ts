@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { fechaLocal } from '@/lib/registros';
 
 export function useHealthMetrics(
-  metricType: 'sleep_minutes' | 'steps' | 'exercise_minutes',
+  metricType: 'sleep_minutes' | 'steps' | 'exercise_minutes' | 'water_ml',
   days: number = 7
 ) {
   const { user } = useAuth({ autoFetch: false });

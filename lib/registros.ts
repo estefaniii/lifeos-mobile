@@ -1,10 +1,29 @@
 // Lógica pura del historial: fechas locales y agrupar lo que hiciste por día.
 // Sin Supabase ni React, para poder probarla sola (tests/registros.test.ts).
 
+// La hora a la que empieza tu día (Perfil, user_settings.day_start_hour). Con 4,
+// algo hecho a la 1 a. m. cuenta para el día anterior. Todos los «hoy» de la app
+// pasan por fechaLocal(), así que el agua, los hábitos, el historial y las rachas
+// usan la misma frontera. Se guarda también en el dispositivo para el primer render.
+let horaInicio = 0;
+const CLAVE_HORA = 'lifeos_hora_inicio_dia';
+try {
+  const g = typeof localStorage !== 'undefined' ? Number(localStorage.getItem(CLAVE_HORA)) : 0;
+  if (g >= 0 && g <= 6) horaInicio = g;
+} catch { /* sin almacenamiento: medianoche */ }
+
+export function setHoraInicioDia(h: number) {
+  horaInicio = Math.min(6, Math.max(0, Math.round(h || 0)));
+  try { if (typeof localStorage !== 'undefined') localStorage.setItem(CLAVE_HORA, String(horaInicio)) } catch { /* nada */ }
+}
+export const horaInicioDia = () => horaInicio;
+
 // «2026-11-01» en la hora del teléfono. toISOString() da la fecha UTC y en
 // Panamá (UTC-5) lo de después de las 7 de la noche caía en el día siguiente.
-export const fechaLocal = (d: Date = new Date()) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export const fechaLocal = (d: Date = new Date()) => {
+  const x = horaInicio ? new Date(d.getTime() - horaInicio * 3600_000) : d;
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+};
 
 // Una columna DATE («2026-11-01») se lee como ese día local, no como medianoche UTC
 export const deFecha = (s: string) => {
@@ -96,3 +115,19 @@ export function minutosSemana(sesiones: { hobby_id: string; minutes: number; don
 
 export const duracion = (min: number) =>
   min < 60 ? `${min} min` : `${Math.floor(min / 60)} h${min % 60 ? ` ${min % 60} min` : ''}`;
+
+/**
+ * Días seguidos cumpliendo algo, contando hacia atrás desde hoy. Si hoy todavía
+ * no se cumplió, la racha sigue viva desde ayer (no se rompe a las 8 de la mañana).
+ */
+export function racha(cumplidos: Iterable<string>, hoy: Date = new Date()) {
+  const dias = new Set(cumplidos);
+  const d = new Date(hoy);
+  if (!dias.has(fechaLocal(d))) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (dias.has(fechaLocal(d))) { n++; d.setDate(d.getDate() - 1) }
+  return n;
+}
+
+// El sticker que toca por racha: 7, 14, 21, 30 días…
+export const hitoRacha = (n: number) => [100, 60, 30, 21, 14, 7].find((h) => n >= h) ?? null;

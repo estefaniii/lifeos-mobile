@@ -360,6 +360,12 @@ export default function FinancesScreen() {
   };
 
   const cerrarPresupuesto = () => { setShowBudgetModal(false); setBudgetCategory(''); setBudgetLimit(''); };
+  const editarPresupuesto = (categoria: string, limite: number) => {
+    setBudgetCategory(categoria); setBudgetLimit(String(limite)); setShowBudgetModal(true);
+  };
+  const presupuestoExiste = (budgetProgress ?? []).some((b) => b.category.trim().toLowerCase() === budgetCategory.trim().toLowerCase());
+  // Los que pasan del 80 % este mes, el más pasado primero
+  const avisosPresupuesto = (budgetProgress ?? []).filter((b) => b.percentage >= 80).sort((a, b) => b.percentage - a.percentage);
   const cerrarRecurrente = () => { setShowRecurringModal(false); setRecurringAmount(''); setRecurringNote(''); setRecurringCategory(''); };
 
   const insight = income === 0
@@ -381,6 +387,28 @@ export default function FinancesScreen() {
             <Titulo>Finanzas</Titulo>
             <Text style={{ color: TINTA.suave, fontSize: 15 }}>Lo que entra, lo que sale y lo que guardas.</Text>
           </View>
+
+          {/* Aviso de presupuestos: ámbar desde el 80 %, coral al pasarse */}
+          {avisosPresupuesto.length > 0 && (
+            <View style={{ gap: 8, marginBottom: -12 }} accessibilityRole="alert">
+              {avisosPresupuesto.map((b) => {
+                const pasado = b.percentage >= 100;
+                const color = pasado ? CORAL : AMBAR;
+                return (
+                  <View key={b.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 20, borderWidth: 1.5,
+                    borderColor: color, backgroundColor: pasado ? 'rgba(255,122,107,0.12)' : 'rgba(255,181,71,0.10)', paddingHorizontal: 16, paddingVertical: 12 }}>
+                    <Text style={{ fontSize: 18 }}>{pasado ? '🚨' : '⚠️'}</Text>
+                    <Text style={{ color: TINTA.texto, fontSize: 14.5, fontWeight: '700', flex: 1 }}>
+                      {pasado
+                        ? `Te pasaste en ${b.category}: llevas el ${b.percentage} % este mes`
+                        : `Llevas el ${b.percentage} % de ${b.category} este mes`}
+                    </Text>
+                    <Text style={{ color, fontSize: 13, fontWeight: '800' }}>{monto(b.limit_amount - b.spent)}{pasado ? ' de más' : ' libres'}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
 
           <View style={{ gap: 16 }}>
             {/* Período */}
@@ -521,12 +549,15 @@ export default function FinancesScreen() {
           <Seccion titulo="Presupuestos" accion={<Enlace texto="Nuevo" onPress={() => setShowBudgetModal(true)} />}>
             {budgetProgress && budgetProgress.length > 0 ? (
               <View style={{ gap: 10 }}>
-                {budgetProgress.map((b: any) => {
+                {budgetProgress.map((b) => {
                   const isOver = b.percentage >= 100;
-                  const isWarning = b.percentage >= 75 && !isOver;
+                  const isWarning = b.percentage >= 80 && !isOver;
                   const barColor = isOver ? CORAL : isWarning ? AMBAR : MENTA;
                   return (
-                    <View key={b.id} style={{ ...tarjeta, borderRadius: 24, paddingVertical: 12, gap: 8, borderColor: isOver ? 'rgba(255,122,107,0.45)' : TINTA.borde }}>
+                    <Pressable key={b.id} onPress={() => editarPresupuesto(b.category, b.limit_amount)} accessibilityRole="button"
+                      accessibilityLabel={`${b.category}: ${b.percentage} % del presupuesto del mes. Toca para cambiar el límite`}
+                      style={({ pressed }) => ({ ...tarjeta, borderRadius: 24, paddingVertical: 12, gap: 8, opacity: pressed ? 0.85 : 1,
+                        borderColor: isOver ? 'rgba(255,122,107,0.45)' : TINTA.borde })}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                         <Text style={{ color: TINTA.texto, fontWeight: '800', fontSize: 15, flex: 1 }} numberOfLines={1}>{b.category}</Text>
                         <Text style={{ color: isOver ? CORAL : TINTA.suave, fontSize: 14, fontWeight: '600' }}>
@@ -535,13 +566,14 @@ export default function FinancesScreen() {
                         <Quitar etiqueta={`Eliminar presupuesto de ${b.category}`} onPress={() => deleteBudget.mutate(b.id)} />
                       </View>
                       <Barra pct={b.percentage} color={barColor} />
+                      <Text style={{ color: TINTA.suave, fontSize: 12.5 }}>{b.percentage} % del mes</Text>
                       {isOver && (
                         <Text style={{ color: CORAL, fontSize: 13, fontWeight: '700' }}>Te pasaste por {monto(b.spent - b.limit_amount)}</Text>
                       )}
                       {isWarning && (
-                        <Text style={{ color: AMBAR, fontSize: 13, fontWeight: '700' }}>Llevas el {b.percentage}%: cuidado</Text>
+                        <Text style={{ color: AMBAR, fontSize: 13, fontWeight: '700' }}>Te quedan {monto(b.limit_amount - b.spent)} este mes</Text>
                       )}
-                    </View>
+                    </Pressable>
                   );
                 })}
               </View>
@@ -624,10 +656,12 @@ export default function FinancesScreen() {
         />
 
         {/* Nuevo presupuesto */}
-        <Hoja visible={showBudgetModal} onClose={cerrarPresupuesto} titulo="Nuevo presupuesto">
+        <Hoja visible={showBudgetModal} onClose={cerrarPresupuesto}
+          titulo={presupuestoExiste ? 'Cambiar presupuesto' : 'Nuevo presupuesto'}
+          sub="Te aviso arriba cuando gastes el 80 % en el mes.">
           <Etiqueta>Categoría</Etiqueta>
           <Chips
-            opciones={['Comida', 'Transporte', 'Salidas', 'Compras Online', 'Suscripciones', 'Salud', 'Universidad', 'Materiales', 'Otros'].map((name) => ({ name }))}
+            opciones={CAT_GASTO}
             valor={budgetCategory}
             onCambio={setBudgetCategory}
           />
@@ -639,7 +673,8 @@ export default function FinancesScreen() {
             onGuardar={() => {
               const n = parseFloat(budgetLimit);
               if (budgetCategory && !isNaN(n) && n > 0 && user?.id) {
-                createBudget.mutate({ user_id: String(user.id), category: budgetCategory, limit_amount: n });
+                createBudget.mutate({ user_id: String(user.id), category: budgetCategory, limit_amount: n },
+                  { onError: () => Alert.alert('No se guardó el presupuesto', 'Revisa tu conexión y prueba otra vez.') });
                 cerrarPresupuesto();
               }
             }}

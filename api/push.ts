@@ -26,6 +26,25 @@ async function usuarioDelToken(token: string): Promise<string | null> {
   return ((await r.json()) as { id?: string }).id ?? null;
 }
 
+// «Esta semana: 38 vasos de agua, 4 rutinas (2 h 10 min), 12 comidas y 3 h de hobbies.»
+async function resumenSemana(sql: postgres.Sql, userId: string) {
+  const [x] = await sql<{ vasos: number; rutinas: number; min_ej: number; comidas: number; min_hob: number }[]>`
+    select
+      coalesce((select sum(amount) from life_logs where user_id = ${userId} and kind = 'agua' and logged_at > now() - interval '7 days'), 0)::int as vasos,
+      (select count(*) from exercise_sessions where user_id = ${userId} and done_on > current_date - 7)::int as rutinas,
+      coalesce((select sum(minutes) from exercise_sessions where user_id = ${userId} and done_on > current_date - 7), 0)::int as min_ej,
+      (select count(*) from life_logs where user_id = ${userId} and kind = 'comida' and logged_at > now() - interval '7 days')::int as comidas,
+      coalesce((select sum(minutes) from hobby_sessions where user_id = ${userId} and done_at > now() - interval '7 days'), 0)::int as min_hob`;
+  const h = (m: number) => (m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}`);
+  const partes = [
+    x.vasos && `${x.vasos} vasos de agua`,
+    x.rutinas && `${x.rutinas} ${x.rutinas === 1 ? 'rutina' : 'rutinas'} (${h(x.min_ej)})`,
+    x.comidas && `${x.comidas} comidas marcadas`,
+    x.min_hob && `${h(x.min_hob)} de hobbies`,
+  ].filter(Boolean);
+  return partes.length ? `Esta semana: ${partes.join(', ')}.` : 'Una semana tranquila. Mañana empieza otra: un vaso de agua y a moverse.';
+}
+
 export default async function handler(req: Req, res: Res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
   const token = String(req.headers.authorization ?? '').replace(/^Bearer\s+/i, '');
@@ -76,7 +95,8 @@ export default async function handler(req: Req, res: Res) {
           on conflict do nothing returning 1`;
         if (!nueva.length) continue;
         const r = recordatorio(t.clave);
-        total += await enviar(subs, { title: r.titulo, body: r.cuerpo, url: r.url, tag: r.clave });
+        const cuerpo = t.clave === 'resumen' ? await resumenSemana(sql, f.user_id).catch(() => r.cuerpo) : r.cuerpo;
+        total += await enviar(subs, { title: r.titulo, body: cuerpo, url: r.url, tag: r.clave });
       }
     }
     // Lo enviado hace más de una semana ya no hace falta para no repetir

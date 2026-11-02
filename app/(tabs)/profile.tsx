@@ -7,7 +7,7 @@ import { ScreenContainer } from '@/components/screen-container';
 import { Titulo, Sticker, TINTA } from '@/components/decor';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
-import { useAjustes, useGuardarRecordatorios, useFotoPerfil, usePush, type EstadoPush } from '@/hooks/use-ajustes';
+import { useAjustes, useGuardarRecordatorios, useGuardarHoraInicio, useFotoPerfil, usePush, type EstadoPush } from '@/hooks/use-ajustes';
 import { RECORDATORIOS, conDefectos, horaBonita, deMinutos, type ClaveRecordatorio, type Recordatorios } from '@/lib/recordatorios';
 import { fechaLocal } from '@/lib/registros';
 
@@ -27,6 +27,7 @@ export default function ProfileScreen() {
   const { subir, quitar } = useFotoPerfil();
   const guardarRec = useGuardarRecordatorios();
   const push = usePush();
+  const guardarHora = useGuardarHoraInicio();
 
   const [nombre, setNombre] = useState(user?.name || '');
   const [editandoNombre, setEditandoNombre] = useState(false);
@@ -224,6 +225,26 @@ export default function ProfileScreen() {
                       </View>
                     )}
                   </View>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Cuándo empieza tu día */}
+          <View>
+            <Titulo size={24} style={{ marginBottom: 4 }}>Tu día empieza a las</Titulo>
+            <Text style={{ color: TINTA.suave, fontSize: 14.5, marginBottom: 12, lineHeight: 20 }}>
+              Si te acuestas tarde, lo que hagas antes de esta hora cuenta para el día anterior: el agua, los hábitos, el historial y las rachas.
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {[0, 1, 2, 3, 4, 5, 6].map((h) => {
+                const on = (ajustes?.day_start_hour ?? 0) === h;
+                return (
+                  <Pressable key={h} onPress={() => guardarHora.mutate(h)} accessibilityRole="button" accessibilityState={{ selected: on }}
+                    style={{ minHeight: 44, paddingHorizontal: 14, borderRadius: 22, justifyContent: 'center', borderWidth: 1.5,
+                      borderColor: on ? ACENTO : TINTA.borde, backgroundColor: on ? ACENTO : 'transparent' }}>
+                    <Text style={{ color: on ? TINTA.fondo : TINTA.texto, fontWeight: '800' }}>{h === 0 ? 'Medianoche' : `${h}:00 a. m.`}</Text>
+                  </Pressable>
                 );
               })}
             </View>

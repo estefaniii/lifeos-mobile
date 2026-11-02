@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   claveIngrediente, etiquetaComida, formatoCantidad, haySeguidas, huecosLlenos, ingredientesDelPlan,
   juntarIngredientes, leerIngrediente, pluralizar, marcadasHoy, repartirMomento, repartirSemana, siguienteOpcion, sinLoQueYaHay,
+  pasilloDe, porPasillo,
 } from '../lib/semana-comida';
 
 // Azar fijo para que las pruebas no dependan de la suerte
@@ -148,5 +149,47 @@ describe('check de hoy', () => {
       { day: 6, slot: 'cena' as const, meal: 'B' },
     ];
     expect(huecosLlenos(plan)).toBe(2);
+  });
+});
+
+describe('pasillos del súper', () => {
+  it('pone cada ingrediente real de las recetas en su pasillo', () => {
+    const casos: [string, string][] = [
+      ['2 aguacates maduros', 'frutas'], ['1 kg de ñame', 'frutas'], ['1 ají chombo', 'frutas'], ['Hojas de menta', 'frutas'],
+      ['500 g de filete de corvina fresca', 'carnes'], ['2 muslos de pollo sin hueso', 'carnes'], ['300 g de camarones pelados', 'carnes'],
+      ['Queso feta', 'lacteos'], ['4 huevos', 'lacteos'], ['1 taza de leche o bebida vegetal', 'lacteos'],
+      ['6 tortillas de trigo', 'panaderia'], ['1 rebanada de pan integral', 'panaderia'],
+      ['1 lata de frijoles negros', 'despensa'], ['2 cdas de curry en polvo', 'despensa'], ['Sal y pimienta', 'despensa'], ['200 g de pasta integral', 'despensa'],
+      ['100 g de pulpa de açaí congelada', 'congelados'], ['1 plátano congelado', 'congelados'],
+      ['1 1/4 taza de agua tibia', 'otros'],
+    ];
+    for (const [ing, pasillo] of casos) expect([ing, pasilloDe(ing)]).toEqual([ing, pasillo]);
+  });
+
+  it('decide por la primera palabra y, a igual posición, por la más larga', () => {
+    expect(pasilloDe('Culantro y sal')).toBe('frutas');
+    expect(pasilloDe('Sal, pimienta y eneldo')).toBe('despensa');
+    expect(pasilloDe('4 tazas de caldo de pollo')).toBe('despensa');
+    expect(pasilloDe('1 lata de atún en agua')).toBe('despensa');
+    expect(pasilloDe('1 lata de leche de coco')).toBe('despensa');
+    expect(pasilloDe('1 cda de mantequilla de maní')).toBe('despensa');
+    expect(pasilloDe('Pimentón en polvo')).toBe('despensa');
+    expect(pasilloDe('1 pimentón rojo')).toBe('frutas');
+    expect(pasilloDe('1 taza de harina de maíz precocida')).toBe('despensa');
+    expect(pasilloDe('2 mazorcas de maíz')).toBe('frutas');
+  });
+
+  it('acepta plurales y lo que sale de juntar ingredientes', () => {
+    expect(pasilloDe('10 limones')).toBe('frutas');
+    expect(pasilloDe('3 pimentones rojos')).toBe('frutas');
+    expect(pasilloDe('Cilantro ×3')).toBe('frutas');
+    expect(pasilloDe('salmón')).toBe('carnes');
+    expect(pasilloDe('Salsa de soya')).toBe('despensa');
+  });
+
+  it('agrupa en el orden del súper y sin grupos vacíos', () => {
+    const grupos = porPasillo([{ name: 'Arroz blanco' }, { name: '2 tomates' }, { name: '2 filetes de salmón' }, { name: '1 cebolla' }]);
+    expect(grupos.map((g) => g.id)).toEqual(['frutas', 'carnes', 'despensa']);
+    expect(grupos[0].items.map((x) => x.name)).toEqual(['2 tomates', '1 cebolla']);
   });
 });

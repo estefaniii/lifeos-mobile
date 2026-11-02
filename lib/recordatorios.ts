@@ -2,13 +2,15 @@
 // Perfil (para mostrarlos) y /api/push (para enviarlos), y tiene sus pruebas.
 // Las afirmaciones no están aquí: son de Presence.
 
-export type ClaveRecordatorio = 'agua' | 'comidas' | 'pausas' | 'habitos' | 'finanzas' | 'dormir';
+export type ClaveRecordatorio = 'agua' | 'comidas' | 'pausas' | 'habitos' | 'finanzas' | 'dormir' | 'resumen' | 'copia';
 export type AjusteRecordatorio = { on: boolean; horas: string[] };
 export type Recordatorios = Record<ClaveRecordatorio, AjusteRecordatorio>;
 
 export const RECORDATORIOS: {
   clave: ClaveRecordatorio; emoji: string; nombre: string; titulo: string; cuerpo: string; url: string;
   horas: string[]; on: boolean;
+  /** Solo esos días de la semana (0 = domingo) o del mes. Sin esto, todos los días. */
+  diasSemana?: number[]; diasMes?: number[];
 }[] = [
   { clave: 'agua', emoji: '💧', nombre: 'Tomar agua', titulo: '💧 Un vaso de agua', cuerpo: 'Tócalo y anótalo en LifeOS.', url: '/', horas: ['10:00', '12:00', '14:00', '16:00', '18:00'], on: true },
   { clave: 'comidas', emoji: '🍽️', nombre: 'Marcar comidas', titulo: '🍽️ ¿Ya comiste?', cuerpo: 'Marca lo que comiste en tu plan de hoy.', url: '/food', horas: ['13:30', '20:00'], on: true },
@@ -16,6 +18,9 @@ export const RECORDATORIOS: {
   { clave: 'habitos', emoji: '🎯', nombre: 'Hábitos del día', titulo: '🎯 Tus hábitos', cuerpo: 'Buenos días. Mira qué hábitos tocan hoy.', url: '/', horas: ['09:00'], on: true },
   { clave: 'finanzas', emoji: '💰', nombre: 'Gastos del día', titulo: '💰 Gastos de hoy', cuerpo: '¿Anotaste lo que gastaste hoy?', url: '/finances', horas: ['20:30'], on: false },
   { clave: 'dormir', emoji: '🌙', nombre: 'Hora de dormir', titulo: '🌙 Hora de descansar', cuerpo: 'Deja el celular y a dormir bien.', url: '/', horas: ['22:30'], on: true },
+  // El cuerpo del resumen lo arma /api/push con los números de tu semana
+  { clave: 'resumen', emoji: '📊', nombre: 'Resumen del domingo', titulo: '📊 Tu semana', cuerpo: 'Mira cómo te fue esta semana.', url: '/history', horas: ['19:00'], on: true, diasSemana: [0] },
+  { clave: 'copia', emoji: '📦', nombre: 'Copia del mes', titulo: '📦 Tu copia del mes', cuerpo: 'Descarga una copia de tus datos de LifeOS.', url: '/profile', horas: ['10:00'], on: true, diasMes: [1] },
 ];
 
 export const recordatorio = (c: ClaveRecordatorio) => RECORDATORIOS.find((r) => r.clave === c)!;
@@ -55,7 +60,12 @@ export function ahoraEn(zona: string, ahora: Date = new Date()) {
     return ahoraEn('America/Panama', ahora);
   }
   const p = (t: string) => partes.find((x) => x.type === t)?.value ?? '00';
-  return { fecha: `${p('year')}-${p('month')}-${p('day')}`, minutos: Number(p('hour')) * 60 + Number(p('minute')) };
+  const fecha = `${p('year')}-${p('month')}-${p('day')}`;
+  const [y, m, d] = fecha.split('-').map(Number);
+  return {
+    fecha, minutos: Number(p('hour')) * 60 + Number(p('minute')),
+    diaSemana: new Date(Date.UTC(y, m - 1, d)).getUTCDay(), diaMes: d,
+  };
 }
 
 /**
@@ -63,11 +73,13 @@ export function ahoraEn(zona: string, ahora: Date = new Date()) {
  * llegar tarde: se acepta lo que cayó en los últimos `margen` minutos, y
  * push_sent (clave usuario + recordatorio + slot) evita mandarlo dos veces.
  */
-export function pendientes(ajustes: Recordatorios, ahora: { fecha: string; minutos: number }, margen = 15) {
+export function pendientes(ajustes: Recordatorios, ahora: { fecha: string; minutos: number; diaSemana?: number; diaMes?: number }, margen = 15) {
   const out: { clave: ClaveRecordatorio; slot: string }[] = [];
   for (const r of RECORDATORIOS) {
     const a = ajustes[r.clave];
     if (!a?.on) continue;
+    if (r.diasSemana && (ahora.diaSemana === undefined || !r.diasSemana.includes(ahora.diaSemana))) continue;
+    if (r.diasMes && (ahora.diaMes === undefined || !r.diasMes.includes(ahora.diaMes))) continue;
     for (const h of a.horas) {
       const m = aMinutos(h);
       if (m <= ahora.minutos && ahora.minutos - m < margen) out.push({ clave: r.clave, slot: `${ahora.fecha} ${h}` });

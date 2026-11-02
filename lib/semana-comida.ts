@@ -172,3 +172,70 @@ export function marcadasHoy(comidas: Partial<Record<Slot, string>>, logs: { kind
 
 export const huecosLlenos = (plan: FilaPlan[]) =>
   new Set(plan.filter((r) => r.meal.trim() && r.day >= 0 && r.day < 7).map((r) => `${r.day}-${r.slot}`)).size;
+
+// ---------- pasillos del súper ----------
+
+export const PASILLOS = [
+  { id: 'frutas', nombre: 'Frutas y verduras', emoji: '🥬' },
+  { id: 'carnes', nombre: 'Carnes y pescados', emoji: '🍗' },
+  { id: 'lacteos', nombre: 'Lácteos y huevos', emoji: '🥚' },
+  { id: 'panaderia', nombre: 'Panadería', emoji: '🥖' },
+  { id: 'despensa', nombre: 'Despensa', emoji: '🫙' },
+  { id: 'congelados', nombre: 'Congelados', emoji: '🧊' },
+  { id: 'otros', nombre: 'Otros', emoji: '🛒' },
+] as const;
+export type Pasillo = (typeof PASILLOS)[number]['id'];
+
+// Palabras sin tildes ni «ñ» («ñame» se busca como «name») y en singular: el
+// plural («tomates», «limones») se acepta al buscar.
+const PALABRAS: [Pasillo, string[]][] = [
+  ['despensa', [
+    'lata', 'leche de coco', 'mantequilla de mani', 'harina', 'maicena', 'polvo de hornear', 'caldo', 'aceite', 'vinagre',
+    'salsa de soya', 'pimenton en polvo', 'pimenton dulce', 'ajo en polvo', 'cacao', 'curry', 'coco rallado', 'pepinillo',
+    'arroz', 'quinoa', 'avena', 'lenteja', 'frijol', 'garbanzo', 'pasta', 'granola', 'semilla', 'ajonjoli', 'almendra',
+    'nuez', 'nueces', 'datil', 'pasa', 'chispas de chocolate', 'miel', 'mostaza', 'vainilla', 'tahini', 'sal', 'pimienta',
+    'comino', 'canela', 'oregano', 'achiote', 'curcuma', 'laurel',
+  ]],
+  ['carnes', [
+    'pollo', 'pechuga', 'muslo', 'res', 'falda', 'carne', 'cerdo', 'pavo', 'pescado', 'filete', 'salmon', 'corvina',
+    'pargo', 'atun', 'tilapia', 'camaron',
+  ]],
+  ['lacteos', ['leche', 'yogur', 'queso', 'mantequilla', 'huevo', 'crema']],
+  ['panaderia', ['pan', 'tortilla', 'totopo']],
+  ['frutas', [
+    'aguacate', 'limon', 'platano', 'mango', 'papaya', 'pitahaya', 'fresa', 'arandano', 'mora', 'frambuesa', 'manzana',
+    'tomate', 'cebolla', 'ajo', 'pimenton', 'aji', 'pepino', 'zanahoria', 'apio', 'lechuga', 'repollo', 'espinaca',
+    'hongo', 'calabacin', 'vainita', 'guisante', 'papa', 'camote', 'name', 'auyama', 'mazorca', 'jengibre', 'cilantro',
+    'culantro', 'albahaca', 'menta', 'eneldo', 'perejil', 'romero', 'tomillo', 'cebollina',
+  ]],
+];
+
+const BUSCAR = PALABRAS.flatMap(([pasillo, palabras]) =>
+  palabras.map((p) => ({ pasillo, largo: p.length, re: new RegExp(`(^|[^a-z])${p}(e?s)?(?![a-z])`) })));
+
+/**
+ * El pasillo de un ingrediente. Gana la palabra que sale PRIMERO en la línea
+ * («Culantro y sal» es una verdura; «Sal, pimienta y eneldo», despensa), y a
+ * igual posición la más larga («leche de coco» antes que «leche»). Lo
+ * congelado va a Congelados aunque sea fruta.
+ */
+export function pasilloDe(ingrediente: string): Pasillo {
+  // No sirve claveIngrediente: recorta finales («tomate» → «tomat»)
+  const t = ingrediente.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]+/g, ' ');
+  if (/congelad/.test(t)) return 'congelados';
+  let mejor: { pasillo: Pasillo; pos: number; largo: number } | null = null;
+  for (const b of BUSCAR) {
+    const m = b.re.exec(t);
+    if (!m) continue;
+    const pos = m.index + m[1].length;
+    if (!mejor || pos < mejor.pos || (pos === mejor.pos && b.largo > mejor.largo)) mejor = { pasillo: b.pasillo, pos, largo: b.largo };
+  }
+  return mejor?.pasillo ?? 'otros';
+}
+
+/** Agrupa por pasillo en el orden de PASILLOS y sin grupos vacíos. */
+export function porPasillo<T extends { name: string }>(items: T[]) {
+  return PASILLOS
+    .map((p) => ({ ...p, items: items.filter((x) => pasilloDe(x.name) === p.id) }))
+    .filter((g) => g.items.length > 0);
+}

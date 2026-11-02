@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, Text, View, Pressable, RefreshControl } from 'react-native';
+import { ScrollView, Text, View, Pressable, RefreshControl, Modal, Platform, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { Titulo, Chispa, TINTA } from '@/components/decor';
-import { useHistorial, useBorrarRegistro } from '@/hooks/use-registros';
+import { useHistorial, useBorrarRegistro, useEspacio, useLiberarEspacio } from '@/hooks/use-registros';
 import { agruparPorDia, horaCorta, duracion, type TipoRegistro } from '@/lib/registros';
 
 // Historial: todo lo que hiciste, por día y con su hora.
@@ -25,6 +25,7 @@ export default function HistoryScreen() {
   const [filtro, setFiltro] = useState<TipoRegistro | null>(null);
   const { data, isLoading, refetch, isRefetching } = useHistorial(dias);
   const borrar = useBorrarRegistro();
+  const [espacio, setEspacio] = useState(false);
 
   const porDia = useMemo(() => {
     const regs = (data?.registros ?? []).filter((r) => !filtro || r.tipo === filtro);
@@ -119,9 +120,66 @@ export default function HistoryScreen() {
               </Pressable>
             ))}
           </View>
+
+          <Pressable onPress={() => setEspacio(true)} accessibilityRole="button"
+            style={{ minHeight: 52, borderRadius: 20, borderWidth: 1.5, borderColor: TINTA.borde, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}>
+            <Text style={{ fontSize: 16 }}>🧹</Text>
+            <Text style={{ color: TINTA.texto, fontWeight: '800', fontSize: 15 }}>Liberar espacio</Text>
+          </Pressable>
         </View>
       </ScrollView>
+      <LiberarEspacio visible={espacio} onClose={() => setEspacio(false)} />
     </ScreenContainer>
+  );
+}
+
+// Borrar lo antiguo del historial para que la app no crezca sin fin. Pregunta antes.
+function LiberarEspacio({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const [meses, setMeses] = useState(12);
+  const { data: filas = [], isLoading } = useEspacio(meses);
+  const liberar = useLiberarEspacio();
+  const total = filas.reduce((a, f) => a + f.cuantas, 0);
+  const [hecho, setHecho] = useState('');
+
+  const confirmar = () => {
+    const msg = `¿Borrar ${total} registros de hace más de ${meses} meses? No se puede deshacer. Tus hábitos, hobbies, recetas, notas y finanzas no se tocan.`;
+    const si = () => liberar.mutate(meses, {
+      onSuccess: () => setHecho(`Listo: borré ${total} registros antiguos.`),
+      onError: (e) => setHecho(`No se pudo: ${(e as Error).message}`),
+    });
+    if (Platform.OS === 'web') { if (window.confirm(msg)) si() }
+    else Alert.alert('Liberar espacio', msg, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Borrar', style: 'destructive', onPress: si }]);
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' }} accessibilityLabel="Cerrar" />
+      <View style={{ backgroundColor: TINTA.tarjeta, borderTopLeftRadius: 32, borderTopRightRadius: 32, borderWidth: 1, borderColor: TINTA.borde, padding: 24, paddingBottom: 40, gap: 14 }}>
+        <Titulo size={24}>Liberar espacio</Titulo>
+        <Text style={{ color: TINTA.suave, fontSize: 14.5, lineHeight: 20 }}>Borra los registros antiguos del día a día. Lo que creaste (hábitos, hobbies, obras, recetas, notas y dinero) se queda.</Text>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {[3, 6, 12].map((m) => (
+            <Pressable key={m} onPress={() => { setMeses(m); setHecho('') }} accessibilityState={{ selected: meses === m }}
+              style={{ flex: 1, minHeight: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5,
+                borderColor: meses === m ? TINTA.texto : TINTA.borde, backgroundColor: meses === m ? TINTA.texto : 'transparent' }}>
+              <Text style={{ color: meses === m ? TINTA.fondo : TINTA.texto, fontWeight: '800' }}>+ de {m} meses</Text>
+            </Pressable>
+          ))}
+        </View>
+        {isLoading ? <ActivityIndicator color={TINTA.suave} /> : filas.map((f) => (
+          <View key={f.tabla} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Text style={{ color: TINTA.texto, fontSize: 14.5 }}>{f.nombre}</Text>
+            <Text style={{ color: f.cuantas ? TINTA.texto : TINTA.suave, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{f.cuantas}</Text>
+          </View>
+        ))}
+        {!!hecho && <Text style={{ color: '#5FD3A8', fontWeight: '700' }}>{hecho}</Text>}
+        <Pressable onPress={confirmar} disabled={!total || liberar.isPending} accessibilityRole="button"
+          style={{ minHeight: 52, borderRadius: 20, backgroundColor: total ? '#FF7A6B' : '#2A2521', alignItems: 'center', justifyContent: 'center' }}>
+          {liberar.isPending ? <ActivityIndicator color={TINTA.fondo} /> :
+            <Text style={{ color: total ? TINTA.fondo : TINTA.suave, fontWeight: '900', fontSize: 16 }}>{total ? `Borrar ${total} registros` : 'No hay nada tan antiguo'}</Text>}
+        </Pressable>
+      </View>
+    </Modal>
   );
 }
 

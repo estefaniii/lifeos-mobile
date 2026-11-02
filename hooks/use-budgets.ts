@@ -29,62 +29,80 @@ export function useBudgets() {
   });
 }
 
+export type BudgetProgress = Budget & { spent: number; percentage: number };
+
+/** Mismo nombre sin importar mayúsculas ni espacios: «comida » = «Comida». */
+const claveCategoria = (c: string | null | undefined) => (c || 'Otros').trim().toLowerCase();
+
+// La clave empieza por 'transactions' a propósito: los hooks de movimientos
+// invalidan ['transactions'] al crear, editar o borrar, y React Query compara
+// por prefijo. Así la barra del presupuesto se mueve sola al anotar un gasto.
+const CLAVE_PROGRESO = 'transactions-budget-progress';
+
 export function useBudgetProgress() {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ['budget-progress', user?.id],
-    queryFn: async () => {
+    queryKey: ['transactions', CLAVE_PROGRESO, user?.id],
+    queryFn: async (): Promise<BudgetProgress[]> => {
       if (!user?.id) return [];
 
-      // Get budgets
-      const { data: budgets } = await supabase
+      const { data: budgets, error: errorPresupuestos } = await supabase
         .from('budgets')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .order('category');
+      if (errorPresupuestos) throw errorPresupuestos;
       if (!budgets || budgets.length === 0) return [];
 
-      // Get this month's expenses by category
+      // Gastos de este mes, en la fecha del teléfono
       const now = new Date();
       const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-      const { data: transactions } = await supabase
+      const { data: transactions, error } = await supabase
         .from('transactions')
         .select('category, amount')
         .eq('user_id', user.id)
         .eq('type', 'expense')
         .gte('date', startOfMonth);
+      if (error) throw error;
 
-      // Calculate spent per category
+      // Postgres devuelve los numeric como texto: Number() antes de sumar
       const spentByCategory: Record<string, number> = {};
-      (transactions || []).forEach((t: any) => {
-        const cat = t.category || 'Otros';
-        spentByCategory[cat] = (spentByCategory[cat] || 0) + Math.abs(t.amount);
+      (transactions || []).forEach((t: { category: string | null; amount: number | string }) => {
+        const cat = claveCategoria(t.category);
+        spentByCategory[cat] = (spentByCategory[cat] || 0) + Math.abs(Number(t.amount) || 0);
       });
 
-      return (budgets as Budget[]).map((b) => ({
-        ...b,
-        spent: spentByCategory[b.category] || 0,
-        percentage: b.limit_amount > 0
-          ? Math.round(((spentByCategory[b.category] || 0) / b.limit_amount) * 100)
-          : 0,
-      }));
+      return (budgets as Budget[]).map((b) => {
+        const limite = Number(b.limit_amount) || 0;
+        const spent = spentByCategory[claveCategoria(b.category)] || 0;
+        return { ...b, limit_amount: limite, spent, percentage: limite > 0 ? Math.round((spent / limite) * 100) : 0 };
+      });
     },
     enabled: !!user?.id,
   });
 }
 
+/**
+ * Crea el presupuesto de una categoría o cambia su límite si ya existe.
+ * Se busca a mano en vez de usar upsert: el upsert necesita una restricción
+ * única (user_id, category) que no está en los SQL del repo.
+ */
 export function useCreateBudget() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: { user_id: string; category: string; limit_amount: number }) => {
-      const { error } = await supabase.from('budgets').upsert(
-        { ...data, period: 'month' },
-        { onConflict: 'user_id,category' }
-      );
+      const { data: existentes, error: errorLeer } = await supabase
+        .from('budgets').select('id, category').eq('user_id', data.user_id);
+      if (errorLeer) throw errorLeer;
+      const ya = (existentes || []).find((b: { category: string }) => claveCategoria(b.category) === claveCategoria(data.category));
+      const { error } = ya
+        ? await supabase.from('budgets').update({ limit_amount: data.limit_amount }).eq('id', ya.id)
+        : await supabase.from('budgets').insert({ ...data, period: 'month' });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
-      queryClient.invalidateQueries({ queryKey: ['budget-progress'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', CLAVE_PROGRESO] });
     },
   });
 }
@@ -98,7 +116,7 @@ export function useDeleteBudget() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
-      queryClient.invalidateQueries({ queryKey: ['budget-progress'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', CLAVE_PROGRESO] });
     },
   });
 }

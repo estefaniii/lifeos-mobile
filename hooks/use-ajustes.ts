@@ -7,11 +7,12 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { conDefectos, type Recordatorios } from '@/lib/recordatorios';
 import { programarEnNativo } from '@/hooks/use-notifications';
+import { setHoraInicioDia } from '@/lib/registros';
 
 const useUserId = () => useAuth({ autoFetch: false }).user?.id ?? null;
 const VAPID = process.env.EXPO_PUBLIC_VAPID_PUBLIC_KEY ?? '';
 
-type Fila = { avatar_path: string | null; reminders: Record<string, unknown>; timezone: string };
+type Fila = { avatar_path: string | null; reminders: Record<string, unknown>; timezone: string; day_start_hour: number };
 
 export function useAjustes() {
   const userId = useUserId();
@@ -19,8 +20,9 @@ export function useAjustes() {
     queryKey: ['ajustes', userId],
     enabled: !!userId,
     queryFn: async () => {
-      const { data } = await supabase.from('user_settings').select('avatar_path, reminders, timezone').eq('user_id', userId!).maybeSingle();
-      const f = (data ?? { avatar_path: null, reminders: {}, timezone: 'America/Panama' }) as Fila;
+      const { data } = await supabase.from('user_settings').select('avatar_path, reminders, timezone, day_start_hour').eq('user_id', userId!).maybeSingle();
+      const f = (data ?? { avatar_path: null, reminders: {}, timezone: 'America/Panama', day_start_hour: 0 }) as Fila;
+      setHoraInicioDia(f.day_start_hour ?? 0);
       let avatarUrl: string | null = null;
       if (f.avatar_path) {
         const { data: u } = await supabase.storage.from('perfil').createSignedUrl(f.avatar_path, 60 * 60 * 24);
@@ -47,6 +49,22 @@ export function useGuardarRecordatorios() {
       if (Platform.OS !== 'web') await programarEnNativo(r);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['ajustes'] }),
+  });
+}
+
+// A qué hora empieza tu día (0 = medianoche … 6 = 6 a. m.)
+export function useGuardarHoraInicio() {
+  const qc = useQueryClient(), userId = useUserId();
+  return useMutation({
+    mutationFn: async (h: number) => {
+      if (!userId) throw new Error('Sesión no válida.');
+      const { error } = await supabase.from('user_settings')
+        .upsert({ user_id: userId, day_start_hour: h, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+      if (error) throw error;
+      setHoraInicioDia(h);
+    },
+    // Todo lo que depende de «hoy» se vuelve a pedir
+    onSuccess: () => qc.invalidateQueries(),
   });
 }
 

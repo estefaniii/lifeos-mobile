@@ -124,3 +124,50 @@ export function useHistorial(dias = 14) {
     },
   });
 }
+
+// ─── Liberar espacio ─────────────────────────────────────────────────────────
+// Lo que más crece con los meses. Solo registros del día a día: nunca dinero,
+// hábitos (su definición), recetas, hobbies, obras ni notas.
+export const HISTORIAL_BORRABLE = [
+  { tabla: 'life_logs', columna: 'logged_at', nombre: 'Agua, comidas y meditación anotadas', esFecha: false },
+  { tabla: 'habit_logs', columna: 'date', nombre: 'Hábitos marcados', esFecha: true },
+  { tabla: 'exercise_sessions', columna: 'done_on', nombre: 'Rutinas de ejercicio hechas', esFecha: true },
+  { tabla: 'hobby_sessions', columna: 'done_at', nombre: 'Ratos de hobby', esFecha: false },
+  { tabla: 'mental_logs', columna: 'date', nombre: 'Estrés y meditación', esFecha: true },
+  { tabla: 'health_metrics', columna: 'date', nombre: 'Sueño y agua por día', esFecha: true },
+] as const;
+
+const limite = (meses: number, esFecha: boolean) => {
+  const d = new Date(); d.setMonth(d.getMonth() - meses);
+  return esFecha ? fechaLocal(d) : d.toISOString();
+};
+
+export function useEspacio(meses: number) {
+  const userId = useUserId();
+  return useQuery({
+    queryKey: ['espacio', userId, meses],
+    enabled: !!userId,
+    queryFn: async () => {
+      const filas = await Promise.all(HISTORIAL_BORRABLE.map(async (t) => {
+        const { count } = await supabase.from(t.tabla).select('*', { count: 'exact', head: true })
+          .eq('user_id', userId!).lt(t.columna, limite(meses, t.esFecha));
+        return { ...t, cuantas: count ?? 0 };
+      }));
+      return filas;
+    },
+  });
+}
+
+export function useLiberarEspacio() {
+  const qc = useQueryClient(), userId = useUserId();
+  return useMutation({
+    mutationFn: async (meses: number) => {
+      if (!userId) throw new Error('Sesión no válida.');
+      for (const t of HISTORIAL_BORRABLE) {
+        const { error } = await supabase.from(t.tabla).delete().eq('user_id', userId).lt(t.columna, limite(meses, t.esFecha));
+        if (error) throw new Error(`${t.nombre}: ${error.message}`);
+      }
+    },
+    onSettled: () => qc.invalidateQueries(),
+  });
+}

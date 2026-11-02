@@ -15,7 +15,7 @@ import { useNotes } from '@/hooks/use-notes';
 import { FadeInView } from '@/components/fade-in-view';
 import { WaterModal } from '@/components/water-modal';
 import { Titulo, Sticker, TINTA } from '@/components/decor';
-import { fechaLocal } from '@/lib/registros';
+import { fechaLocal, racha, hitoRacha } from '@/lib/registros';
 
 // «Domingo, 1 de noviembre»: solo la primera letra en mayúscula
 const fechaLarga = () => {
@@ -247,6 +247,10 @@ export default function HomeScreen() {
   const { data: weekSleep } = useHealthMetrics('sleep_minutes', 7);
 
   const vasos = Math.floor((healthSummary?.water_ml || 0) / 250);
+  // Días seguidos con 8 vasos o más (hoy cuenta en cuanto se llega)
+  const { data: aguaDias } = useHealthMetrics('water_ml', 120);
+  const rachaAgua = racha((aguaDias ?? []).filter((d) => d.value >= 2000).map((d) => String(d.date).slice(0, 10)));
+  const hitoAgua = hitoRacha(rachaAgua);
   const habitosHechos = todayLogs?.filter((l: any) => l.completed).length || 0;
   const todosHechos = !!habits?.length && habitosHechos === habits.length;
 
@@ -359,10 +363,13 @@ export default function HomeScreen() {
               accessibilityLabel={`Hidratación: ${vasos} de 8 vasos. Toca para anotar`}
               style={{ ...TARJETA, padding: 18 }}
             >
+              {hitoAgua && <Sticker texto={`¡${hitoAgua} días!`} color={AGUA} giro={6} style={{ position: 'absolute', top: -12, right: 18 }} />}
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, gap: 12 }}>
                 <View style={{ flex: 1 }}>
                   <Titulo size={22}>Hidratación</Titulo>
-                  <Text style={{ color: TINTA.suave, fontSize: 13, marginTop: 2 }}>Toca para anotar un vaso</Text>
+                  <Text style={{ color: TINTA.suave, fontSize: 13, marginTop: 2 }}>
+                    {rachaAgua >= 2 ? `🔥 ${rachaAgua} días seguidos con 8 vasos` : 'Toca para anotar un vaso'}
+                  </Text>
                 </View>
                 <Text style={{ color: AGUA, fontSize: 15, fontWeight: '800' }}>{vasos} de 8</Text>
               </View>

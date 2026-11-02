@@ -11,6 +11,7 @@ import { useExerciseSessions, useLogExercise } from '@/hooks/use-vida';
 import { useMarcarDia } from '@/hooks/use-programas';
 import { ProgramasEjercicio, type MarcaDia } from '@/components/programas-ejercicio';
 import { Sticker, Titulo } from '@/components/decor';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { fechaLocal } from '@/lib/registros';
 
 type C = ReturnType<typeof useColors>;
@@ -18,7 +19,6 @@ type C = ReturnType<typeof useColors>;
 // El acento de Ejercicio (coral) con texto oscuro encima
 const ACENTO = '#FF7A6B';
 const SOBRE = '#110F0D';
-const ELEVADO = '#2A2521';
 
 /** La rutina en curso. Con `marca` viene de un día de un programa o reto. */
 type EnCurso = { rutina: Rutina; zona: Zona; marca?: MarcaDia };
@@ -40,6 +40,23 @@ function abrir(url: string) {
   Linking.openURL(url).catch(() => Alert.alert('No pude abrirlo', 'Prueba otra vez en un momento.'));
 }
 
+/**
+ * Días seguidos con al menos una rutina, contando hacia atrás desde hoy.
+ * Si hoy todavía no hay nada, la racha sigue viva desde ayer: no se rompe
+ * a las 8 de la mañana solo porque aún no entrenaste.
+ */
+function diasSeguidos(fechas: string[], hoy: Date = new Date()): number {
+  const hechas = new Set(fechas);
+  const d = new Date(hoy);
+  if (!hechas.has(fechaLocal(d))) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (hechas.has(fechaLocal(d))) { n++; d.setDate(d.getDate() - 1) }
+  return n;
+}
+
+// Las marcas que merecen sticker
+const HITOS_RACHA: [number, string][] = [[21, '¡3 semanas!'], [14, '¡2 semanas!'], [7, '¡1 semana!']];
+
 // Ejercicio: elige una zona, una rutina y síguela paso a paso con temporizador de descanso.
 export default function ExerciseScreen() {
   const c = useColors();
@@ -58,7 +75,10 @@ export default function ExerciseScreen() {
   // que seguir en el mismo programa.
   const [programaAbierto, setProgramaAbierto] = useState<string | null>(null);
   const marcar = useMarcarDia();
-  const { data: sesiones = [], error } = useExerciseSessions(30);
+  // Un año: la semana solo usa 7 días, pero la racha puede ser larga.
+  const { data: sesiones = [], error } = useExerciseSessions(365);
+  const racha = useMemo(() => diasSeguidos(sesiones.map((x) => x.done_on)), [sesiones]);
+  const hito = HITOS_RACHA.find(([n]) => racha >= n);
 
   const semana = useMemo(() => {
     const hace7 = new Date(); hace7.setDate(hace7.getDate() - 6);
@@ -108,6 +128,16 @@ export default function ExerciseScreen() {
                   ? 'Tus retos de 21 días y los planes que sigues, día por día.'
                   : 'Rutinas por zona, en casa y a tu ritmo.'}
               </Text>
+
+              <View style={{ backgroundColor: c.surface, borderRadius: 24, borderWidth: 1, borderColor: racha ? ACENTO : c.border,
+                padding: 16, marginBottom: hito ? 26 : 18, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <Titulo size={34} color={racha ? ACENTO : c.muted}>{racha}</Titulo>
+                <Text style={{ flex: 1, color: c.foreground, fontSize: 15, fontWeight: '700' }}>
+                  {racha === 1 ? 'día seguido haciendo ejercicio' : 'días seguidos haciendo ejercicio'}
+                  {racha === 0 ? <Text style={{ color: c.muted, fontWeight: '400' }}>{'\n'}Una rutina hoy y empieza tu racha.</Text> : null}
+                </Text>
+                {hito && <Sticker texto={hito[1]} color={ACENTO} tinta={SOBRE} giro={-6} style={{ position: 'absolute', bottom: -14, right: 14 }} />}
+              </View>
 
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
                 {([['zonas', 'Rutinas'], ['programas', 'Programas y retos']] as const).map(([k, texto]) => (
@@ -229,15 +259,17 @@ function Musica({ c, titulo, zonaId }: { c: C; titulo: string; zonaId?: string }
       <Titulo size={22} color={c.foreground} style={{ marginBottom: 12 }}>{titulo}</Titulo>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 20 }}>
         {listasPara(zonaId).map((l) => (
-          <View key={l.busqueda} style={{ width: 184, backgroundColor: c.surface, borderRadius: 24, borderWidth: 1, borderColor: c.border, padding: 12, gap: 10 }}>
-            <View>
-              <Text style={{ color: c.foreground, fontWeight: '800', fontSize: 15 }}>{l.nombre}</Text>
-              <Text style={{ color: c.muted, fontSize: 12.5 }} numberOfLines={1}>{l.busqueda}</Text>
+          <View key={l.busqueda} style={{ width: 210, backgroundColor: c.surface, borderRadius: 24, borderWidth: 1, borderColor: c.border, paddingVertical: 8, paddingLeft: 14, paddingRight: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ flex: 1, color: c.foreground, fontWeight: '800', fontSize: 15 }} numberOfLines={2}>{l.nombre}</Text>
+              <IconosMusica
+                fondo={c.surface}
+                alSpotify={() => abrir(urlSpotify(l))}
+                alYoutube={() => abrir(urlYoutubeMusic(l))}
+                etiqueta={l.nombre}
+              />
             </View>
-            <View style={{ flexDirection: 'row', gap: 6 }}>
-              <BotonChico c={c} texto="Spotify" onPress={() => abrir(urlSpotify(l))} etiqueta={`${l.nombre} en Spotify`} />
-              <BotonChico c={c} texto="YouTube" onPress={() => abrir(urlYoutubeMusic(l))} etiqueta={`${l.nombre} en YouTube Music`} />
-            </View>
+            <Text style={{ color: c.muted, fontSize: 12.5, paddingRight: 10 }} numberOfLines={1}>{l.busqueda}</Text>
           </View>
         ))}
       </ScrollView>
@@ -245,13 +277,34 @@ function Musica({ c, titulo, zonaId }: { c: C; titulo: string; zonaId?: string }
   );
 }
 
-function BotonChico({ c, texto, onPress, etiqueta }: { c: C; texto: string; onPress: () => void; etiqueta?: string }) {
+/**
+ * Los logos de Spotify y YouTube en blanco, cada uno en un botón de 44 px.
+ * El hueco del logo (los arcos, el triángulo) se pinta con el color de la
+ * tarjeta para que se lea como recortado.
+ */
+function IconosMusica({ fondo, alSpotify, alYoutube, etiqueta }: {
+  fondo: string; alSpotify: () => void; alYoutube: () => void; etiqueta: string;
+}) {
+  const boton = ({ pressed }: { pressed: boolean }) => ({
+    width: 44, height: 44, alignItems: 'center' as const, justifyContent: 'center' as const, opacity: pressed ? 0.6 : 1,
+  });
   return (
-    <Pressable onPress={onPress} accessibilityRole="link" accessibilityLabel={etiqueta ?? texto}
-      style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 22, backgroundColor: ELEVADO,
-        alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}>
-      <Text style={{ color: c.foreground, fontWeight: '700', fontSize: 13 }}>{texto}</Text>
-    </Pressable>
+    <View style={{ flexDirection: 'row' }}>
+      <Pressable onPress={alSpotify} accessibilityRole="link" accessibilityLabel={`${etiqueta} en Spotify`} style={boton}>
+        <Svg width={24} height={24} viewBox="0 0 24 24">
+          <Circle cx={12} cy={12} r={12} fill="#FFFFFF" />
+          <Path d="M6.2 9.3C9.8 8.1 14.6 8.4 18 10.3" stroke={fondo} strokeWidth={2.1} strokeLinecap="round" fill="none" />
+          <Path d="M7 12.6C10 11.7 13.7 12 16.6 13.6" stroke={fondo} strokeWidth={1.8} strokeLinecap="round" fill="none" />
+          <Path d="M7.7 15.7C10.1 15.1 12.9 15.3 15.1 16.5" stroke={fondo} strokeWidth={1.5} strokeLinecap="round" fill="none" />
+        </Svg>
+      </Pressable>
+      <Pressable onPress={alYoutube} accessibilityRole="link" accessibilityLabel={`${etiqueta} en YouTube`} style={boton}>
+        <Svg width={26} height={26} viewBox="0 0 24 24">
+          <Rect x={1} y={5} width={22} height={14.5} rx={4.5} fill="#FFFFFF" />
+          <Path d="M9.8 8.9L15.6 12.25L9.8 15.6Z" fill={fondo} />
+        </Svg>
+      </Pressable>
+    </View>
   );
 }
 
