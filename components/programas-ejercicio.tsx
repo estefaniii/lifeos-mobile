@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { useColors } from '@/hooks/use-colors';
+import { Sticker, Titulo } from '@/components/decor';
+import { ZONAS, buscarRutina } from '@/constants/ejercicios';
+import { RETOS, type Reto } from '@/constants/retos';
 import {
   useBorrarPrograma,
   useDiasHechos,
@@ -26,12 +29,29 @@ import {
  * es peor que un enlace que funciona siempre.
  */
 
-export function ProgramasEjercicio() {
+/** Qué día de qué programa se está haciendo, para marcarlo al terminar la rutina. */
+export type MarcaDia = { programId: string; dia: number; yaHecho: boolean };
+
+const zonaDe = (id: string) => ZONAS.find((z) => z.id === id) ?? ZONAS[0];
+/** El programa guardado de un reto, si ya lo empezó. Se reconoce por autor y nombre. */
+const programaDelReto = (programas: Programa[], r: Reto) =>
+  programas.find((p) => p.author === 'LifeOS' && p.name === r.nombre);
+
+export function ProgramasEjercicio({
+  abiertoId,
+  alAbrir,
+  alHacerRutina,
+}: {
+  /** El programa abierto vive en la pantalla: así sigue abierto al volver del reproductor. */
+  abiertoId: string | null;
+  alAbrir: (id: string | null) => void;
+  alHacerRutina: (rutinaId: string, marca: MarcaDia) => void;
+}) {
   const c = useColors();
   const { data: programas = [], isLoading, error } = useProgramas();
   const { data: hechos = [] } = useDiasHechos();
-  const [abierto, setAbierto] = useState<Programa | null>(null);
   const [editando, setEditando] = useState<Programa | 'nuevo' | null>(null);
+  const [reto, setReto] = useState<Reto | null>(null);
 
   if (editando) {
     return (
@@ -42,36 +62,95 @@ export function ProgramasEjercicio() {
     );
   }
 
-  if (abierto) {
-    const vivo = programas.find((p) => p.id === abierto.id) ?? abierto;
+  if (reto) {
     return (
-      <Dias
-        programa={vivo}
-        hechos={hechos.filter((h) => h.program_id === vivo.id).map((h) => h.day)}
-        alSalir={() => setAbierto(null)}
-        alEditar={() => { setAbierto(null); setEditando(vivo); }}
+      <VistaReto
+        reto={reto}
+        existente={programaDelReto(programas, reto)}
+        alSalir={() => setReto(null)}
+        alAbrir={(id) => { setReto(null); alAbrir(id); }}
       />
     );
   }
 
-  if (error) {
+  const abierto = abiertoId ? programas.find((p) => p.id === abiertoId) : null;
+  if (abierto) {
     return (
-      <Aviso c={c}>
-        Aún no puedo guardar programas: falta crear las tablas en la base de
-        datos. Está el archivo supabase/programas-ejercicio.sql listo para
-        pegar en Supabase.
-      </Aviso>
+      <Dias
+        programa={abierto}
+        hechos={hechos.filter((h) => h.program_id === abierto.id).map((h) => h.day)}
+        alSalir={() => alAbrir(null)}
+        alEditar={() => { alAbrir(null); setEditando(abierto); }}
+        alHacerRutina={alHacerRutina}
+      />
     );
   }
 
+  const hechosDe = (id: string) => hechos.filter((h) => h.program_id === id).length;
+
   return (
     <View style={{ gap: 12 }}>
+      {error && (
+        <Aviso c={c}>
+          No pude cargar tus programas. Revisa la conexión y vuelve a entrar.
+          Si la base de datos es nueva, las tablas están en
+          supabase/programas-ejercicio.sql.
+        </Aviso>
+      )}
+
+      {/* ---------- retos de 21 días ---------- */}
+      <Titulo size={24} color={c.foreground}>Retos de 21 días</Titulo>
+      <Text style={{ color: c.muted, fontSize: 13.5, marginTop: -6 }}>
+        Elige uno y te lo paso a tu plan. Tú vas contando los días.
+      </Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 12, paddingTop: 12, paddingBottom: 4, paddingRight: 20 }}
+      >
+        {RETOS.map((r) => {
+          const z = zonaDe(r.zona);
+          const guardado = programaDelReto(programas, r);
+          return (
+            <Pressable
+              key={r.id}
+              onPress={() => setReto(r)}
+              accessibilityRole="button"
+              accessibilityLabel={r.nombre}
+              style={({ pressed }) => ({
+                width: 236, backgroundColor: c.surface, borderRadius: 22,
+                borderWidth: 1, borderColor: c.border, opacity: pressed ? 0.85 : 1,
+              })}
+            >
+              <Image
+                source={z.foto}
+                resizeMode="cover"
+                style={{ width: '100%', height: 118, borderTopLeftRadius: 21, borderTopRightRadius: 21 }}
+              />
+              <Sticker texto="21 días" color={z.color} giro={5} style={{ position: 'absolute', top: -10, right: 12 }} />
+              <View style={{ padding: 14, gap: 4 }}>
+                <Text style={{ color: c.foreground, fontSize: 16.5, fontWeight: '800' }}>{r.nombre}</Text>
+                <Text style={{ color: c.muted, fontSize: 13, lineHeight: 18 }} numberOfLines={3}>{r.para}</Text>
+                {guardado && (
+                  <Text style={{ color: z.color, fontSize: 12.5, fontWeight: '700', marginTop: 4 }}>
+                    En tu plan · {hechosDe(guardado.id)} de 21 días
+                  </Text>
+                )}
+              </View>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {/* ---------- los programas guardados ---------- */}
+      <Text style={{ color: c.foreground, fontSize: 18, fontWeight: '800', marginTop: 14 }}>Tus programas</Text>
+
       <Pressable
         onPress={() => setEditando('nuevo')}
         accessibilityRole="button"
         style={({ pressed }) => ({
           borderRadius: 18, borderWidth: 1, borderStyle: 'dashed', borderColor: c.border,
-          paddingVertical: 14, alignItems: 'center', opacity: pressed ? 0.7 : 1,
+          minHeight: 48, justifyContent: 'center', alignItems: 'center', opacity: pressed ? 0.7 : 1,
         })}
       >
         <Text style={{ color: c.primary, fontWeight: '700' }}>+ Nuevo programa</Text>
@@ -79,21 +158,21 @@ export function ProgramasEjercicio() {
 
       {isLoading && <Text style={{ color: c.muted, fontSize: 13 }}>Cargando…</Text>}
 
-      {!isLoading && programas.length === 0 && (
+      {!isLoading && !error && programas.length === 0 && (
         <Aviso c={c}>
-          Aquí van los planes que sigues de alguien más: pones el nombre, de
-          quién es, y el enlace del video de cada día. La app te lleva la
-          cuenta de por dónde vas.
+          Aquí van los retos que elijas y los planes que sigues de alguien más:
+          pones el nombre, de quién es, y el enlace del video de cada día. La
+          app te lleva la cuenta de por dónde vas.
         </Aviso>
       )}
 
       {programas.map((p) => {
-        const hechosDeEste = hechos.filter((h) => h.program_id === p.id).length;
+        const hechosDeEste = hechosDe(p.id);
         const total = p.days.length || 1;
         return (
           <Pressable
             key={p.id}
-            onPress={() => setAbierto(p)}
+            onPress={() => alAbrir(p.id)}
             accessibilityRole="button"
             style={({ pressed }) => ({
               backgroundColor: c.surface, borderRadius: 22, padding: 18,
@@ -117,6 +196,75 @@ export function ProgramasEjercicio() {
   );
 }
 
+// ---------- un reto antes de empezarlo ----------
+
+function VistaReto({
+  reto,
+  existente,
+  alSalir,
+  alAbrir,
+}: {
+  reto: Reto;
+  existente?: Programa;
+  alSalir: () => void;
+  alAbrir: (id: string) => void;
+}) {
+  const c = useColors();
+  const guardar = useGuardarPrograma();
+  const z = zonaDe(reto.zona);
+  const entrenos = reto.dias.filter((d) => !d.descanso).length;
+
+  const empezar = () => {
+    if (existente) return alAbrir(existente.id);
+    guardar.mutate(
+      { name: reto.nombre, author: 'LifeOS', days: reto.dias },
+      {
+        onSuccess: (id) => alAbrir(id),
+        onError: (e) => Alert.alert('No se guardó el reto', (e as Error).message),
+      },
+    );
+  };
+
+  return (
+    <View style={{ gap: 12 }}>
+      <Atras c={c} texto="← Programas" onPress={alSalir} />
+      <View>
+        <Image source={z.foto} resizeMode="cover" style={{ width: '100%', height: 190, borderRadius: 22 }} />
+        <Sticker texto="21 días" color={z.color} giro={-5} style={{ position: 'absolute', bottom: -12, right: 16 }} />
+      </View>
+      <Titulo size={28} color={c.foreground} style={{ marginTop: 8 }}>{reto.nombre}</Titulo>
+      <Text style={{ color: c.foreground, fontSize: 15, lineHeight: 21 }}>{reto.para}</Text>
+      <Text style={{ color: c.muted, fontSize: 13.5, lineHeight: 19 }}>
+        {entrenos} días de rutina y {reto.dias.length - entrenos} de descanso activo. Empieza
+        suave para aprender la técnica y termina con la rutina completa.
+      </Text>
+
+      {[0, 1, 2].map((s) => (
+        <View key={s} style={{ backgroundColor: c.surface, borderRadius: 18, padding: 14, borderWidth: 1, borderColor: c.border, gap: 4 }}>
+          <Text style={{ color: c.foreground, fontWeight: '800', fontSize: 15, marginBottom: 2 }}>Semana {s + 1}</Text>
+          {reto.dias.slice(s * 7, s * 7 + 7).map((d) => (
+            <Text key={d.dia} style={{ color: d.descanso ? c.muted : c.foreground, fontSize: 13.5 }}>
+              Día {d.dia} · {d.titulo}
+            </Text>
+          ))}
+        </View>
+      ))}
+
+      {guardar.isError && (
+        <Text style={{ color: c.warning, fontSize: 13 }}>
+          No se guardó: {(guardar.error as Error).message}
+        </Text>
+      )}
+      <BotonLleno
+        c={c}
+        texto={existente ? 'Seguir con el reto' : guardar.isPending ? 'Guardando…' : 'Empezar el reto'}
+        onPress={empezar}
+        deshabilitado={guardar.isPending}
+      />
+    </View>
+  );
+}
+
 // ---------- los días de un programa ----------
 
 function Dias({
@@ -124,14 +272,20 @@ function Dias({
   hechos,
   alSalir,
   alEditar,
+  alHacerRutina,
 }: {
   programa: Programa;
   hechos: number[];
   alSalir: () => void;
   alEditar: () => void;
+  alHacerRutina: (rutinaId: string, marca: MarcaDia) => void;
 }) {
   const c = useColors();
   const marcar = useMarcarDia();
+  const total = programa.days.length;
+  const hechosN = programa.days.filter((d) => hechos.includes(d.dia)).length;
+  // El día que toca es el primero sin marcar: si se salta uno, no se pierde.
+  const siguiente = programa.days.find((d) => !hechos.includes(d.dia));
 
   const abrirVideo = async (url: string) => {
     try {
@@ -144,15 +298,49 @@ function Dias({
   return (
     <View style={{ gap: 12 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Pressable onPress={alSalir} style={{ paddingVertical: 8 }}>
-          <Text style={{ color: c.primary, fontWeight: '700' }}>← Programas</Text>
-        </Pressable>
-        <Pressable onPress={alEditar} style={{ paddingVertical: 8 }}>
+        <Atras c={c} texto="← Programas" onPress={alSalir} />
+        <Pressable onPress={alEditar} accessibilityRole="button" style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' }}>
           <Text style={{ color: c.muted, fontWeight: '600' }}>Editar</Text>
         </Pressable>
       </View>
 
-      <Text style={{ color: c.foreground, fontSize: 24, fontWeight: '800' }}>{programa.name}</Text>
+      <Titulo size={28} color={c.foreground}>{programa.name}</Titulo>
+
+      {total > 0 && (
+        <View style={{ backgroundColor: c.surface, borderRadius: 22, padding: 16, borderWidth: 1, borderColor: c.border, gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
+            <Text style={{ color: c.foreground, fontSize: 22, fontWeight: '800' }}>
+              {siguiente ? `Día ${siguiente.dia} de ${total}` : '¡Terminado!'}
+            </Text>
+            <Text style={{ color: c.muted, fontSize: 13 }}>{hechosN} hechos</Text>
+          </View>
+          {/* Una casilla por día, siete por fila: se ve de un vistazo lo hecho y lo que falta. */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }} accessibilityLabel={`${hechosN} de ${total} días hechos`}>
+            {programa.days.map((d) => {
+              const hecho = hechos.includes(d.dia);
+              const hoy = siguiente?.dia === d.dia;
+              return (
+                <View
+                  key={d.dia}
+                  style={{
+                    width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: hecho ? c.primary : 'transparent',
+                    borderWidth: hoy ? 2 : 1, borderColor: hecho || hoy ? c.primary : c.border,
+                    borderStyle: d.descanso && !hecho ? 'dashed' : 'solid',
+                  }}
+                >
+                  <Text style={{ color: hecho ? c.background : hoy ? c.foreground : c.muted, fontSize: 12.5, fontWeight: '700' }}>
+                    {hecho ? '✓' : d.dia}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+          {programa.days.some((d) => d.descanso) && (
+            <Text style={{ color: c.muted, fontSize: 12 }}>Las casillas punteadas son descanso activo.</Text>
+          )}
+        </View>
+      )}
       {!!programa.source_url && (
         <Pressable onPress={() => abrirVideo(programa.source_url!)}>
           <Text style={{ color: c.primary, fontSize: 13 }}>Ver el programa completo</Text>
@@ -165,12 +353,14 @@ function Dias({
 
       {programa.days.map((d) => {
         const hecho = hechos.includes(d.dia);
+        const r = buscarRutina(d.rutina);
+        const hoy = siguiente?.dia === d.dia;
         return (
           <View
             key={d.dia}
             style={{
               backgroundColor: c.surface, borderRadius: 20, padding: 16,
-              borderWidth: 1, borderColor: hecho ? c.primary : c.border,
+              borderWidth: hoy ? 2 : 1, borderColor: hecho || hoy ? c.primary : c.border,
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -190,8 +380,8 @@ function Dias({
               </Pressable>
 
               <View style={{ flex: 1 }}>
-                <Text style={{ color: c.muted, fontSize: 11.5, fontWeight: '700', letterSpacing: 1 }}>
-                  DÍA {d.dia}
+                <Text style={{ color: c.muted, fontSize: 12.5, fontWeight: '700' }}>
+                  Día {d.dia}{hoy ? ' · te toca hoy' : ''}
                 </Text>
                 <Text
                   style={{
@@ -208,12 +398,32 @@ function Dias({
               <Text style={{ color: c.muted, fontSize: 13, marginTop: 8 }}>{d.notas}</Text>
             )}
 
-            {d.video ? (
+            {r && (
+              <Text style={{ color: c.muted, fontSize: 12.5, marginTop: 8 }}>
+                {r.rutina.nombre} · {r.zona.nombre} · {r.rutina.minutos} min
+              </Text>
+            )}
+
+            {r ? (
+              <Pressable
+                onPress={() => alHacerRutina(r.rutina.id, { programId: programa.id, dia: d.dia, yaHecho: hecho })}
+                accessibilityRole="button"
+                style={({ pressed }) => ({
+                  marginTop: 12, borderRadius: 14, minHeight: 46, justifyContent: 'center',
+                  backgroundColor: hoy ? c.primary : 'transparent', borderWidth: hoy ? 0 : 1.5, borderColor: c.border,
+                  alignItems: 'center', opacity: pressed ? 0.85 : 1,
+                })}
+              >
+                <Text style={{ color: hoy ? c.background : c.foreground, fontWeight: '800' }}>
+                  {hecho ? 'Repetir la rutina' : 'Hacer la rutina'}
+                </Text>
+              </Pressable>
+            ) : d.video ? (
               <Pressable
                 onPress={() => abrirVideo(d.video!)}
                 accessibilityRole="button"
                 style={({ pressed }) => ({
-                  marginTop: 12, borderRadius: 14, paddingVertical: 11,
+                  marginTop: 12, borderRadius: 14, minHeight: 46, justifyContent: 'center',
                   backgroundColor: c.primary, alignItems: 'center', opacity: pressed ? 0.85 : 1,
                 })}
               >
@@ -260,9 +470,7 @@ function Editor({ programa, alSalir }: { programa: Programa | null; alSalir: () 
 
   return (
     <View style={{ gap: 12 }}>
-      <Pressable onPress={alSalir} style={{ paddingVertical: 8 }}>
-        <Text style={{ color: c.primary, fontWeight: '700' }}>← Cancelar</Text>
-      </Pressable>
+      <Atras c={c} texto="← Cancelar" onPress={alSalir} />
 
       <Text style={{ color: c.foreground, fontSize: 24, fontWeight: '800' }}>
         {programa ? 'Editar programa' : 'Nuevo programa'}
@@ -288,8 +496,8 @@ function Editor({ programa, alSalir }: { programa: Programa | null; alSalir: () 
           style={{ backgroundColor: c.surface, borderRadius: 18, padding: 14, borderWidth: 1, borderColor: c.border, gap: 8 }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text style={{ color: c.muted, fontSize: 11.5, fontWeight: '700', letterSpacing: 1 }}>
-              DÍA {d.dia}
+            <Text style={{ color: c.muted, fontSize: 12.5, fontWeight: '700' }}>
+              Día {d.dia}
             </Text>
             <Pressable onPress={() => quitar(i)} hitSlop={10}>
               <Text style={{ color: c.muted, fontSize: 13 }}>Quitar</Text>
@@ -397,6 +605,32 @@ function Campo({
         }}
       />
     </View>
+  );
+}
+
+function Atras({ c, texto, onPress }: { c: ReturnType<typeof useColors>; texto: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
+      <Text style={{ color: c.primary, fontWeight: '700' }}>{texto}</Text>
+    </Pressable>
+  );
+}
+
+function BotonLleno({ c, texto, onPress, deshabilitado }: {
+  c: ReturnType<typeof useColors>; texto: string; onPress: () => void; deshabilitado?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={deshabilitado}
+      accessibilityRole="button"
+      style={({ pressed }) => ({
+        minHeight: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 22,
+        backgroundColor: c.primary, opacity: deshabilitado ? 0.5 : pressed ? 0.85 : 1,
+      })}
+    >
+      <Text style={{ color: c.background, fontWeight: '800', fontSize: 16 }}>{texto}</Text>
+    </Pressable>
   );
 }
 

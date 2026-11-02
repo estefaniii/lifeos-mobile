@@ -3,10 +3,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
+import { fechaLocal } from '@/lib/registros';
 
 const useUserId = () => useAuth({ autoFetch: false }).user?.id ?? null;
-const fechaLocal = (d = new Date()) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 export type DiaPrograma = {
   dia: number;
@@ -15,6 +14,8 @@ export type DiaPrograma = {
   video?: string;
   descanso?: boolean;
   notas?: string;
+  /** Id de una rutina de constants/ejercicios.ts (los retos de 21 días). */
+  rutina?: string;
 };
 
 export type Programa = {
@@ -76,10 +77,15 @@ export function useGuardarPrograma() {
       };
       // Con id actualiza, sin id crea. Un solo camino para los dos casos:
       // dos funciones separadas se separaban más con cada campo nuevo.
-      const { error } = p.id
-        ? await supabase.from('exercise_programs').update(fila).eq('id', p.id).eq('user_id', userId)
-        : await supabase.from('exercise_programs').insert([fila]);
+      if (p.id) {
+        const { error } = await supabase.from('exercise_programs').update(fila).eq('id', p.id).eq('user_id', userId);
+        if (error) throw error;
+        return p.id;
+      }
+      // Devuelve el id nuevo para poder abrir el programa recién creado (los retos).
+      const { data, error } = await supabase.from('exercise_programs').insert([fila]).select('id').single();
       if (error) throw error;
+      return (data as { id: string }).id;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['programas'] }),
   });
